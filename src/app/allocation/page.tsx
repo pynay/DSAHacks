@@ -1,12 +1,28 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Boxes, CheckCircle2, PackageCheck, Send, Target } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Boxes, CheckCircle2, PackageCheck, Send, Target, TrendingUp } from 'lucide-react';
 import { useInventory } from '@/context/InventoryProvider';
 import { useZones } from '@/lib/useZones';
-import { allocate } from '@/lib/allocation';
+import { allocate, redistributeNeed } from '@/lib/allocation';
+import type { ForecastPayload } from '@/lib/forecastServer';
 import StatCard from '@/components/StatCard';
+import ForecastChart from '@/components/charts/ForecastChart';
 import { inputClass } from '@/components/FormField';
+
+interface ForecastMeta {
+  model: string;
+  horizon_months: number;
+  train_window: { start: string; end: string; n_rows: number };
+  backtest: {
+    window_months: number;
+    n_predictions: number;
+    model_mae: number;
+    naive_last_month_mae: number;
+    seasonal_naive_mae: number;
+  };
+  generated_on: string;
+}
 
 function categorySummary(items: { category: string; quantity: number }[]): string {
   const byCat = new Map<string, number>();
@@ -22,10 +38,29 @@ export default function AllocationPage() {
   const { zones, error } = useZones();
   const [unitsPerPerson, setUnitsPerPerson] = useState(3);
   const [staged, setStaged] = useState(false);
+  const [mode, setMode] = useState<'current' | 'predicted'>('current');
+  const [forecast, setForecast] = useState<ForecastPayload | null>(null);
+
+  useEffect(() => {
+    fetch('/api/forecast')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.total) setForecast(d);
+      })
+      .catch(() => {});
+  }, []);
+
+  const allocZones = useMemo(() => {
+    if (mode === 'predicted' && forecast) {
+      const weights = Object.fromEntries(forecast.hoods.map((h) => [h.id, h.nextPredicted]));
+      return redistributeNeed(zones, weights);
+    }
+    return zones;
+  }, [zones, mode, forecast]);
 
   const result = useMemo(
-    () => allocate(inventory, zones, unitsPerPerson),
-    [inventory, zones, unitsPerPerson],
+    () => allocate(inventory, allocZones, unitsPerPerson),
+    [inventory, allocZones, unitsPerPerson],
   );
 
   function stage() {
@@ -56,6 +91,30 @@ export default function AllocationPage() {
           </p>
         </div>
         <div className="flex items-end gap-3">
+          <div>
+            <span className="mb-1 block text-xs font-medium text-stone-500">Allocate on</span>
+            <div className="flex overflow-hidden rounded-lg border border-stone-300">
+              <button
+                onClick={() => {
+                  setMode('current');
+                  setStaged(false);
+                }}
+                className={`px-3 py-2 text-sm font-medium ${mode === 'current' ? 'bg-yellow-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50'}`}
+              >
+                Current need
+              </button>
+              <button
+                onClick={() => {
+                  setMode('predicted');
+                  setStaged(false);
+                }}
+                disabled={!forecast}
+                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium disabled:opacity-40 ${mode === 'predicted' ? 'bg-yellow-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50'}`}
+              >
+                <TrendingUp size={14} /> Predicted
+              </button>
+            </div>
+          </div>
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-stone-500">Units / person</span>
             <input
@@ -100,6 +159,91 @@ export default function AllocationPage() {
         />
         <StatCard label="Units left in stock" value={result.unitsLeft.toLocaleString()} icon={Boxes} />
       </div>
+
+      {mode === 'predicted' && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Predictive mode: total demand is unchanged, but its split across zones follows each
+          neighborhood&apos;s <b>predicted next-month 311 share</b> instead of the latest counted
+          need — pre-positioning food where pressure is heading.
+        </p>
+      )}
+
+      {forecast && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
+            <h3 className="font-semibold text-stone-900">Downtown need forecast</h3>
+            <p className="mb-1 text-xs text-stone-500">
+              Monthly 311 homelessness-related requests, all six neighborhoods combined — 24 months
+              actual + {(forecast.meta as ForecastMeta).horizon_months}-month model forecast.
+            </p>
+            <ForecastChart history={forecast.total.history} forecast={forecast.total.forecast} />
+            <div className="mt-2 flex flex-wrap gap-2">
+              {forecast.hoods.map((h) => {
+                const delta = h.lastActual > 0 ? (h.nextPredicted - h.lastActual) / h.lastActual : 0;
+                const up = h.nextPredicted >= h.lastActual;
+                return (
+                  <span
+                    key={h.id}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${up ? 'bg-orange-100 text-orange-800' : 'bg-emerald-100 text-emerald-800'}`}
+                    title={`last ${h.lastActual} → predicted ${h.nextPredicted}`}
+                  >
+                    {h.label} {up ? '↑' : '↓'}
+                    {Math.abs(Math.round(delta * 100))}%
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+            <h3 className="font-semibold text-stone-900">Model card</h3>
+            {(() => {
+              const m = forecast.meta as ForecastMeta;
+              const vsNaive =
+                ((m.backtest.naive_last_month_mae - m.backtest.model_mae) /
+                  m.backtest.naive_last_month_mae) *
+                100;
+              return (
+                <dl className="mt-2 space-y-2 text-xs text-stone-600">
+                  <div>
+                    <dt className="font-medium text-stone-800">Model</dt>
+                    <dd>{m.model}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-stone-800">Training data</dt>
+                    <dd>
+                      {m.train_window.n_rows} neighborhood-months, {m.train_window.start} →{' '}
+                      {m.train_window.end}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-stone-800">
+                      Backtest (rolling, last {m.backtest.window_months} months,{' '}
+                      {m.backtest.n_predictions} predictions)
+                    </dt>
+                    <dd>
+                      MAE <b>{m.backtest.model_mae}</b> vs last-month naive{' '}
+                      {m.backtest.naive_last_month_mae} ({vsNaive.toFixed(1)}% better) · seasonal
+                      naive {m.backtest.seasonal_naive_mae}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-stone-800">Caveats</dt>
+                    <dd>
+                      Aggregate neighborhood-level demand forecasting for aid pre-positioning. 311
+                      signals are proxies with known biases, never headcounts. No individual-level
+                      data exists in the commons.
+                    </dd>
+                  </div>
+                  <div className="text-stone-400">
+                    Generated {m.generated_on} · ml/forecast.py (deterministic)
+                  </div>
+                </dl>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
         <table className="min-w-full text-sm">

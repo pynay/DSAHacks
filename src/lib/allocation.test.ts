@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { InventoryItem } from './types';
 import type { DeliveryZone } from './delivery';
-import { allocate } from './allocation';
+import { allocate, redistributeNeed } from './allocation';
 
 function item(over: Partial<InventoryItem> = {}): InventoryItem {
   return {
@@ -113,5 +113,36 @@ describe('allocate', () => {
     expect(r.totalAllocated).toBe(0);
     expect(r.unitsLeft).toBe(100);
     expect(r.coverage).toBe(0);
+  });
+});
+
+describe('redistributeNeed', () => {
+  it('re-splits total need by forecast shares, preserving the total exactly', () => {
+    const zones = [zone({ id: 'a', need: 100 }), zone({ id: 'b', need: 200 })];
+    const out = redistributeNeed(zones, { a: 75, b: 25 }); // shares 0.75 / 0.25
+    expect(out.find((z) => z.id === 'a')!.need).toBe(225);
+    expect(out.find((z) => z.id === 'b')!.need).toBe(75);
+    expect(out.reduce((s, z) => s + z.need, 0)).toBe(300);
+  });
+
+  it('preserves the total under rounding (largest remainder)', () => {
+    const zones = [zone({ id: 'a', need: 50 }), zone({ id: 'b', need: 50 }), zone({ id: 'c', need: 1 })];
+    const out = redistributeNeed(zones, { a: 1, b: 1, c: 1 }); // thirds of 101
+    expect(out.reduce((s, z) => s + z.need, 0)).toBe(101);
+  });
+
+  it('gives zero to zones without a forecast weight and falls back when no weights match', () => {
+    const zones = [zone({ id: 'a', need: 100 }), zone({ id: 'b', need: 100 })];
+    const out = redistributeNeed(zones, { a: 40 });
+    expect(out.find((z) => z.id === 'a')!.need).toBe(200);
+    expect(out.find((z) => z.id === 'b')!.need).toBe(0);
+    expect(redistributeNeed(zones, {})).toEqual(zones); // no usable weights -> unchanged
+  });
+
+  it('does not mutate its input', () => {
+    const zones = [zone({ id: 'a', need: 100 }), zone({ id: 'b', need: 200 })];
+    redistributeNeed(zones, { a: 1, b: 3 });
+    expect(zones[0].need).toBe(100);
+    expect(zones[1].need).toBe(200);
   });
 });

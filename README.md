@@ -14,6 +14,7 @@ two connected projects in one repo:
 | Part | What it is | Where it lives |
 |---|---|---|
 | **Parsel console** | Next.js web app: inventory, donations, distributions, a Mapbox 3D delivery map, and a need-based allocation recommender | `src/`, `public/` |
+| **Need forecasting (ML)** | scikit-learn model that forecasts monthly 311 need-pressure per neighborhood 3 months ahead, backtested against naive baselines; feeds the console's predictive allocation | `ml/`, outputs in `marts/forecast_*` |
 | **SD Homelessness Data Commons** | Python/DuckDB pipeline fusing eight SD homelessness signal sources into analysis-ready marts (documented in its own section below) | `commons/`, `data/`, `marts/`, `seeds/`, `tests/`, `run.py`, `refresh.py` |
 
 The console reads the commons' exported marts directly — the pipeline does not need to be
@@ -33,7 +34,7 @@ sidebar navigation but resets on a full page reload. Delivery-zone data is real 
 | **Donations** | Log incoming donations; matching inventory increases automatically (case-insensitive name+category match; unknown items are added to stock) |
 | **Distributions** | Record outgoing food; inventory decreases automatically (floored at zero) |
 | **Delivery** | Mapbox GL 3D map of downtown SD (terrain + building extrusions): need-weighted drop zones from the data commons, a depot marker, straight-line spokes, click-to-add custom drops, per-zone popups (need / 311 requests / distance / elevation) |
-| **Allocation** | Splits current stock across zones proportionally to need; one click stages the plan as real distribution records (decrementing inventory) |
+| **Allocation** | Splits current stock across zones proportionally to need; one click stages the plan as real distribution records (decrementing inventory). Includes the need-forecast chart, a model card, and a **predictive mode** that re-splits demand by predicted next-month 311 shares |
 
 ### How the delivery zones are computed
 
@@ -71,6 +72,37 @@ Deterministic and explainable (`src/lib/allocation.ts`, unit-tested):
 zone via the same provider action the Distributions screen uses, so inventory, the
 dashboard, and the activity feed all update immediately.
 
+### Need forecasting (`ml/forecast.py`)
+
+Forecasts monthly 311 homelessness-related request volume (`gid_requests`) per
+neighborhood, 3 months ahead. **This is aggregate demand forecasting for aid
+pre-positioning — the commons holds no individual-level data, and nothing here predicts
+or tracks people.**
+
+- **Model:** one pooled Ridge regression (regularized linear AR) across all
+  neighborhoods — lags 1/2/3/12, 3-month rolling mean, month-of-year seasonality,
+  neighborhood one-hots. ~500 neighborhood-month training rows (2019-08 → 2026-08;
+  missing 311 months zero-filled, since absence of requests in an auto-updating count
+  feed means zero).
+- **Evaluation:** rolling-origin backtest over the last 12 months (72 one-step
+  predictions): model MAE **20.55** vs last-month naive **20.81** and seasonal naive
+  **33.01**. Model selection used the same backtest — a gradient-boosting variant
+  overfit badly (MAE 34.7) and was rejected. All numbers live in
+  `marts/forecast_meta.json` and are shown in the in-app model card.
+- **Outputs:** `marts/forecast_monthly.csv` (metric `gid_requests_forecast`) +
+  `marts/forecast_meta.json`, committed like the other marts, so the app needs no
+  Python at runtime. The console reads them via DuckDB (`/api/forecast`).
+- **Predictive allocation:** the Allocation screen's "Predicted" mode keeps total
+  demand unchanged but re-splits it across zones by predicted next-month 311 shares
+  (largest-remainder rounding, exact-total preserving).
+
+Re-run after refreshing the commons:
+
+```bash
+python3 -m pip install -r ml/requirements.txt
+python3 ml/forecast.py    # deterministic; rewrites marts/forecast_*
+```
+
 ### Running the console
 
 Requires Node 20.9+ (developed on Node 25) and a free
@@ -80,7 +112,7 @@ Requires Node 20.9+ (developed on Node 25) and a free
 npm install
 cp .env.example .env.local   # then paste your Mapbox token into .env.local
 npm run dev                  # http://localhost:3000  (use `npm run dev -- -p 3007` if 3000 is taken)
-npm test                     # 22 unit tests (inventory logic, dashboard aggregations, allocation)
+npm test                     # 26 unit tests (inventory logic, dashboard aggregations, allocation)
 npm run build                # production build / type-check
 ```
 
@@ -106,7 +138,7 @@ bindings and must not be bundled).
 ### Console tech
 
 Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · Recharts 3 ·
-mapbox-gl 3 · @duckdb/node-api 1.5 · lucide-react · Vitest 4
+mapbox-gl 3 · @duckdb/node-api 1.5 · lucide-react · Vitest 4 · scikit-learn 1.8 (ml/)
 
 ---
 

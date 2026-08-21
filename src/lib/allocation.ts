@@ -39,6 +39,32 @@ export interface AllocationResult {
   unitsLeft: number; // stock remaining after allocation
 }
 
+// Predictive mode: keep the SAME total need but re-split it across zones by
+// forecast weights (e.g. predicted next-month 311 volume). Largest-remainder
+// rounding preserves the total exactly. Zones with no weight get 0; if no
+// zone has a usable weight, the input is returned unchanged.
+export function redistributeNeed(
+  zones: DeliveryZone[],
+  weightById: Record<string, number>,
+): DeliveryZone[] {
+  const totalNeed = zones.reduce((s, z) => s + z.need, 0);
+  const totalWeight = zones.reduce((s, z) => s + Math.max(0, weightById[z.id] ?? 0), 0);
+  if (totalNeed <= 0 || totalWeight <= 0) return zones;
+
+  const exact = zones.map((z) => (totalNeed * Math.max(0, weightById[z.id] ?? 0)) / totalWeight);
+  const need = exact.map(Math.floor);
+  let leftover = totalNeed - need.reduce((s, n) => s + n, 0);
+  const byFraction = exact
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (const { i } of byFraction) {
+    if (leftover <= 0) break;
+    need[i]++;
+    leftover--;
+  }
+  return zones.map((z, i) => ({ ...z, need: need[i] }));
+}
+
 export function allocate(
   inventory: InventoryItem[],
   zones: DeliveryZone[],

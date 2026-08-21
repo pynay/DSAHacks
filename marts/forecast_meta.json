@@ -1,0 +1,35 @@
+{
+  "model": "Ridge regression (pooled linear AR, alpha=1.0)",
+  "target": "gid_requests",
+  "horizon_months": 3,
+  "features": [
+    "lag1",
+    "lag2",
+    "lag3",
+    "lag12",
+    "roll3",
+    "month_sin",
+    "month_cos",
+    "neighborhood one-hots"
+  ],
+  "train_window": {
+    "start": "2019-08-01",
+    "end": "2026-08-01",
+    "n_rows": 504
+  },
+  "backtest": {
+    "window_months": 12,
+    "n_predictions": 72,
+    "model_mae": 20.55,
+    "naive_last_month_mae": 20.81,
+    "seasonal_naive_mae": 33.01
+  },
+  "notes": [
+    "Aggregate neighborhood-level demand forecasting for aid pre-positioning; no individual-level data exists in the commons.",
+    "311 signals are proxies with known biases, not headcounts (see README / DATA_DICTIONARY).",
+    "Missing 311 months are zero-filled (absence of requests = 0 for this auto-updating feed).",
+    "Model selection by the same backtest: HistGradientBoosting overfit (MAE 34.7) and was rejected in favor of Ridge.",
+    "Deterministic (Ridge is deterministic; SEED=42 kept for any future stochastic variant)."
+  ],
+  "generated_on": "2026-08-20"
+}
