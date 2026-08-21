@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Parsel · Pitch</title>
+<style>
+  :root {
+    --navy: #071a2b;
+    --navy2: #0b2438;
+    --emerald: #34d399;
+    --emerald-d: #059669;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    --muted2: #64748b;
+    --line: rgba(255,255,255,0.10);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--navy);
+    color: var(--ink);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #deck { height: 100vh; width: 100vw; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    padding: 6vh 8vw;
+    background: radial-gradient(1200px 700px at 80% -10%, #103049 0%, var(--navy) 55%);
+    animation: fade .45s ease;
+  }
+  .slide.active { display: flex; }
+  @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  .eyebrow { font-size: 0.95rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--emerald); font-weight: 700; }
+  h1 { font-size: clamp(2.6rem, 6vw, 5rem); line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.8rem, 3.6vw, 3rem); line-height: 1.08; font-weight: 800; letter-spacing: -0.015em; }
+  .lead { font-size: clamp(1.05rem, 1.7vw, 1.5rem); color: var(--muted); line-height: 1.45; font-weight: 400; }
+  .accent { color: var(--emerald); }
+  .num { font-variant-numeric: tabular-nums; font-weight: 800; }
+
+  /* layout helpers */
+  .col { display: flex; flex-direction: column; justify-content: center; gap: 1.4rem; }
+  .split { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 4vw; align-items: center; width: 100%; }
+  .center { align-items: center; text-align: center; margin: auto; max-width: 62rem; }
+
+  /* intro image */
+  .hero-img { width: 100%; height: 62vh; border-radius: 20px; object-fit: cover; box-shadow: 0 30px 80px rgba(0,0,0,.55); border: 1px solid var(--line); }
+
+  /* problem quote */
+  .quote { font-size: clamp(1.4rem, 2.7vw, 2.4rem); font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; }
+  .quote .mark { color: var(--emerald); }
+  .attrib { color: var(--muted2); font-size: 1rem; font-weight: 500; }
+  .statrow { display: flex; gap: 2.5rem; flex-wrap: wrap; }
+  .stat .big { font-size: clamp(1.8rem, 3.4vw, 2.8rem); font-weight: 800; letter-spacing: -0.02em; }
+  .stat .cap { color: var(--muted); font-size: 0.98rem; margin-top: 0.2rem; }
+  .stat .to { color: var(--emerald); }
+
+  /* media frames */
+  .media { width: 100%; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0,0,0,.5); background: #000; }
+  .media video { width: 100%; height: 62vh; object-fit: cover; display: block; background: #000; }
+  .browser { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 70px rgba(0,0,0,.5); background: #0b2438; }
+  .browser .bar { height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 13px; background: #0e2c44; border-bottom: 1px solid var(--line); }
+  .browser .dot { width: 11px; height: 11px; border-radius: 50%; background: #35506b; }
+  .browser .addr { margin-left: 10px; font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }
+  .frame-wrap { position: relative; height: 60vh; overflow: hidden; background: #0b1220; }
+  /* crop the app sidebar out of the live iframe */
+  .frame-wrap iframe { position: absolute; top: 0; left: -232px; width: calc(100% + 232px); height: 100%; border: 0; }
+
+  .pills { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .pill { font-size: 0.86rem; font-weight: 600; color: var(--emerald); background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.28); padding: 0.35rem 0.75rem; border-radius: 999px; }
+  .callout { border-left: 3px solid var(--emerald); padding-left: 0.9rem; color: var(--ink); font-weight: 600; }
+  ul.clean { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+  ul.clean li { display: flex; gap: 0.8rem; font-size: clamp(1.05rem, 1.7vw, 1.45rem); line-height: 1.4; color: #e2e8f0; }
+  ul.clean li::before { content: "→"; color: var(--emerald); font-weight: 800; }
+
+  .brandmark { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.15rem; }
+  .brandmark .box { width: 26px; height: 26px; border-radius: 7px; background: var(--emerald-d); display: grid; place-items: center; }
+
+  /* chrome */
+  #hud { position: fixed; bottom: 18px; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 14px; z-index: 20; pointer-events: none; }
+  #dots { display: flex; gap: 8px; pointer-events: auto; }
+  #dots button { width: 9px; height: 9px; border-radius: 50%; border: 0; background: #2b465e; cursor: pointer; padding: 0; }
+  #dots button.on { background: var(--emerald); }
+  #counter { position: fixed; top: 20px; right: 26px; font-size: 0.82rem; color: var(--muted2); font-variant-numeric: tabular-nums; z-index: 20; }
+  .hint { position: fixed; bottom: 16px; right: 22px; font-size: 0.72rem; color: #3a5470; z-index: 20; }
+</style>
+</head>
+<body>
+<div id="deck">
+
+  <!-- 1 · INTRO -->
+  <section class="slide active">
+    <div class="split">
+      <div class="col">
+        <div class="eyebrow">Parsel · Building for Good 2026</div>
+        <h1>Food that<br>finds people.</h1>
+        <p class="lead">Autonomous drones deliver food relief to where San Diego's need is highest, guided by a live model of the streets and the drone's own eyes.</p>
+      </div>
+      <img class="hero-img" src="aerial.jpg" alt="Drone view over UCSD campus" />
+    </div>
+  </section>
+
+  <!-- 2 · PROBLEM -->
+  <section class="slide">
+    <div class="col" style="max-width: 60rem; margin: auto;">
+      <div class="eyebrow">The problem</div>
+      <p class="quote"><span class="mark">&ldquo;</span>In the next five years our food supply more than doubles, from 37 to nearly 90 million pounds. We have 146 volunteers, and we don&rsquo;t see steady growth in the workforce.<span class="mark">&rdquo;</span></p>
+      <p class="attrib">Feeding San Diego engineering lead · hackathon interview, Aug 2026</p>
+      <div style="height:0.4rem"></div>
+      <h2>Distribution can&rsquo;t scale on volunteers alone.</h2>
+      <div class="statrow">
+        <div class="stat"><div class="big">37.4M <span class="to">&rarr;</span> 87.4M</div><div class="cap">lbs of food to move, within 5 years</div></div>
+        <div class="stat"><div class="big">146 <span class="to">&rarr;</span> 240</div><div class="cap">volunteers needed · a 94-person gap, flat today</div></div>
+      </div>
+      <p class="lead">Twice the food, the same hands. The gap shows up at the last mile.</p>
+    </div>
+  </section>
+
+  <!-- 3 · SOLUTION -->
+  <section class="slide">
+    <div class="split">
+      <div class="col">
+        <div class="eyebrow">The solution</div>
+        <h2>Parsel flies it there.</h2>
+        <p class="lead">Drones carry food to priority drop sites, no driver required. This is a real flight over campus, Geisel Library to the Data Science building.</p>
+        <div class="pills"><span class="pill">Autonomous route</span><span class="pill">Real DJI flight</span><span class="pill">FEFO food payload</span></div>
+      </div>
+      <div class="media">
+        <video data-autoplay src="/ucsd-drone.mp4" muted playsinline controls preload="auto"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ANALYTICS 1 -->
+  <section class="slide">
+    <div class="split">
+      <div class="col">
+        <div class="eyebrow">Where do we send them?</div>
+        <h2>A model of where need concentrates.</h2>
+        <p class="lead">We take <span class="accent">Data Science Alliance&rsquo;s</span> downtown street count and add signals: 311 requests, encampment enforcement, shelter capacity, paid-parking activity and annual PIT counts, then predict where visible need concentrates, month over month.</p>
+        <p class="callout">Backtested: 79% lower error than the naive baseline &nbsp;&middot;&nbsp; output = ranked priority drop sites.</p>
+      </div>
+      <div class="browser">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="addr">parsel · Response Map</span></div>
+        <div class="frame-wrap"><iframe src="/delivery" title="Response map" loading="lazy"></iframe></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · ANALYTICS 2 -->
+  <section class="slide">
+    <div class="split">
+      <div class="col">
+        <div class="eyebrow">Closing the loop</div>
+        <h2>The drone makes the model smarter.</h2>
+        <p class="lead">On arrival, <span class="accent">EyePop</span> counts how many people are actually waiting, faces blurred on-device. That real count feeds back into the model, so tomorrow&rsquo;s forecast and tomorrow&rsquo;s food load are sharper.</p>
+        <div class="pills"><span class="pill">EyePop person detection</span><span class="pill">Faces scrubbed on-device</span><span class="pill">Bayesian model update</span></div>
+      </div>
+      <div class="media">
+        <video data-autoplay src="ground-detection.mp4" muted playsinline loop controls preload="auto"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · CONCLUSION -->
+  <section class="slide">
+    <div class="col center">
+      <div class="eyebrow">Where this goes</div>
+      <h2>Proof of concept, real trajectory.</h2>
+      <ul class="clean" style="text-align:left; max-width: 46rem; margin: 0 auto;">
+        <li>A demo today, not a deployment. Real service needs purpose-built delivery drones.</li>
+        <li>Best fit: rural and mountainous San Diego, where volunteers can&rsquo;t or won&rsquo;t drive.</li>
+        <li>The vision: autonomous food relief that reaches the people roads can&rsquo;t.</li>
+      </ul>
+      <div style="height:1rem"></div>
+      <div class="brandmark"><span class="box">📦</span> Parsel</div>
+    </div>
+  </section>
+
+</div>
+
+<div id="counter">01 / 06</div>
+<div id="hud"><div id="dots"></div></div>
+<div class="hint">← → or space to navigate</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const dotsWrap = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  let i = 0;
+
+  slides.forEach((_, n) => {
+    const b = document.createElement('button');
+    b.onclick = () => go(n);
+    dotsWrap.appendChild(b);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function go(n) {
+    n = Math.max(0, Math.min(slides.length - 1, n));
+    slides[i].classList.remove('active');
+    dots[i].classList.remove('on');
+    i = n;
+    slides[i].classList.add('active');
+    dots[i].classList.add('on');
+    counter.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+    // play the active slide's video from the top, pause the rest
+    slides.forEach((s, k) => {
+      const v = s.querySelector('video[data-autoplay]');
+      if (!v) return;
+      if (k === i) { try { v.currentTime = 0; v.play().catch(() => {}); } catch (e) {} }
+      else { v.pause(); }
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+  });
+
+  go(0);
+</script>
+</body>
+</html>
