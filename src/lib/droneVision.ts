@@ -34,6 +34,13 @@ export interface VisionVerdict {
   zone: number[]; // landing zone as frame fractions [x0, y0, x1, y1]
 }
 
+export interface VisionStats {
+  peakPeople: number;
+  holds: number; // times the verdict entered HOLD this session
+  samples: number;
+  series: [number, number][]; // [wall-clock ts, people] downsampled rolling window
+}
+
 export interface VisionDetection {
   label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
   confidence: number; // max person confidence (0 when none)
@@ -43,6 +50,9 @@ export interface VisionDetection {
   verdict: VisionVerdict | null; // drop-verdict pipeline (null on older bridges)
   brightness: number; // mean frame brightness feeding the visibility gate
   bootId: string; // bridge process id; changes on restart -> UI reconnects the MJPEG stream
+  faceMode: string; // 'eyepop-face' | 'head-fallback' | 'off'
+  blurred: number; // face regions pixelated on the current frame
+  stats: VisionStats | null;
   videoFps: number; // measured camera capture rate
   inferFps: number; // measured EyePop round-trip rate
   ts: number;
@@ -54,6 +64,8 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     label?: string; confidence?: number; count?: number;
     persons?: VisionPerson[]; objects?: VisionObject[];
     verdict?: VisionVerdict | null; brightness?: number; boot_id?: string;
+    face_mode?: string; blurred?: number;
+    stats?: { peak_people?: number; holds?: number; samples?: number; series?: [number, number][] };
     video_fps?: number; infer_fps?: number; ts?: number;
   };
   return {
@@ -65,6 +77,16 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     verdict: raw.verdict ?? null,
     brightness: raw.brightness ?? 0,
     bootId: raw.boot_id ?? '',
+    faceMode: raw.face_mode ?? 'off',
+    blurred: raw.blurred ?? 0,
+    stats: raw.stats
+      ? {
+          peakPeople: raw.stats.peak_people ?? 0,
+          holds: raw.stats.holds ?? 0,
+          samples: raw.stats.samples ?? 0,
+          series: raw.stats.series ?? [],
+        }
+      : null,
     videoFps: raw.video_fps ?? 0,
     inferFps: raw.infer_fps ?? 0,
     ts: raw.ts ?? 0,

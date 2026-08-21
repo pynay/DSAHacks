@@ -48,3 +48,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+
+# Drone vision bridge runtime log
+data/drone_vision_log.jsonl

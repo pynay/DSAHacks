@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, MapPin, Video, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, MapPin, ScanFace, Video, XCircle } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
 
@@ -139,6 +139,53 @@ export default function DronePage() {
               <p className="text-xs text-stone-400">{vision.connected ? 'Nothing in frame.' : 'Offline.'}</p>
             )}
           </div>
+
+          {det?.stats && (
+            <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-stone-500">
+                  <Activity size={13} /> Session telemetry
+                </div>
+                <span className="flex items-center gap-1 text-[11px] text-stone-400">
+                  <ScanFace size={12} />
+                  {det.blurred > 0 ? `${det.blurred} face${det.blurred === 1 ? '' : 's'} blurred` : 'privacy blur on'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-lg font-semibold text-stone-900">{det.count}</div>
+                  <div className="text-[11px] text-stone-500">people now</div>
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-stone-900">{det.stats.peakPeople}</div>
+                  <div className="text-[11px] text-stone-500">peak people</div>
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-stone-900">{det.stats.holds}</div>
+                  <div className="text-[11px] text-stone-500">holds</div>
+                </div>
+              </div>
+              {det.stats.series.length > 1 && (
+                <svg viewBox="0 0 120 28" className="mt-2 h-7 w-full" preserveAspectRatio="none">
+                  <polyline
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="text-yellow-600"
+                    points={det.stats.series
+                      .map(([, n], i) => {
+                        const max = Math.max(1, ...det.stats!.series.map(([, v]) => v));
+                        return `${(i / (det.stats!.series.length - 1)) * 120},${26 - (n / max) * 22}`;
+                      })
+                      .join(' ')}
+                  />
+                </svg>
+              )}
+              <div className="mt-1 text-[10px] text-stone-400">
+                people in frame · 5s samples + verdict events → data/drone_vision_log.jsonl
+              </div>
+            </div>
+          )}
 
           <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
             <div className="mb-2 text-xs font-medium text-stone-500">Delivery targets (by need)</div>

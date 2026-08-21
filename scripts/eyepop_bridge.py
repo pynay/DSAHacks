@@ -19,6 +19,7 @@ Venv note: eyepop pins pyarrow<22 which has no CPython 3.14 wheels; install
 with `pip install --no-deps eyepop` plus deps and `pyarrow>=22` (see git log).
 """
 import asyncio
+import json
 import os
 import sys
 import tempfile
@@ -38,6 +39,8 @@ from eyepop import EyePopSdk
 from eyepop.worker.worker_types import Pop, InferenceComponent
 
 from drop_verdict import VerdictEngine
+from privacy import head_region, pad_and_clamp
+from vision_stats import VisionStats
 
 load_dotenv(Path(__file__).parent / ".env", override=True)
 # override=True: a stale shell var must not silently win over scripts/.env
@@ -59,8 +62,20 @@ MIN_BRIGHTNESS = float(os.environ.get("MIN_BRIGHTNESS", "8.0"))
 DROP_ZONE = tuple(float(v) for v in os.environ.get("DROP_ZONE", "0.25,0.25,0.75,0.75").split(","))
 ENGINE = VerdictEngine(clear_hold_s=CLEAR_HOLD_S, min_brightness=MIN_BRIGHTNESS, zone=DROP_ZONE)
 BOOT_ID = f"{os.getpid()}-{int(time.time() * 1000)}"  # changes per process; lets the UI detect restarts
+# Privacy: pixelate faces on every served frame (raw frames sent to EyePop stay
+# unblurred so detection quality is unaffected). BLUR_FACES=0 disables.
+BLUR_FACES = os.environ.get("BLUR_FACES", "1") != "0"
+FACE_ABILITY = os.environ.get("EYEPOP_FACE_ABILITY", "eyepop.person.face.short-range:latest")
+# Telemetry: JSONL log of 5s samples + verdict-transition events. Empty path disables.
+VISION_LOG = os.environ.get("VISION_LOG", str(Path(__file__).parent.parent / "data" / "drone_vision_log.jsonl"))
+SAMPLE_EVERY_S = 5.0
+STATS = VisionStats(maxlen=2400)  # ~5 min of per-inference samples
 
 POP = Pop(components=[
+    InferenceComponent(ability=EYEPOP_ABILITY, confidenceThreshold=CONFIDENCE),
+    InferenceComponent(ability=FACE_ABILITY, confidenceThreshold=0.4),
+])
+POP_NO_FACE = Pop(components=[
     InferenceComponent(ability=EYEPOP_ABILITY, confidenceThreshold=CONFIDENCE)
 ])
 
@@ -68,7 +83,8 @@ POP = Pop(components=[
 state: dict = {"ready": False, "ts": 0, "count": 0, "label": "clear",
                "confidence": 0.0, "persons": [], "objects": [], "jpeg": b"", "frame_seq": 0,
                "video_fps": 0.0, "infer_fps": 0.0,
-               "brightness": 0.0, "frame_wh": (1920, 1080), "verdict": None}
+               "brightness": 0.0, "frame_wh": (1920, 1080), "verdict": None,
+               "blur": [], "face_mode": "off"}
 latest_raw: dict = {"jpg": b""}  # newest un-annotated frame (jpeg bytes) for the inference loop
 
 
@@ -78,7 +94,7 @@ def ema(prev: float, dt: float) -> float:
     return inst if prev == 0.0 else prev * 0.9 + inst * 0.1
 
 
-def grab_and_annotate(cap, objects, video_fps, infer_fps, verdict, zone):
+def grab_and_annotate(cap, objects, video_fps, infer_fps, verdict, zone, blur_regions):
     """Blocking: read one frame, return (raw_jpeg, annotated_jpeg) bytes.
 
     Runs in the executor; ALL cv2/numpy work happens here. Only bytes cross
@@ -92,6 +108,15 @@ def grab_and_annotate(cap, objects, video_fps, infer_fps, verdict, zone):
     brightness = float(frame[::16, ::16].mean())  # subsampled: feeds the visibility gate
     fh, fw = frame.shape[:2]
     ok_raw, raw_buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    # Privacy first: pixelate face regions on the SERVED frame only (raw above
+    # is already encoded for EyePop). Regions arrive padded + clamped.
+    for (bx0, by0, bx1, by1) in blur_regions:
+        if bx1 - bx0 > 4 and by1 - by0 > 4:
+            roi = frame[by0:by1, bx0:bx1]
+            small = cv2.resize(roi, (max(1, (bx1 - bx0) // 14), max(1, (by1 - by0) // 14)),
+                               interpolation=cv2.INTER_LINEAR)
+            frame[by0:by1, bx0:bx1] = cv2.resize(small, (bx1 - bx0, by1 - by0),
+                                                 interpolation=cv2.INTER_NEAREST)
     for o in objects:
         x, y = int(o["x"]), int(o["y"])
         w, h = int(o["width"]), int(o["height"])
@@ -102,7 +127,8 @@ def grab_and_annotate(cap, objects, video_fps, infer_fps, verdict, zone):
         cv2.rectangle(frame, (x, y - 22), (x + 8 + 10 * len(tag), y), color, -1)
         cv2.putText(frame, tag, (x + 4, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
     banner = (f"EyePop.ai {EYEPOP_ABILITY}  |  {len(objects)} detected  |  "
-              f"{video_fps:.0f} fps video / {infer_fps:.1f} fps inference")
+              f"{video_fps:.0f} fps video / {infer_fps:.1f} fps inference"
+              + (f"  |  {len(blur_regions)} face(s) blurred" if blur_regions else ""))
     cv2.putText(frame, banner, (12, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     # Landing-zone reticle + verdict line, colored by state.
     zx0, zy0, zx1, zy1 = int(zone[0] * fw), int(zone[1] * fh), int(zone[2] * fw), int(zone[3] * fh)
@@ -182,7 +208,7 @@ async def capture_loop():
         while True:
             got_frame = await loop.run_in_executor(
                 None, grab_and_annotate, cap, state["objects"], state["video_fps"],
-                state["infer_fps"], state["verdict"], DROP_ZONE)
+                state["infer_fps"], state["verdict"], DROP_ZONE, state["blur"])
             if got_frame is None:
                 if VIDEO_SOURCE:  # end of file -> loop it
                     await loop.run_in_executor(None, cap.set, cv2.CAP_PROP_POS_FRAMES, 0)
@@ -213,9 +239,23 @@ async def capture_loop():
         cap.release()
 
 
+def log_line(payload: dict):
+    """Append one JSONL line to the vision log (crash-safe: open/flush per write)."""
+    if not VISION_LOG:
+        return
+    try:
+        path = Path(VISION_LOG)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a") as f:
+            f.write(json.dumps(payload) + "\n")
+    except OSError as e:
+        print(f"  vision log write failed: {e}", flush=True)
+
+
 async def inference_loop(endpoint):
     tmp = Path(tempfile.mkstemp(suffix=".jpg", prefix="eyepop_frame_")[1])
     last = time.monotonic()
+    last_log_wall = 0.0
     try:
         while True:
             raw = latest_raw["jpg"]
@@ -230,16 +270,34 @@ async def inference_loop(endpoint):
                 print(f"  inference error: {e}", flush=True)
                 await asyncio.sleep(1.0)
                 continue
-            objects = [
-                {"label": o.get("classLabel", "object"),
-                 "confidence": round(o.get("confidence", 0.0), 3),
-                 "x": o.get("x", 0), "y": o.get("y", 0),
-                 "width": o.get("width", 0), "height": o.get("height", 0)}
-                for o in result.get("objects", [])
-            ]
+            objects, face_boxes = [], []
+            for o in result.get("objects", []):
+                parsed = {"label": o.get("classLabel", "object"),
+                          "confidence": round(o.get("confidence", 0.0), 3),
+                          "x": o.get("x", 0), "y": o.get("y", 0),
+                          "width": o.get("width", 0), "height": o.get("height", 0)}
+                # Faces feed the privacy blur, not the verdict/chips.
+                if "face" in parsed["label"].lower():
+                    face_boxes.append(parsed)
+                else:
+                    objects.append(parsed)
             fw, fh = state["frame_wh"]
             for o in objects:
                 o["in_zone"] = ENGINE.in_zone(o, fw, fh)
+            if BLUR_FACES:
+                # Belt and braces: any person without a detected face inside their
+                # box (back of head, detector miss) gets a head-region blur too.
+                blur_boxes = list(face_boxes)
+                for pers in (o for o in objects if o["label"] == "person"):
+                    has_face = any(
+                        pers["x"] <= f["x"] + f["width"] / 2 <= pers["x"] + pers["width"]
+                        and pers["y"] <= f["y"] + f["height"] / 2 <= pers["y"] + pers["height"]
+                        for f in face_boxes)
+                    if not has_face:
+                        blur_boxes.append(head_region(pers))
+                state["blur"] = [pad_and_clamp(b, fw, fh) for b in blur_boxes]
+            else:
+                state["blur"] = []
             verdict = ENGINE.update(objects, fw, fh, state["brightness"], time.monotonic())
             persons = [o for o in objects if o["label"] == "person"]
             now = time.monotonic()
@@ -256,6 +314,20 @@ async def inference_loop(endpoint):
                 verdict={"state": verdict.state, "reason": verdict.reason, "score": verdict.score,
                          "inZone": verdict.in_zone, "nearby": verdict.nearby, "zone": list(DROP_ZONE)},
             )
+            # Telemetry: per-inference stats; JSONL gets transition events + 5s samples.
+            wall = time.time()
+            event = STATS.add_sample(people=len(persons), verdict_state=verdict.state, ts=wall)
+            if event:
+                log_line({**event, "reason": verdict.reason, "people": len(persons)})
+            if wall - last_log_wall >= SAMPLE_EVERY_S:
+                last_log_wall = wall
+                by_label = {}
+                for o in objects:
+                    by_label[o["label"]] = by_label.get(o["label"], 0) + 1
+                log_line({"type": "sample", "ts": wall, "people": len(persons),
+                          "state": verdict.state, "score": verdict.score,
+                          "brightness": round(state["brightness"], 1), "objects": by_label,
+                          "faces_blurred": len(state["blur"])})
     finally:
         tmp.unlink(missing_ok=True)
 
@@ -269,6 +341,9 @@ async def get_detection(_req):
     body["verdict"] = state["verdict"]
     body["brightness"] = round(state["brightness"], 1)
     body["boot_id"] = BOOT_ID
+    body["face_mode"] = state["face_mode"]
+    body["blurred"] = len(state["blur"])
+    body["stats"] = {**STATS.summary(), "series": STATS.series()[::10][-60:]}
     return web.json_response(body)
 
 
@@ -331,10 +406,16 @@ async def main():
     async with EyePopSdk.async_worker(api_key=API_KEY) as endpoint:
         try:
             await endpoint.set_pop(POP)
+            state["face_mode"] = "eyepop-face" if BLUR_FACES else "off"
         except Exception as e:
-            sys.exit(f"EyePop rejected the session ({e}).\nCheck EYEPOP_API_KEY in scripts/.env "
-                     "(keys are lowercase 'eyp_...' — a capitalized 'Eyp_' means a bad copy).")
-        print(f"Connected. Pop: {EYEPOP_ABILITY}", flush=True)
+            print(f"  face ability unavailable ({str(e)[:80]}), falling back to head-region blur", flush=True)
+            try:
+                await endpoint.set_pop(POP_NO_FACE)
+                state["face_mode"] = "head-fallback" if BLUR_FACES else "off"
+            except Exception as e2:
+                sys.exit(f"EyePop rejected the session ({e2}).\nCheck EYEPOP_API_KEY in scripts/.env "
+                         "(keys are lowercase 'eyp_...' — a capitalized 'Eyp_' means a bad copy).")
+        print(f"Connected. Pop: {EYEPOP_ABILITY} | face_mode={state['face_mode']}", flush=True)
         app = web.Application()
         app.on_response_prepare.append(cors)
         app.router.add_get("/detection", get_detection)

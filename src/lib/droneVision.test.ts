@@ -11,6 +11,9 @@ const fullPayload = {
   video_fps: 30.6,
   infer_fps: 6.4,
   boot_id: '13651-1787308200000',
+  face_mode: 'eyepop-face',
+  blurred: 1,
+  stats: { peak_people: 3, holds: 2, samples: 76, series: [[1787309009.6, 1], [1787309014.7, 2]] },
   brightness: 132.1,
   verdict: {
     state: 'HOLD',
@@ -32,6 +35,11 @@ test('parses a full bridge payload including the verdict', () => {
   expect(det.objects[0].label).toBe('laptop');
   expect(det.videoFps).toBe(30.6);
   expect(det.bootId).toBe('13651-1787308200000');
+  expect(det.faceMode).toBe('eyepop-face');
+  expect(det.blurred).toBe(1);
+  expect(det.stats?.peakPeople).toBe(3);
+  expect(det.stats?.holds).toBe(2);
+  expect(det.stats?.series).toHaveLength(2);
 });
 
 test('older bridge without verdict still parses, verdict is null', () => {
@@ -49,6 +57,9 @@ test('empty payload parses to safe defaults', () => {
   const det = parseDetection({});
   expect(det.verdict).toBeNull();
   expect(det.bootId).toBe('');
+  expect(det.faceMode).toBe('off');
+  expect(det.blurred).toBe(0);
+  expect(det.stats).toBeNull();
   expect(det.count).toBe(0);
   expect(det.label).toBe('clear');
   expect(det.objects).toEqual([]);
