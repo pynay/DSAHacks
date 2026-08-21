@@ -13,8 +13,9 @@ import ActivityFeed from '@/components/ActivityFeed';
 import CategoryChart from '@/components/charts/CategoryChart';
 import TrendChart from '@/components/charts/TrendChart';
 import PitChart from '@/components/charts/PitChart';
-import DsdpChart from '@/components/charts/DsdpChart';
-import ActivityChart from '@/components/charts/ActivityChart';
+import NeedHeatmap from '@/components/charts/NeedHeatmap';
+import IndexedSignals from '@/components/charts/IndexedSignals';
+import LaJollaSlope from '@/components/charts/LaJollaSlope';
 
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
@@ -56,16 +57,14 @@ export default function DashboardPage() {
 
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
+          {/* Need heatmap — where/when need concentrates */}
           <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h2 className="font-semibold text-stone-900">
-              Downtown unsheltered homelessness (DSDP monthly counts)
-            </h2>
-            <p className="mb-1 text-xs text-stone-500">
-              The challenge&apos;s core historical series, 2017–2025, multiplier-adjusted totals
-              across all six downtown neighborhoods. Line breaks are the provider&apos;s real
-              reporting gaps — never interpolated or zero-filled.
+            <h2 className="font-semibold text-stone-900">Where need concentrates</h2>
+            <p className="mb-3 text-xs text-stone-500">
+              311 homelessness requests by neighborhood over the last 18 months. Rows ranked by
+              total; darker = higher need. East Village runs hottest and rising.
             </p>
-            <DsdpChart data={commons.dsdp} />
+            <NeedHeatmap months={commons.heatmap.months} rows={commons.heatmap.rows} />
           </div>
           <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
             <h2 className="flex items-center gap-2 font-semibold text-stone-900">
@@ -129,15 +128,20 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* Source J: downtown activity proxy */}
+          {/* Do the signals move together? Indexed multi-signal comparison. */}
           <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h2 className="font-semibold text-stone-900">Downtown activity (paid parking sessions)</h2>
+            <h2 className="font-semibold text-stone-900">Do the signals move together?</h2>
             <p className="mb-1 text-xs text-stone-500">
-              Source J activity proxy across the six downtown neighborhoods, 2021–2026. An open
-              signal of downtown activity — deliberately not read as foot traffic or a homelessness
-              count.
+              Three downtown series of different scale — DSDP counts, 311 requests, paid-parking
+              activity — each shown as a percent of its own average (100 = typical) so they share
+              one axis. When need diverges from activity, that gap is where a drone check earns its
+              trip.
             </p>
-            <ActivityChart data={commons.parking} />
+            <IndexedSignals
+              dsdp={commons.dsdp}
+              requests={commons.requests311}
+              parking={commons.parking.map((p) => ({ month: p.month, value: p.sessions }))}
+            />
           </div>
 
           {/* Source I: La Jolla food access */}
@@ -153,18 +157,12 @@ export default function DashboardPage() {
                     {Math.round(v.lowIncomeLowAccess).toLocaleString()}
                   </div>
                   <div className="text-xs text-stone-500">low-income + low-access residents ({v.year})</div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {commons.laJolla.map((x) => (
-                      <span
-                        key={x.year}
-                        title={`${x.lowAccess.toLocaleString()} low-access of ${x.pop.toLocaleString()}`}
-                        className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800"
-                      >
-                        {x.year}: {x.lowAccessShare.toFixed(0)}% low-access
-                      </span>
-                    ))}
+                  <div className="mt-3">
+                    <LaJollaSlope
+                      data={commons.laJolla.map((x) => ({ year: x.year, lowAccessShare: x.lowAccessShare }))}
+                    />
                   </div>
-                  <p className="mt-2 text-[11px] text-stone-400">
+                  <p className="mt-1 text-[11px] text-stone-400">
                     A food desert beyond downtown: {Math.round(v.lowAccessShare)}% of{' '}
                     {(v.pop / 1000).toFixed(0)}k residents live &gt;1 mi from a supermarket. A
                     candidate expansion zone for drone delivery.
