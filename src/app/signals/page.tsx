@@ -40,33 +40,42 @@ export default function SignalsPage() {
         </p>
       </div>
 
-      {!commons && (
+      {!commons && !outlook && (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-400 shadow-sm">
           Loading signals…
         </div>
       )}
 
+      {outlook && (
+        // Rendered independent of the commons fetch (M1): the outlook card should still show
+        // up if /api/outlook succeeds even when /api/commons fails.
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="font-semibold text-slate-900">Where downtown is headed</h2>
+          <p className="mb-3 text-xs text-slate-500">
+            Downtown DSDP counted-unit total, nowcast for unpublished recent months, then a 12-month
+            forecast with an 80% band. The 2023-08 camping ban is marked for reference; the ITS effect
+            below is quasi-experimental, not causal.
+          </p>
+          <OutlookChart
+            history={outlook.history}
+            forecast={outlook.forecast}
+            requests={outlook.requests}
+            interpolatedMonths={outlook.meta.interpolated_months}
+          />
+          <div className="mt-4">
+            <OutlookFindings
+              forecastLast={outlook.forecast[outlook.forecast.length - 1]}
+              beatsNaiveThrough={outlook.beatsNaiveThrough}
+              beatsLastValueFrom={outlook.beatsLastValueFrom}
+              its={outlook.its}
+              t0={outlook.meta.t0}
+            />
+          </div>
+        </div>
+      )}
+
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
-          {outlook && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-3">
-              <h2 className="font-semibold text-slate-900">Where downtown is headed</h2>
-              <p className="mb-3 text-xs text-slate-500">
-                Downtown DSDP counted-unit total, nowcast for unpublished recent months, then a 12-month
-                forecast with an 80% band. The 2023-08 camping ban is marked for reference; the ITS effect
-                below is quasi-experimental, not causal.
-              </p>
-              <OutlookChart history={outlook.history} forecast={outlook.forecast} />
-              <div className="mt-4">
-                <OutlookFindings
-                  forecastLast={outlook.forecast[outlook.forecast.length - 1]}
-                  beatsNaiveThrough={outlook.beatsNaiveThrough}
-                  its={outlook.its}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Need heatmap showing where and when need concentrates */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
             <h2 className="font-semibold text-slate-900">Where need concentrates</h2>

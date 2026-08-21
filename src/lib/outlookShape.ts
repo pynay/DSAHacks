@@ -26,3 +26,16 @@ export function beatsNaiveThrough(
   }
   return k;
 }
+
+// Smallest horizon h such that model_mae < last_value_mae for every horizon >= h
+// (0 if the model never beats naive persistence for the rest of the horizon range).
+export function beatsLastValueFrom(
+  bt: { horizon: number; model_mae: number; last_value_mae: number }[],
+): number {
+  const sorted = [...bt].sort((a, b) => a.horizon - b.horizon);
+  for (const candidate of sorted) {
+    const rest = sorted.filter((r) => r.horizon >= candidate.horizon);
+    if (rest.every((r) => r.model_mae < r.last_value_mae)) return candidate.horizon;
+  }
+  return 0;
+}

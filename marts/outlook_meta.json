@@ -7,6 +7,8 @@
   "t0": "2023-08",
   "placebo_t0": "2022-08",
   "its_window_start": "2021-01",
+  "its_window_end_requests": "2026-07",
+  "its_window_end_dsdp": "2025-12",
   "interpolated_months": [
     "2025-07",
     "2025-08",
@@ -66,6 +68,30 @@
       12
     ]
   },
+  "robustness": {
+    "post_by_window_start": {
+      "2020-01": {
+        "estimate": -346.68132683391036,
+        "p": 0.000530723063991069
+      },
+      "2021-01": {
+        "estimate": -420.7560966302167,
+        "p": 8.3218218272263e-06
+      },
+      "2021-07": {
+        "estimate": -421.1269688723886,
+        "p": 2.230720204997677e-05
+      },
+      "2022-01": {
+        "estimate": -357.1397010197668,
+        "p": 2.3617404111103312e-05
+      },
+      "2022-07": {
+        "estimate": -404.12729072442426,
+        "p": 2.1539489380407693e-05
+      }
+    }
+  },
   "headline": {
     "downtown_forecast_last_month": "2026-12",
     "downtown_point": 886,
@@ -78,10 +104,10 @@
       "p": 8.3218218272263e-06
     },
     "ban_level_change_requests": {
-      "estimate": 285.7618450513813,
-      "ci_lo": 33.56777175355532,
-      "ci_hi": 537.9559183492072,
-      "p": 0.026361736138633265
+      "estimate": 302.60632413169515,
+      "ci_lo": 52.04083388614461,
+      "ci_hi": 553.1718143772457,
+      "p": 0.017931196070990103
     },
     "ban_slope_change_dsdp": {
       "estimate": -41.59552005344824,
@@ -90,10 +116,10 @@
       "p": 2.0750555150856983e-13
     },
     "ban_slope_change_requests": {
-      "estimate": -28.744132148529808,
-      "ci_lo": -40.34421192143142,
-      "ci_hi": -17.144052375628192,
-      "p": 1.1939165541742078e-06
+      "estimate": -29.781102069037953,
+      "ci_lo": -41.47341535857121,
+      "ci_hi": -18.088788779504696,
+      "p": 5.970805712223921e-07
     },
     "ban_effect_12m_dsdp": {
       "estimate": -919.9023372715956,
@@ -102,10 +128,10 @@
       "pct_of_pre": -87.71214460943487
     },
     "ban_effect_12m_requests": {
-      "estimate": -59.16774073097639,
-      "ci_lo": -277.5071821769941,
-      "ci_hi": 159.17170071504128,
-      "pct_of_pre": -10.733219981627176
+      "estimate": -54.766900696760274,
+      "ci_lo": -274.77506251385034,
+      "ci_hi": 165.24126112032982,
+      "pct_of_pre": -9.93489333255058
     },
     "placebo_level_change_dsdp": {
       "estimate": 83.20178180681431,
@@ -152,7 +178,8 @@
     "80% bands = empirical 10th/90th percentiles of log-space backtest residuals per horizon; band sums across neighborhoods are approximations.",
     "ITS is quasi-experimental: the ban coincided with shelter openings and sweeps; read effects as 'associated with'.",
     "311 is complaint volume, never a headcount.",
-    "effect_12m is relative to a counterfactual that extrapolates the pre-ban linear trend 12 more months; treat the immediate level change (post) as the more defensible estimate.",
+    "post is the gap between the post-ban segment and the pre-ban trend extrapolated to T0 (a counterfactual-relative estimate), not an observed month-over-month change; treat it as the least trend-dependent estimate, since effect_12m compounds 12 more months of an assumed trend.",
+    "80% bands are summed across neighborhoods and are therefore wider than a true 80% interval for the downtown total.",
     "HAC 95% CIs read as roughly 85\u201390% in samples of ~60 months."
   ]
 }

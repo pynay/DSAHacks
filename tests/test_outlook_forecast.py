@@ -31,8 +31,9 @@ def test_backtest_shape_and_baselines():
     table, resid = backtest(f, origins)
     assert list(table["horizon"]) == list(range(1, 13))
     assert (table["n"] > 0).all() and set(resid) == set(range(1, 13))
-    # on a clean seasonal series the model should be in the same league as seasonal naive
-    assert table["model_mae"].mean() < 2 * table["seasonal_naive_mae"].mean()
+    # on a clean seasonal series the model should actually beat seasonal naive, not just
+    # be in the same league
+    assert table["model_mae"].mean() < table["seasonal_naive_mae"].mean()
 
 
 def test_forecast_shape_bands_and_kind():

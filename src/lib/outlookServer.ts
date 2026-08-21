@@ -6,7 +6,7 @@
 import { DuckDBInstance } from "@duckdb/node-api";
 import fs from "node:fs";
 import path from "node:path";
-import { sumBands, beatsNaiveThrough } from "./outlookShape";
+import { sumBands, beatsNaiveThrough, beatsLastValueFrom } from "./outlookShape";
 
 const MARTS = path.join(process.cwd(), "marts");
 const REQUESTS_MONTHS = 36;
@@ -40,14 +40,29 @@ export interface ItsSeries {
   preMean: number;
 }
 
+// Subset of ml/outlook.py's outlook_meta.json that the frontend reads directly (the
+// index signature keeps the rest of the file, e.g. headline/notes, available too).
+export interface OutlookMeta {
+  origin: string;
+  run_month: string;
+  t0: string;
+  placebo_t0: string;
+  interpolated_months: string[];
+  its_window_end_requests?: string;
+  its_window_end_dsdp?: string;
+  robustness?: { post_by_window_start: Record<string, { estimate: number; p: number }> };
+  [key: string]: unknown;
+}
+
 export interface OutlookPayload {
-  meta: unknown; // ml/outlook.py's outlook_meta.json, verbatim
+  meta: OutlookMeta; // ml/outlook.py's outlook_meta.json, verbatim
   history: MonthPoint[]; // downtown DSDP sum, published months only
   forecast: ForecastPoint[]; // downtown DSDP sum, nowcast + forecast horizon
   requests: MonthPoint[]; // downtown 311 sum, last 36 months (reality check)
   its: Partial<Record<"dsdp_adjusted_total" | "gid_requests", ItsSeries>>;
   backtest: BacktestRow[];
   beatsNaiveThrough: number;
+  beatsLastValueFrom: number;
 }
 
 async function build(): Promise<OutlookPayload> {
@@ -84,7 +99,8 @@ async function build(): Promise<OutlookPayload> {
     .reverse();
 
   // Forecast: sum neighborhood-level point + band per month, keeping the kind
-  // (nowcast for the first horizon, forecast thereafter) from each month's rows.
+  // (nowcast when the target month is <= run_month, i.e. not yet actually published;
+  // forecast thereafter -- see ml/outlook_forecast.py's forecast()) from each month's rows.
   const fcReader = await conn.runAndReadAll(`
     SELECT strftime(obs_month, '%Y-%m') AS month, neighborhood, value, lo80 AS lo, hi80 AS hi, kind
     FROM read_csv_auto('${forecastCsv}')
@@ -145,7 +161,7 @@ async function build(): Promise<OutlookPayload> {
     last_value_mae: Number(r.last_value_mae),
   }));
 
-  const meta = JSON.parse(fs.readFileSync(path.join(MARTS, "outlook_meta.json"), "utf8"));
+  const meta: OutlookMeta = JSON.parse(fs.readFileSync(path.join(MARTS, "outlook_meta.json"), "utf8"));
 
   return {
     meta,
@@ -155,6 +171,7 @@ async function build(): Promise<OutlookPayload> {
     its,
     backtest,
     beatsNaiveThrough: beatsNaiveThrough(backtest),
+    beatsLastValueFrom: beatsLastValueFrom(backtest),
   };
 }
 
