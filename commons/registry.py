@@ -11,7 +11,7 @@ SOURCES = {
         url="https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/",
         signal_type="observation", refresh_cadence="static (2014-2019 archive)",
         measures="People, tent/structures, and vehicles physically counted on downtown streets monthly by Downtown San Diego Partnership contractors.",
-        known_bias="Single monthly early-morning count; undercounts people in vehicles/hidden locations. 3 months imputed (Aug/Sep 2014, Jun 2015). Methodology changed Apr 2017 (occupancy multipliers) but THIS dataset does NOT apply multipliers - series is raw counted units throughout."),
+        known_bias="Single monthly early-morning count; undercounts people in vehicles/hidden locations. 3 months imputed (Aug/Sep 2014, Jun 2015). The point-level table (stg_a_observations) is raw counted units with NO occupancy multipliers applied. The pre-aggregated monthly/neighborhood totals (stg_a_monthly_totals, stg_a_neighborhood_totals) are DSDP-published figures that ARE occupancy-multiplier-adjusted from the Apr 2017 methodology change onward (2.00/2.00 pre-2017, then 1.75 tents / 1.66-2.03 vehicles - see stg_h_method_periods); they match Source H's published totals exactly from 2017-04 on."),
     "B": dict(name="Downtown SD Partnership monthly report totals",
         url="https://downtownsandiego.org/",
         signal_type="observation", refresh_cadence="monthly (manual/PDF)",

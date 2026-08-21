@@ -10,11 +10,11 @@ register_table("stg_a_observations", grain="one row per counted entity (person/s
     measures="Each row is one unit physically counted downtown on the count date.",
     known_bias="Raw counted units; NO occupancy multipliers applied (a structure = 1, not est. occupants). Imputed months flagged is_imputed.")
 register_table("stg_a_monthly_totals", grain="month", signal_type="observation", source_id="A", refresh="static archive",
-    measures="Downtown total counted units per month, 2012-2019.",
-    known_bias="Pre-2014 rows lack point detail; single-count-per-month.")
+    measures="DSDP-published downtown total per month, 2012-2019.",
+    known_bias="Pre-2014 rows lack point detail; single-count-per-month. These are DSDP-published totals, not raw counted units: they are occupancy-multiplier-adjusted from the Apr 2017 methodology change onward (2.00/2.00 pre-2017, then 1.75 tents / 1.66-2.03 vehicles - see stg_h_method_periods), and match Source H's published totals exactly in the 2017-2019 overlap. Only months before 2017-04 equal raw point-data counts.")
 register_table("stg_a_neighborhood_totals", grain="month x neighborhood", signal_type="observation", source_id="A", refresh="static archive",
-    measures="Counted units per downtown neighborhood per month (2018-2019 DSDP-era).",
-    known_bias="Overlaps DSDP reporting era; may not match sum of point data months.")
+    measures="DSDP-published counted total per downtown neighborhood per month (2018-2019 DSDP-era).",
+    known_bias="Overlaps DSDP reporting era; entirely post the Apr 2017 methodology change, so these are DSDP-published, occupancy-multiplier-adjusted totals (not raw) and may not match the sum of raw point data for the same months. Matches Source H's published totals exactly where they overlap.")
 register_table("dim_blocks", grain="2010 census block", signal_type="context", source_id="A", refresh="static archive",
     measures="Downtown block polygons (WKT) with derived neighborhood.",
     known_bias="neighborhood derived as modal neighborhood of source-A observations per block; blocks with no observations have NULL neighborhood.")
@@ -29,6 +29,9 @@ def _points(path):
     df["lon"], df["lat"] = coords[0], coords[1]
     df["h3_r8"] = [h3.latlng_to_cell(la, lo, 8) for la, lo in zip(df["lat"], df["lon"])]
     df = df.rename(columns={"type": "entity_type", "geoid": "geo_block"})
+    # DSDP renamed Core -> City Center in 2019, retroactively; canonicalized here to
+    # match config.DOWNTOWN_NEIGHBORHOODS and Source H.
+    df["neighborhood"] = df["neighborhood"].replace({"core": "city_center"})
     df["zip"] = DOWNTOWN_ZIP
     df["source_file"] = path.name
     return df[["obs_date", "obs_month", "neighborhood", "entity_type", "geo_block",

@@ -61,10 +61,14 @@ counting-effort confounder). `docs/hackathon/DATA_DICTIONARY_hackathon.md` and
 
 H supersedes B as the primary modern observed downtown series: `mart_monthly_neighborhood`
 carries H's `dsdp_adjusted_total` (multiplier-adjusted, matches what DSDP publishes) plus
-raw digitized components (`dsdp_individuals`/`dsdp_tents`/`dsdp_vehicles`); B's
-press-collected totals remain under the separate `dsdp_reported_total` metric so the two
-series never collide under one name. `mart_monthly_block` carries H's `dsdp_units_total`
-on census-block-mapped rows only.
+raw digitized components (`dsdp_individuals`/`dsdp_tents`/`dsdp_vehicles`); source A's
+own DSDP-published neighborhood totals (`stg_a_neighborhood_totals`, 96 rows) and B's
+press-collected totals both land under the same `dsdp_reported_total` metric name -
+tagged `source_id='A'` and `source_id='B'` respectively - so they do *not* collide as
+values, but they do share one metric name. B's seed is currently stubbed (no rows), but
+if it's ever filled in, consumers reading `dsdp_reported_total` must group/filter by
+`source_id` to keep the two series apart. `mart_monthly_block` carries H's
+`dsdp_units_total` on census-block-mapped rows only.
 
 ## Outputs
 
@@ -90,9 +94,12 @@ on census-block-mapped rows only.
 5. **`refresh.py`** — the incremental-refresh entrypoint described above.
 
 No client-level or personally identifying data appears anywhere in the database or
-exports. 311/citation free-text description and street-address fields are dropped at
-load time in the staging loaders (`commons/staging/src_c.py`, `src_d.py`) — never
-selected into any table, staging or mart.
+exports. 311's free-text `public_description` and `street_address` fields are dropped
+at load time in `commons/staging/src_c.py` — never selected into any table, staging or
+mart. Citations are different: `stg_citations` retains `location_text`, the city's
+published citation location string (street/block text, no personal data), for internal
+staging use only — it is never selected into a mart or export (public and internal-tier
+CSVs both exclude it; see `test_exports_public_tier`).
 
 ## seeds/
 
@@ -134,13 +141,16 @@ is a small CSV with a `source_url` column per row so every number is traceable.
   are NULL for every `stg_citations` row and citation correlations in QA_REPORT are
   necessarily citywide-volume, not spatial.
 - **DSDP totals are not comparable across their own multiplier boundary.** Source H's
-  `dsdp_adjusted_total` (and legacy source B `dsdp_reported_total`) are
-  occupancy-multiplier-adjusted (tents x1.75-2.00, vehicles x1.66-2.03); source A's
-  raw counted units and H's own digitized components
-  (`dsdp_individuals`/`dsdp_tents`/`dsdp_vehicles`) are not. Never sum adjusted totals
-  with raw component counts, and never compare H's adjusted totals directly against
-  A's raw counts or against post-2020 RTFH/PIT raw figures without noting the
-  adjusted-vs-raw mismatch.
+  `dsdp_adjusted_total`, and source A's own pre-aggregated `dsdp_reported_total`
+  (`stg_a_monthly_totals`/`stg_a_neighborhood_totals`), are DSDP-published figures that
+  are occupancy-multiplier-adjusted (tents x1.75-2.00, vehicles x1.66-2.03) from the
+  Apr 2017 methodology change onward — they match each other exactly in their
+  2017-2019 overlap. Only source A's *point-level* table (`stg_a_observations`, metric
+  `observed_total_units`/`observed_individuals`/etc.) and H's own digitized components
+  (`dsdp_individuals`/`dsdp_tents`/`dsdp_vehicles`) are raw, unadjusted counted units.
+  Never sum adjusted totals with raw component counts, and never compare an adjusted
+  total (H's or A's `dsdp_reported_total`) directly against A's raw point counts or
+  against post-2020 RTFH/PIT raw figures without noting the adjusted-vs-raw mismatch.
 - **Source A has 3 imputed months** (Aug/Sep 2014, Jun 2015) flagged `is_imputed=true`
   in `stg_a_observations`/`mart_monthly_neighborhood` — these are not directly
   observed counts and should be visually distinguished or excluded in any trend line

@@ -7,7 +7,7 @@ Complaint (311) and enforcement tables measure reporting and enforcement activit
 they are NOT counts of people experiencing homelessness and must never be presented
 as such. Each table's **Known bias** section is part of the data.
 
-_Generated 2026-08-20 20:21_
+_Generated 2026-08-20 20:37_
 
 ## Sources
 
@@ -15,7 +15,7 @@ _Generated 2026-08-20 20:21_
 
 - **Signal type:** observation  |  **Cadence:** static (2014-2019 archive)  |  **Last load:** ok
 - **Measures:** People, tent/structures, and vehicles physically counted on downtown streets monthly by Downtown San Diego Partnership contractors.
-- **Known bias:** Single monthly early-morning count; undercounts people in vehicles/hidden locations. 3 months imputed (Aug/Sep 2014, Jun 2015). Methodology changed Apr 2017 (occupancy multipliers) but THIS dataset does NOT apply multipliers - series is raw counted units throughout.
+- **Known bias:** Single monthly early-morning count; undercounts people in vehicles/hidden locations. 3 months imputed (Aug/Sep 2014, Jun 2015). The point-level table (stg_a_observations) is raw counted units with NO occupancy multipliers applied. The pre-aggregated monthly/neighborhood totals (stg_a_monthly_totals, stg_a_neighborhood_totals) are DSDP-published figures that ARE occupancy-multiplier-adjusted from the Apr 2017 methodology change onward (2.00/2.00 pre-2017, then 1.75 tents / 1.66-2.03 vehicles - see stg_h_method_periods); they match Source H's published totals exactly from 2017-04 on.
 
 ### `B` - [Downtown SD Partnership monthly report totals](https://downtownsandiego.org/)
 
@@ -188,8 +188,8 @@ _Generated 2026-08-20 20:21_
 - **Grain:** month
 - **Signal type:** observation  |  **Source:** A (https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/)
 - **Refresh:** static archive
-- **Measures:** Downtown total counted units per month, 2012-2019.
-- **Known bias:** Pre-2014 rows lack point detail; single-count-per-month.
+- **Measures:** DSDP-published downtown total per month, 2012-2019.
+- **Known bias:** Pre-2014 rows lack point detail; single-count-per-month. These are DSDP-published totals, not raw counted units: they are occupancy-multiplier-adjusted from the Apr 2017 methodology change onward (2.00/2.00 pre-2017, then 1.75 tents / 1.66-2.03 vehicles - see stg_h_method_periods), and match Source H's published totals exactly in the 2017-2019 overlap. Only months before 2017-04 equal raw point-data counts.
 
 | column | type |
 |---|---|
@@ -201,8 +201,8 @@ _Generated 2026-08-20 20:21_
 - **Grain:** month x neighborhood
 - **Signal type:** observation  |  **Source:** A (https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/)
 - **Refresh:** static archive
-- **Measures:** Counted units per downtown neighborhood per month (2018-2019 DSDP-era).
-- **Known bias:** Overlaps DSDP reporting era; may not match sum of point data months.
+- **Measures:** DSDP-published counted total per downtown neighborhood per month (2018-2019 DSDP-era).
+- **Known bias:** Overlaps DSDP reporting era; entirely post the Apr 2017 methodology change, so these are DSDP-published, occupancy-multiplier-adjusted totals (not raw) and may not match the sum of raw point data for the same months. Matches Source H's published totals exactly where they overlap.
 
 | column | type |
 |---|---|

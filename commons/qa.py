@@ -100,10 +100,25 @@ def write_qa_report(con, results, path=ROOT / "QA_REPORT.md") -> LoadResult:
          "| step | status | rows | note |", "|---|---|---|---|"]
     for name, r in results.items():
         L.append(f"| {name} | {r.status} | {r.rows} | {((r.note or '').splitlines() or [''])[0][:120]} |")
-    gaps = [n for n, r in results.items() if r.status in ("failed", "stubbed", "partial")]
+
+    # Source load state: read from meta_sources, not the in-memory results dict, so that
+    # a refresh.py run (which only touches C/D) still reports the persisted status of
+    # every other source (e.g. B/E stubbed) rather than omitting them entirely.
+    src_rows = con.execute("""SELECT source_id, load_status, rows_loaded, load_note, loaded_at
+                               FROM meta_sources ORDER BY source_id""").fetchall()
+    L.append("\n## Source load state\n")
+    L.append("| source_id | load_status | rows_loaded | loaded_at | note |")
+    L.append("|---|---|---|---|---|")
+    for sid, status, rows, note, loaded_at in src_rows:
+        L.append(f"| {sid} | {status or 'never run'} | {rows if rows is not None else ''} | "
+                 f"{loaded_at or ''} | {((note or '').splitlines() or [''])[0][:120]} |")
+
+    gap_lines = [f"- `{sid}`: {status} - {((note or '').splitlines() or [''])[0][:200]}"
+                 for sid, status, rows, note, loaded_at in src_rows if status in ("failed", "stubbed", "partial")]
+    gap_lines += [f"- `{n}`: {r.status} - {((r.note or '').splitlines() or [''])[0][:200]}"
+                  for n, r in results.items() if r.status in ("failed", "stubbed", "partial")]
     L.append("\n## Source gaps\n")
-    L.append("None - all steps ok.\n" if not gaps else
-             "\n".join(f"- `{n}`: {results[n].status} - {((results[n].note or '').splitlines() or [''])[0][:200]}" for n in gaps) + "\n")
+    L.append("None - all steps ok.\n" if not gap_lines else "\n".join(gap_lines) + "\n")
 
     L.append("## Table inventory\n\n| table | rows | min date | max date |\n|---|---|---|---|")
     for (t,) in con.execute("""SELECT table_name FROM information_schema.tables
@@ -144,15 +159,21 @@ def write_qa_report(con, results, path=ROOT / "QA_REPORT.md") -> LoadResult:
 
     L.append("\n## Validation Correlations: do independent signals agree?\n")
     L.append(_fmt("(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)", _corr_311_vs_dsdp(con),
-        lambda r: "Complaints track observed street population direction" + (" strongly" if r > .6 else " only loosely" if r > .3 else " weakly - complaint volume is NOT a proxy for people") + ". Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units. Observed series merges source A (raw units) and source H (multiplier-adjusted) per month via max(); bases differ in the 2018-2019 overlap, so r is not an apples-to-apples comparison across the full window."))
+        lambda r: "Complaints track observed street population direction" + (" strongly" if r > .6 else " only loosely" if r > .3 else " weakly - complaint volume is NOT a proxy for people") + ". Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units. Observed series merges source A (stg_a_neighborhood_totals) and source H per month via max(); both are DSDP-published, multiplier-adjusted totals from 2017-04 onward and are basis-consistent with each other in that window (pre-2017 source A months are pre-methodology-change published figures), so r is an apples-to-apples comparison of published totals throughout."))
     L.append(_fmt("(ii) 311 vs Source A counted units at block-month grain (2016-2018 overlap; note: stg_a_observations ends 2018-02 and 311 homelessness categories begin 2018-08 - by design the two series do not overlap in time)",
         _corr_311_vs_blocks(con),
         lambda r: "Block-level agreement is " + ("strong" if r > .6 else "moderate" if r > .3 else "weak") + " - fine-grained complaint data locates hotspots" + ("" if r > .3 else " poorly") + "."))
     L.append(_fmt("(ii-b) 311 vs DSDP block-level units at census-block-month grain (2019-2025)", _corr_311_vs_h_blocks(con),
         lambda r: "Block-level agreement is " + ("strong" if r > .6 else "moderate" if r > .3 else "weak") + " - fine-grained complaint data locates hotspots" + ("" if r > .3 else " poorly") + ". These are raw counted units (component sums), not multiplier-adjusted."))
     for name, res in _corr_citations(con).items():
+        note = ""
+        if name == "citations_vs_downtown_observed":
+            note = ("Note: the observed series here (stg_a_monthly_totals) switches basis at 2017-04 - "
+                     "pre-2017-04 months are raw counted units, 2017-04 onward is DSDP-published, "
+                     "occupancy-multiplier-adjusted (methodology change). ")
         L.append(_fmt(f"(iii) {name} (monthly, citations are citywide)", res,
-            lambda r: ("Note the NEGATIVE correlation: citation volume moves opposite to this series over the overlap window. " if r < 0 else "")
+            lambda r, note=note: note
+            + ("Note the NEGATIVE correlation: citation volume moves opposite to this series over the overlap window. " if r < 0 else "")
             + "Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount."))
     path.write_text("\n".join(L))
     return LoadResult("ok", 0, str(path))

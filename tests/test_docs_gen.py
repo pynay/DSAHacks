@@ -19,7 +19,8 @@ def test_dictionary_contents(tmp_path):
     assert res.status == "ok"
     txt = out.read_text()
     assert "stg_a_observations" in txt and "Known bias" in txt
-    assert "does NOT apply multipliers" in txt      # A's multiplier caveat present
+    assert "NO occupancy multipliers applied" in txt  # A's point-level table is raw
+    assert "occupancy-multiplier-adjusted" in txt     # A's pre-aggregated totals are not raw
     assert "NOT people" in txt or "not people" in txt.lower()  # complaint framing
     for t in ("dim_blocks", "stg_a_monthly_totals"):
         assert f"### `{t}`" in txt

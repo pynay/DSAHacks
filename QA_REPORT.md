@@ -1,19 +1,45 @@
-# QA Report - generated 2026-08-20 20:21
+# QA Report - generated 2026-08-20 20:37
 
 ## Run summary
 
 | step | status | rows | note |
 |---|---|---|---|
-| refresh_311 | ok | 329515 | kept categories=['encampment', 'outreach_request']; failed files=[] |
-| refresh_72hr | ok | 334073 |  |
-| refresh_citations | ok | 78158 | failed files=[] |
+| load_src_a | ok | 41166 | files: ['cached', 'cached', 'cached', 'cached', 'cached']; imputed rows: 1964 |
+| load_src_h | ok | 7027 | monthly=2880 blocklevel=3737 grid=382 methods=4 crosswalk=24 |
+| load_src_c | ok | 329515 | kept categories=['encampment', 'outreach_request']; failed files=[] |
+| load_src_d_72hr | ok | 334073 |  |
+| load_src_d_citations | ok | 78158 | failed files=[] |
+| load_src_b_dsdp | stubbed | 0 | pdf_rows=0 seed_rows=0 |
+| load_src_f_pit | ok | 9 |  |
+| load_src_e_capacity | stubbed | 23 | pdf_rows=0 seed_rows=23 |
+| load_src_g_weather | ok | 5342 |  |
+| load_src_g_zori | ok | 3507 |  |
+| load_src_g_events | ok | 9 |  |
 | build_marts | ok | 54211 |  |
 | export_marts | ok | 287 | 4 files exported |
 | data_dictionary | ok | 22 | /Users/pynay/Documents/DSAHacks/DATA_DICTIONARY.md |
 
+## Source load state
+
+| source_id | load_status | rows_loaded | loaded_at | note |
+|---|---|---|---|---|
+| A | ok | 41166 | 2026-08-20 20:37:18.524824 | files: ['cached', 'cached', 'cached', 'cached', 'cached']; imputed rows: 1964 |
+| B | stubbed | 0 | 2026-08-20 20:37:39.813983 | pdf_rows=0 seed_rows=0 |
+| C | ok | 329515 | 2026-08-20 20:37:30.085579 | kept categories=['encampment', 'outreach_request']; failed files=[] |
+| D | ok | 78158 | 2026-08-20 20:37:39.810570 | failed files=[] |
+| E | stubbed | 23 | 2026-08-20 20:37:39.820153 | pdf_rows=0 seed_rows=23 |
+| F | ok | 9 | 2026-08-20 20:37:39.816693 |  |
+| G_events | ok | 9 | 2026-08-20 20:37:41.322095 |  |
+| G_weather | ok | 5342 | 2026-08-20 20:37:40.949138 |  |
+| G_zori | ok | 3507 | 2026-08-20 20:37:41.319449 |  |
+| H | ok | 7027 | 2026-08-20 20:37:18.563549 | monthly=2880 blocklevel=3737 grid=382 methods=4 crosswalk=24 |
+
 ## Source gaps
 
-None - all steps ok.
+- `B`: stubbed - pdf_rows=0 seed_rows=0
+- `E`: stubbed - pdf_rows=0 seed_rows=23
+- `load_src_b_dsdp`: stubbed - pdf_rows=0 seed_rows=0
+- `load_src_e_capacity`: stubbed - pdf_rows=0 seed_rows=23
 
 ## Table inventory
 
@@ -51,12 +77,12 @@ None - all steps ok.
 
 ## Validation Correlations: do independent signals agree?
 
-- **(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)**: r = 0.393 (n=85 pairs). Complaints track observed street population direction only loosely. Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units. Observed series merges source A (raw units) and source H (multiplier-adjusted) per month via max(); bases differ in the 2018-2019 overlap, so r is not an apples-to-apples comparison across the full window.
+- **(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)**: r = 0.393 (n=85 pairs). Complaints track observed street population direction only loosely. Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units. Observed series merges source A (stg_a_neighborhood_totals) and source H per month via max(); both are DSDP-published, multiplier-adjusted totals from 2017-04 onward and are basis-consistent with each other in that window (pre-2017 source A months are pre-methodology-change published figures), so r is an apples-to-apples comparison of published totals throughout.
 
 - **(ii) 311 vs Source A counted units at block-month grain (2016-2018 overlap; note: stg_a_observations ends 2018-02 and 311 homelessness categories begin 2018-08 - by design the two series do not overlap in time)**: insufficient overlapping data (n=0).
 
 - **(ii-b) 311 vs DSDP block-level units at census-block-month grain (2019-2025)**: r = 0.231 (n=1061 pairs). Block-level agreement is weak - fine-grained complaint data locates hotspots poorly. These are raw counted units (component sums), not multiplier-adjusted.
 
-- **(iii) citations_vs_downtown_observed (monthly, citations are citywide)**: r = 0.320 (n=64 pairs). Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount.
+- **(iii) citations_vs_downtown_observed (monthly, citations are citywide)**: r = 0.320 (n=64 pairs). Note: the observed series here (stg_a_monthly_totals) switches basis at 2017-04 - pre-2017-04 months are raw counted units, 2017-04 onward is DSDP-published, occupancy-multiplier-adjusted (methodology change). Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount.
 
 - **(iii) citations_vs_311 (monthly, citations are citywide)**: r = -0.488 (n=96 pairs). Note the NEGATIVE correlation: citation volume moves opposite to this series over the overlap window. Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount.

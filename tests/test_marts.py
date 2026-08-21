@@ -4,6 +4,7 @@ import duckdb
 import pandas as pd
 
 from commons import db, marts
+from commons.config import DOWNTOWN_NEIGHBORHOODS
 from commons.staging import src_a, src_c, src_h
 
 
@@ -49,6 +50,25 @@ def test_exports_public_tier(tmp_path, monkeypatch):
     assert (tmp_path / "blocks.geojson").exists()
     gj = json.loads((tmp_path / "blocks.geojson").read_text())
     assert gj["type"] == "FeatureCollection" and len(gj["features"]) > 100
+
+
+def test_neighborhood_canonicalization():
+    # C2: stg_a_observations used the pre-2019 label 'core' instead of 'city_center',
+    # splitting one neighborhood across signal layers via dim_blocks -> geo.enrich.
+    con = _built_con()
+    hoods = {r[0] for r in con.execute(
+        "SELECT DISTINCT neighborhood FROM mart_monthly_neighborhood WHERE neighborhood IS NOT NULL").fetchall()}
+    assert hoods <= set(DOWNTOWN_NEIGHBORHOODS)
+    assert "core" not in hoods
+    # the join the bug broke: an observation-signal row and a complaint-signal row
+    # for the same obs_month, both correctly tagged 'city_center'.
+    both = con.execute("""
+      WITH obs AS (SELECT DISTINCT obs_month FROM mart_monthly_neighborhood
+                   WHERE neighborhood='city_center' AND signal_type='observation'),
+      comp AS (SELECT DISTINCT obs_month FROM mart_monthly_neighborhood
+               WHERE neighborhood='city_center' AND signal_type='complaint')
+      SELECT count(*) FROM obs JOIN comp USING (obs_month)""").fetchone()[0]
+    assert both > 0
 
 
 def test_h_metrics_in_marts():

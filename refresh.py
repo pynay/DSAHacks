@@ -1,5 +1,7 @@
 """Incremental refresh of auto-updating layers only (311 + enforcement),
 then rebuild marts, dictionary, and QA. Other sources keep their last load."""
+import sys
+
 from commons import db, docs_gen, marts, qa
 from commons.staging import src_c, src_d
 
@@ -15,6 +17,9 @@ STEPS = [
 def main():
     con = db.connect()
     db.ensure_schema(con)
+    if con.execute("SELECT count(*) FROM information_schema.tables WHERE table_name='dim_blocks'").fetchone()[0] == 0:
+        print("commons.duckdb not initialized - run `python run.py` first")
+        sys.exit(1)
     results = db.run_steps(con, STEPS)
     results["data_dictionary"] = docs_gen.write_data_dictionary(con)
     results["qa_report"] = qa.write_qa_report(con, results)
