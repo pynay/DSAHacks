@@ -260,29 +260,46 @@ export default function Home() {
           <div className="hero-rise inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
             <ShieldCheck size={14} /> Food insecurity decision-support demo
           </div>
-          <h1 className="hero-rise font-display text-balance mt-7 max-w-6xl text-5xl font-semibold leading-[0.93] tracking-[-0.045em] sm:text-7xl lg:text-[7rem]" style={{ ['--rise-delay' as string]: '90ms' }}>
-            Hunger is local.{' '}
-            <span className="hero-underline text-[#27875b]">Relief should be precise.</span>
+          <h1 className="hero-rise font-display mt-7 text-6xl font-semibold leading-[0.95] tracking-[-0.04em] sm:text-8xl lg:text-[8.5rem]" style={{ ['--rise-delay' as string]: '90ms' }}>
+            Meet <span className="hero-underline text-[#27875b]">Parsel</span>.
           </h1>
-          <div className="hero-rise mt-9 grid gap-8 border-t border-slate-200 pt-7 md:grid-cols-[1.15fr_.85fr] md:items-end" style={{ ['--rise-delay' as string]: '190ms' }}>
-            <p className="max-w-3xl text-xl leading-8 text-slate-600 sm:text-2xl sm:leading-9">
-              Parsel connects food inventory, nutrition-insecurity data, a planning model, and
-              reviewed drone observations to help operators decide what food to send, where, and when.
+
+          <div className="hero-rise mt-10 max-w-3xl border-t border-slate-200 pt-7" style={{ ['--rise-delay' as string]: '200ms' }}>
+            <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="font-display text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">par&middot;sel</span>
+              <span className="font-mono text-sm text-slate-400">/&#712;p&auml;r&#712;s&#601;l/</span>
+              <span className="font-mono text-sm italic text-slate-400">noun &middot; San Diego</span>
             </p>
-            <div className="hero-rise flex flex-wrap gap-3 md:justify-end" style={{ ['--rise-delay' as string]: '320ms' }}>
-              <Link
-                href="/login"
-                className="group inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123a54]"
-              >
-                Open the demo <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <a
-                href="#case-for-action"
-                className="group inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
-              >
-                See why it matters <ArrowDown size={17} className="transition-transform group-hover:translate-y-0.5" />
-              </a>
-            </div>
+            <ol className="mt-4 space-y-3">
+              <li className="grid grid-cols-[1.5rem_1fr] gap-2">
+                <span className="font-mono text-sm leading-7 text-[#27875b]">1.</span>
+                <span className="text-lg leading-7 text-slate-700 sm:text-xl sm:leading-8">
+                  a parcel of food, routed to verified need instead of a best guess.
+                </span>
+              </li>
+              <li className="grid grid-cols-[1.5rem_1fr] gap-2">
+                <span className="font-mono text-sm leading-7 text-[#27875b]">2.</span>
+                <span className="text-lg leading-7 text-slate-700 sm:text-xl sm:leading-8">
+                  planning software that pairs live inventory with field-checked demand &mdash; and
+                  keeps a person deciding what moves.
+                </span>
+              </li>
+            </ol>
+          </div>
+
+          <div className="hero-rise mt-9 flex flex-wrap gap-3" style={{ ['--rise-delay' as string]: '330ms' }}>
+            <Link
+              href="/login"
+              className="group inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123a54]"
+            >
+              Open the demo <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="#case-for-action"
+              className="group inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+            >
+              See why it matters <ArrowDown size={17} className="transition-transform group-hover:translate-y-0.5" />
+            </a>
           </div>
         </div>
       </section>
