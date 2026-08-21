@@ -54,6 +54,11 @@ SOURCES = {
         signal_type="observation", refresh_cadence="static bundle (2017-2025), committed in data/hackathon/",
         measures="Verified published DSDP monthly unsheltered totals by area (2017-2025), digitized block-level counts (2018-2025, 12 count dates), block-grid polygons, area crosswalk, and the multiplier schedule.",
         known_bias="Published totals ARE occupancy-multiplier-adjusted (tents x1.75-2.00, vehicles x1.66-2.03) - not comparable to raw counted units (source A) nor to post-2020 RTFH/PIT raw counts. Components digitized from map images (secondary reliability, 2018+). Block footprint grew 261->382 in Jan 2022. Counting effort varied (fellowship months 2017-2020). Four 2025 months unreported."),
+    "I": dict(name="USDA Food Access Research Atlas - La Jolla",
+        url="https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data",
+        signal_type="food_access", refresh_cadence="periodic (USDA FARA release; manual seed)",
+        measures="USDA FARA census-tract food-access indicators for La Jolla (ZIP 92037): population, low-access population and share (>1mi urban to nearest supermarket), low-income-and-low-access population, the LILA food-desert flag, and housing units receiving SNAP. Vintages 2010/2015/2019 on 2010 tract boundaries.",
+        known_bias="Low access is defined purely by distance to a supermarket, not affordability or actual need. Periodic snapshots, not a continuous series. SNAP figure counts housing units, not people. Field availability varies by vintage (see each row's note). Not comparable to the downtown homelessness signals; provided as area food-insecurity context only."),
 }
 
 TABLE_DOCS: dict[str, dict] = {}  # table_name -> doc dict; loaders register at import
