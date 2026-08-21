@@ -59,6 +59,7 @@ export default function DeliveryObservationPanel({
   const [detection, setDetection] = useState<CameraDetectionResult | null>(null);
   const [saved, setSaved] = useState<SavedDeliveryObservation | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [cameraAttempt, setCameraAttempt] = useState(0);
 
   useEffect(() => {
     if (!active || saved) return;
@@ -97,7 +98,7 @@ export default function DeliveryObservationPanel({
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     };
-  }, [active, saved]);
+  }, [active, saved, cameraAttempt]);
 
   async function analyzeAndSave(image: string) {
     setCaptureUrl(image);
@@ -179,9 +180,9 @@ export default function DeliveryObservationPanel({
           <h3 className="font-semibold text-slate-900">Delivery-zone verification</h3>
           <p className="text-xs text-slate-500">{destination} · mission {missionId}</p>
         </div>
-        <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${saved ? 'bg-emerald-100 text-emerald-800' : active ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500'}`}>
-          <span className={`h-2 w-2 rounded-full ${active && !saved ? 'animate-pulse bg-red-500' : saved ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-          {saved ? 'OBSERVATION SAVED' : active ? 'CAMERA LIVE' : 'STARTS AT DELIVERY ZONE'}
+        <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${saved ? 'bg-emerald-100 text-emerald-800' : cameraState === 'live' ? 'bg-red-100 text-red-700' : cameraState === 'unavailable' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>
+          <span className={`h-2 w-2 rounded-full ${cameraState === 'live' && !saved ? 'animate-pulse bg-red-500' : saved ? 'bg-emerald-500' : cameraState === 'unavailable' ? 'bg-amber-500' : 'bg-slate-400'}`} />
+          {saved ? 'OBSERVATION SAVED' : cameraState === 'live' ? 'CAMERA LIVE' : cameraState === 'unavailable' ? 'CAMERA UNAVAILABLE' : active ? 'REQUESTING CAMERA' : 'STARTS AT DELIVERY ZONE'}
         </span>
       </div>
 
@@ -237,6 +238,11 @@ export default function DeliveryObservationPanel({
             </div>
           )}
           {message && <p className={`mt-2 text-xs ${captureState === 'error' || cameraState === 'unavailable' ? 'text-red-700' : 'text-slate-500'}`}>{message}</p>}
+          {active && cameraState === 'unavailable' && !saved && (
+            <button type="button" onClick={() => { setCameraState('standby'); setCameraAttempt((attempt) => attempt + 1); }} className="mt-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+              Retry laptop camera
+            </button>
+          )}
         </div>
 
         <div className="space-y-3">
