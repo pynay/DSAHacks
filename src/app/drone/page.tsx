@@ -1,0 +1,124 @@
+'use client';
+
+import { CheckCircle2, MapPin, Video, XCircle } from 'lucide-react';
+import { useZones } from '@/lib/useZones';
+import { useDroneVision } from '@/lib/droneVision';
+
+export default function DronePage() {
+  const { zones } = useZones();
+  const vision = useDroneVision();
+  const det = vision.detection;
+  const clear = det?.label === 'clear';
+  const targets = [...zones].filter((z) => z.need > 0).sort((a, b) => b.need - a.need).slice(0, 4);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="font-semibold text-stone-900">Drone delivery ops</h2>
+          <p className="text-sm text-stone-500">
+            Live drone-camera vision by EyePop.ai. Detects people in the drop area so the drone
+            only releases when the zone is clear.
+          </p>
+        </div>
+        {vision.connected ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> EYEPOP VISION LIVE
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" /> vision offline — start the bridge
+          </span>
+        )}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Live EyePop feed — the drone's-eye view */}
+        <div className="lg:col-span-2">
+          <div className="relative aspect-video overflow-hidden rounded-xl border border-stone-800 bg-stone-900">
+            {vision.connected ? (
+              // eslint-disable-next-line @next/next/no-img-element -- localhost MJPEG live stream
+              <img src={vision.frameUrl} alt="EyePop drone camera feed" className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full place-items-center text-center text-stone-400">
+                <div>
+                  <Video size={30} className="mx-auto mb-2" />
+                  <p className="text-sm">Waiting for the EyePop vision bridge on :8091</p>
+                </div>
+              </div>
+            )}
+
+            {det && (
+              <div className="absolute left-3 top-3 rounded-lg bg-black/65 px-3 py-2 backdrop-blur">
+                <div className="text-[10px] uppercase tracking-wide text-stone-400">EyePop.ai · drop-zone check · LIVE</div>
+                <div className={`flex items-center gap-2 text-base font-bold ${clear ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {clear ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+                  {clear ? 'CLEAR TO DROP' : 'OBSTRUCTED — HOLD'}
+                  <span className="text-xs font-normal text-stone-300">
+                    {det.count} in frame{det.count > 0 ? ` · ${(det.confidence * 100).toFixed(0)}%` : ''}
+                  </span>
+                </div>
+              </div>
+            )}
+            {det && (
+              <div className="absolute bottom-3 right-3 rounded-lg bg-black/65 px-3 py-1.5 text-[11px] font-medium text-stone-200 backdrop-blur">
+                eyepop.person:latest · {det.videoFps.toFixed(0)} fps video · {det.inferFps.toFixed(1)} fps inference
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Side: decision + detections + delivery targets */}
+        <div className="space-y-3">
+          <div className={`rounded-xl border border-stone-200 p-4 shadow-sm ${det ? (clear ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800') : 'bg-white'}`}>
+            <div className="text-xs font-medium uppercase tracking-wide opacity-70">Drop decision</div>
+            <div className="mt-1 flex items-center gap-2 text-2xl font-bold">
+              {det ? (clear ? <CheckCircle2 size={22} /> : <XCircle size={22} />) : null}
+              {det ? (clear ? 'CLEAR' : 'HOLD') : '—'}
+            </div>
+            <div className="mt-1 text-xs opacity-80">
+              {det ? `${det.count} person${det.count === 1 ? '' : 's'} detected in the drop area` : 'Awaiting vision feed'}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+            <div className="mb-1 text-xs font-medium text-stone-500">Detections</div>
+            {det && det.persons.length ? (
+              <div className="flex flex-wrap gap-1.5">
+                {det.persons.map((p, i) => (
+                  <span key={i} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                    person {(p.confidence * 100).toFixed(0)}%
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-stone-400">{vision.connected ? 'Zone clear.' : 'Offline.'}</p>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+            <div className="mb-2 text-xs font-medium text-stone-500">Delivery targets (by need)</div>
+            <ul className="space-y-1.5">
+              {targets.map((z) => (
+                <li key={z.id} className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-1.5 text-stone-800">
+                    <MapPin size={12} className="text-red-500" /> {z.label}
+                  </span>
+                  <span className="text-xs text-stone-500">need {z.need}</span>
+                </li>
+              ))}
+              {targets.length === 0 && <li className="text-xs text-stone-400">Loading zones…</li>}
+            </ul>
+          </div>
+
+          <p className="text-[11px] text-stone-400">
+            Feed runs <code className="rounded bg-stone-100 px-1">eyepop.person:latest</code> via
+            <code className="rounded bg-stone-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
+            live webcam (run without <code className="rounded bg-stone-100 px-1">VIDEO_SOURCE</code>) or
+            any video file.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

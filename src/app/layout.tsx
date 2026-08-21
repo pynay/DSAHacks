@@ -6,8 +6,12 @@ import Providers from '@/components/Providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Parsel',
-  description: 'Food relief inventory + autonomous delivery ops',
+  title: {
+    default: 'Parsel — Food relief, precisely delivered',
+    template: '%s · Parsel',
+  },
+  description:
+    'A predictive food-bank operations platform that turns community data, inventory signals, and drone verification into smarter food allocation.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

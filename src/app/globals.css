@@ -7,3 +7,32 @@ body {
   background: #fefce8; /* yellow-50 canvas */
   color: #1c1917; /* stone-900 text */
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: #fcd34d;
+  color: #1c1917;
+}
+
+:focus-visible {
+  outline: 3px solid #d97706;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
