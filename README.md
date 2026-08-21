@@ -29,11 +29,11 @@ sidebar navigation but resets on a full page reload. Delivery-zone data is real 
 
 | Screen | What it does |
 |---|---|
-| **Dashboard** | KPI cards (total stock, SKUs, low stock, expiring, weekly donation/distribution counts), inventory-by-category bar chart, 6-week intake-vs-outflow trend, stock-status breakdown, recent-activity feed |
+| **Dashboard** | KPI cards (total stock, SKUs, low stock, expiring, weekly donation/distribution counts), inventory-by-category bar chart, 6-week intake-vs-outflow trend, stock-status breakdown, recent-activity feed — plus two real-data panels from the commons seeds (`/api/commons`): the HUD Point-in-Time trend (2016-2025, San Diego region) and the SDHC city shelter roster (993 beds / 14 sites, with per-category occupancy) |
 | **Inventory** | 20 seeded items; search + category/status filters, inline quantity +/-, add-item modal. Status is **derived, never stored**: `Out` (qty 0) → `Low` (≤ reorder threshold) → `Expiring` (≤ 14 days) → `OK` |
 | **Donations** | Log incoming donations; matching inventory increases automatically (case-insensitive name+category match; unknown items are added to stock) |
 | **Distributions** | Record outgoing food; inventory decreases automatically (floored at zero) |
-| **Delivery** | Mapbox GL 3D map of downtown SD (terrain + building extrusions): need-weighted drop zones from the data commons, a depot marker, straight-line spokes, click-to-add custom drops, per-zone popups (need / 311 requests / distance / elevation) |
+| **Delivery** | Mapbox GL 3D map of downtown SD (terrain + building extrusions): need-weighted drop zones from the data commons, a depot marker, straight-line spokes, click-to-add custom drops, per-zone popups (need / 311 requests / tents / vehicles / distance / elevation) |
 | **Allocation** | Splits current stock across zones proportionally to need; one click stages the plan as real distribution records (decrementing inventory). Includes the need-forecast chart, a model card, and a **predictive mode** that re-splits demand by predicted next-month 311 shares |
 
 ### How the delivery zones are computed
@@ -45,7 +45,7 @@ marts at request time:
    `marts/monthly_by_neighborhood.csv` (`read_csv_auto` + a `ROW_NUMBER()` window) to get
    the **latest** value per neighborhood for four metrics:
    `dsdp_individuals` (the "need" score), `gid_requests` (311 reports),
-   `observed_individuals`, `violations_72hr_reports`.
+   `observed_individuals`, `violations_72hr_reports`, `dsdp_tents`, `dsdp_vehicles`.
 2. **Geometry** — each of the 6 downtown neighborhoods (East Village, City Center, Cortez,
    Gaslamp, Columbia, Marina) is placed at the average-vertex centroid of its census-block
    polygons from `marts/blocks.geojson` (287 blocks).

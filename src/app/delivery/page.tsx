@@ -115,9 +115,11 @@ export default function DeliveryPage() {
                     <div className="h-full rounded-full bg-red-500" style={{ width: `${pct}%` }} />
                   </div>
                 )}
-                <div className="mt-1 flex gap-3 text-[11px] text-stone-500">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-stone-500">
                   <span>need {z.need}</span>
                   <span>{z.requests} reqs</span>
+                  {!z.custom && <span>{z.tents ?? 0} tents</span>}
+                  {!z.custom && <span>{z.vehicles ?? 0} veh</span>}
                   <span>elev {z.elevation != null ? `${Math.round(z.elevation)} m` : "—"}</span>
                 </div>
               </li>

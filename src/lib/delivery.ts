@@ -12,6 +12,8 @@ export interface DeliveryZone {
   requests: number; // 311 "Get It Done" requests
   observed: number; // 2014-2018 observed individuals
   violations: number; // 72-hour encampment enforcement reports
+  tents?: number; // dsdp_tents (most recent digitized tent count)
+  vehicles?: number; // dsdp_vehicles (most recent digitized vehicle count)
   custom?: boolean; // true for zones the user dropped on the map
   elevation?: number | null; // meters, from terrain query
 }

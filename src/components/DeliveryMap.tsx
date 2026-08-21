@@ -177,6 +177,7 @@ export default function DeliveryMap({
             `<div style="font:12px/1.4 Inter,sans-serif;color:#1c1917">
                <b>${p.label}</b><br/>
                need ${z?.need ?? "?"} · ${z?.requests ?? "?"} 311 reqs<br/>
+               ${z?.tents ?? 0} tents · ${z?.vehicles ?? 0} vehicles<br/>
                ${dist} km from depot · elev ${elev}
              </div>`,
           )

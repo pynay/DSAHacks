@@ -20,22 +20,32 @@ function pretty(key: string): string {
 }
 
 // Latest value per (neighborhood, metric), pivoted to one row per neighborhood.
-async function needByNeighborhood(): Promise<
-  Record<string, { need: number; requests: number; observed: number; violations: number }>
-> {
+interface NeedRow {
+  need: number;
+  requests: number;
+  observed: number;
+  violations: number;
+  tents: number;
+  vehicles: number;
+}
+
+async function needByNeighborhood(): Promise<Record<string, NeedRow>> {
   const csv = path.join(MARTS, "monthly_by_neighborhood.csv").replace(/'/g, "''");
   const sql = `
     WITH latest AS (
       SELECT neighborhood, metric, value,
              ROW_NUMBER() OVER (PARTITION BY neighborhood, metric ORDER BY obs_month DESC) AS rn
       FROM read_csv_auto('${csv}')
-      WHERE metric IN ('dsdp_individuals','gid_requests','observed_individuals','violations_72hr_reports')
+      WHERE metric IN ('dsdp_individuals','gid_requests','observed_individuals',
+                       'violations_72hr_reports','dsdp_tents','dsdp_vehicles')
     )
     SELECT neighborhood,
            MAX(CASE WHEN metric = 'dsdp_individuals'        THEN value END) AS need,
            MAX(CASE WHEN metric = 'gid_requests'            THEN value END) AS requests,
            MAX(CASE WHEN metric = 'observed_individuals'    THEN value END) AS observed,
-           MAX(CASE WHEN metric = 'violations_72hr_reports' THEN value END) AS violations
+           MAX(CASE WHEN metric = 'violations_72hr_reports' THEN value END) AS violations,
+           MAX(CASE WHEN metric = 'dsdp_tents'              THEN value END) AS tents,
+           MAX(CASE WHEN metric = 'dsdp_vehicles'           THEN value END) AS vehicles
     FROM latest
     WHERE rn = 1
     GROUP BY neighborhood`;
@@ -44,13 +54,15 @@ async function needByNeighborhood(): Promise<
   const conn = await instance.connect();
   const reader = await conn.runAndReadAll(sql);
   const rows = reader.getRowObjects();
-  const out: Record<string, { need: number; requests: number; observed: number; violations: number }> = {};
+  const out: Record<string, NeedRow> = {};
   for (const r of rows) {
     out[String(r.neighborhood)] = {
       need: Number(r.need ?? 0),
       requests: Number(r.requests ?? 0),
       observed: Number(r.observed ?? 0),
       violations: Number(r.violations ?? 0),
+      tents: Number(r.tents ?? 0),
+      vehicles: Number(r.vehicles ?? 0),
     };
   }
   return out;
@@ -127,6 +139,8 @@ export function getZones(): Promise<DeliveryZone[]> {
         requests: need[nb]?.requests ?? 0,
         observed: need[nb]?.observed ?? 0,
         violations: need[nb]?.violations ?? 0,
+        tents: need[nb]?.tents ?? 0,
+        vehicles: need[nb]?.vehicles ?? 0,
         elevation: null as number | null,
       }))
       .sort((a, b) => b.need - a.need);
