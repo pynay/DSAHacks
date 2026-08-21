@@ -215,7 +215,7 @@ export default function SignalsPage() {
                 automate &mdash; that&apos;s what Parsel is for.
               </p>
               <Link
-                href="/delivery"
+                href="/dispatch"
                 className="mt-3 inline-block rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800"
               >
                 See the automated response &rarr;
