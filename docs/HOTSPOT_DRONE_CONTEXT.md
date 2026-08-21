@@ -13,13 +13,14 @@ runtime responsibilities, and production evolution path, use
 
 ## Executive handoff
 
-Parsel is a food-inventory, donation, allocation, and delivery application for
+Parsel is a food-inventory, donation, allocation, and response-planning application for
 downtown San Diego. The product goal is to forecast where visible unhoused
-populations are likely to concentrate, send a real or simulated drone to verify
-aggregate demand with EyePop.ai, update the hotspot map from that observation,
-and recommend how much food should be delivered. The dashboard should ultimately
-show predicted people, verified people, food loaded, delivered, taken, returned,
-and wasted.
+populations are likely to concentrate, use a real or simulated drone to gather
+aggregate field observations with EyePop.ai, update the hotspot map from that
+evidence, and recommend where human teams should direct food resources. The drone
+is a mobile sensing platform, not the food-delivery mechanism. The dashboard should
+ultimately show predicted people, reviewed observations, planned food, distributed
+food, uptake, surplus, returns, and waste.
 
 The best model supported by the data currently available is:
 
@@ -41,13 +42,12 @@ panel snapshots.
 ```text
 predict block intensities
   -> choose highest-priority movable hotspot
-  -> inspect and pack safe food
-  -> fly real drone or 3D mission
+  -> fly a real or simulated sensing mission
   -> capture one stabilized EyePop count
   -> assimilate aggregate count into nearby blocks
   -> move/re-rank hotspots
-  -> recalculate recommended food quantity
-  -> complete safe handoff
+  -> optimize recommended locations and food quantities
+  -> dispatch a separate human-controlled distribution
   -> record uptake, surplus, return, and waste
 ```
 
@@ -256,7 +256,7 @@ Display, per mission:
 - Model version, source timestamp, observation timestamp, and human correction.
 - Why a recommendation changed after feedback.
 
-Inventory should decrement at an approved handoff or recorded distribution—not
+Inventory should decrement at an approved handoff or recorded distribution, not
 merely when a drone is dispatched.
 
 ### P2: Collect training data
@@ -281,8 +281,8 @@ error, and uncertainty on forward-time and held-out-location tests.
   count. Always show confidence and allow human correction.
 - Deliver food through an authorized distribution point or ground partner. Do
   not drop packages directly on or near detected people.
-- A vision system may quarantine suspect food for review, but a person should
-  approve disposal. The drone should not autonomously remove food.
+- Food-quality review is a separate facility workflow. The sensing drone should
+  not enter inventory areas, quarantine stock, or remove food.
 - The January 2025 source data is stale. Drone/ground verification is required
   before using the estimate operationally.
 

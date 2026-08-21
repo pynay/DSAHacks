@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Parsel — Evidence-informed food relief planning',
+    default: 'Parsel | Evidence-informed food relief planning',
     template: '%s · Parsel',
   },
   description:

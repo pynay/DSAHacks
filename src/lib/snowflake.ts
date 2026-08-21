@@ -1,9 +1,8 @@
 // Server-only Snowflake access. Env-gated: if the SNOWFLAKE_* vars aren't set,
 // `snowflakeConfigured` is false and callers fall back to the local behavior,
 // so the app runs fine without credentials. Secrets live only in .env.local
-// (gitignored) — they are never committed or logged.
+// (gitignored). They are never committed or logged.
 import 'server-only';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import snowflake from 'snowflake-sdk';
 import fs from 'node:fs';
 
@@ -53,7 +52,7 @@ function connect(): Promise<any> {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getConn(): Promise<any> {
-  if (!snowflakeConfigured) throw new Error('Snowflake not configured — set SNOWFLAKE_* in .env.local');
+  if (!snowflakeConfigured) throw new Error('Snowflake not configured. Set SNOWFLAKE_* in .env.local');
   if (!connPromise) {
     connPromise = connect().catch((e) => {
       connPromise = null; // allow retry on next call

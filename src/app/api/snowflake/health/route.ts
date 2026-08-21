@@ -4,7 +4,7 @@ import { snowflakeConfigured, sfQuery } from '@/lib/snowflake';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET /api/snowflake/health — verifies the connection and lists the tables that
+// GET /api/snowflake/health verifies the connection and lists the tables that
 // schema.sql created. Use this to confirm credentials + setup before wiring the
 // rest of the integration.
 export async function GET() {

@@ -64,7 +64,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-4 text-center text-xs text-slate-500">
-            Demo build — no credentials needed, any sign-in opens the console.
+            Demo build. No credentials are needed; any sign-in opens the console.
           </p>
         </div>
 

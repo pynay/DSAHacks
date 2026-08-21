@@ -38,8 +38,8 @@ export const seedDistributions: Distribution[] = [
   { id: 'x1', date: '2026-08-19', recipient: 'Eastside Shelter', type: 'partner-agency', items: [{ name: 'Canned Black Beans', quantity: 60, unit: 'cans' }, { name: 'White Rice', quantity: 40, unit: 'lbs' }], householdsServed: 45 },
   { id: 'x2', date: '2026-08-17', recipient: 'Mobile Pantry Route 3', type: 'mobile-pantry', items: [{ name: 'Fresh Apples', quantity: 30, unit: 'lbs' }, { name: 'Cereal', quantity: 20, unit: 'boxes' }], householdsServed: 30 },
   { id: 'x3', date: '2026-08-13', recipient: 'Johnson Family', type: 'household', items: [{ name: 'Whole Milk', quantity: 2, unit: 'gallons' }, { name: 'Eggs', quantity: 2, unit: 'dozens' }], householdsServed: 1 },
-  { id: 'x4', date: '2026-08-05', recipient: 'East Village drop zone', type: 'mobile-pantry', items: [{ name: 'Canned Soup', quantity: 70, unit: 'cans' }, { name: 'Bottled Water', quantity: 90, unit: 'bottles' }], householdsServed: 52 },
+  { id: 'x4', date: '2026-08-05', recipient: 'East Village distribution site', type: 'mobile-pantry', items: [{ name: 'Canned Soup', quantity: 70, unit: 'cans' }, { name: 'Bottled Water', quantity: 90, unit: 'bottles' }], householdsServed: 52 },
   { id: 'x5', date: '2026-07-29', recipient: 'Gaslamp outreach', type: 'partner-agency', items: [{ name: 'Peanut Butter', quantity: 30, unit: 'jars' }, { name: 'Cereal', quantity: 22, unit: 'boxes' }], householdsServed: 26 },
-  { id: 'x6', date: '2026-07-22', recipient: 'City Center drop zone', type: 'mobile-pantry', items: [{ name: 'White Rice', quantity: 55, unit: 'lbs' }, { name: 'Canned Black Beans', quantity: 45, unit: 'cans' }], householdsServed: 38 },
+  { id: 'x6', date: '2026-07-22', recipient: 'City Center distribution site', type: 'mobile-pantry', items: [{ name: 'White Rice', quantity: 55, unit: 'lbs' }, { name: 'Canned Black Beans', quantity: 45, unit: 'cans' }], householdsServed: 38 },
   { id: 'x7', date: '2026-07-15', recipient: 'Cortez family services', type: 'partner-agency', items: [{ name: 'Frozen Chicken', quantity: 40, unit: 'lbs' }], householdsServed: 21 },
 ];

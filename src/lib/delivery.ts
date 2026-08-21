@@ -46,8 +46,8 @@ export interface HotspotMeta {
   latest_observation?: string | null;
 }
 
-// Food-bank depot the drones launch from (downtown SD staging hub, Little Italy edge).
-export const DEPOT = { label: "Food bank depot", lng: -117.17, lat: 32.7245 };
+// Operations base for the sensing mission (downtown SD, Little Italy edge).
+export const DEPOT = { label: "Drone operations base", lng: -117.17, lat: 32.7245 };
 
 export const MAP_DEFAULTS = {
   center: [-117.1565, 32.7128] as [number, number],

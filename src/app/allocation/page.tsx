@@ -51,7 +51,7 @@ export default function AllocationPage() {
       if (zone.allocated === 0) continue;
       recordDistribution({
         date: today,
-        recipient: `${zone.label} drop zone`,
+        recipient: `${zone.label} distribution site`,
         type: 'mobile-pantry',
         items: zone.items.map(({ name, quantity, unit }) => ({ name, quantity, unit })),
         notes: `Operator-reviewed allocation: updated estimate ${zone.need}, ${Math.round(zone.coverage * 100)}% coverage`,
@@ -143,7 +143,7 @@ export default function AllocationPage() {
 
       {staged && (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Reviewed-zone distributions staged — demo inventory has been decremented. See the
+          Reviewed-zone distributions staged. Demo inventory has been decremented. See the
           Distributions screen for the records.
         </p>
       )}
@@ -202,7 +202,7 @@ export default function AllocationPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">
-                  {zone.items.length ? categorySummary(zone.items) : '—'}
+                  {zone.items.length ? categorySummary(zone.items) : 'N/A'}
                 </td>
               </tr>
             ))}

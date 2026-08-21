@@ -186,7 +186,7 @@ The allocation service is deterministic:
 5. Stop when demand is covered or stock is exhausted.
 
 The existing inventory uses heterogeneous demo units. Production allocation must
-normalize servings, weight, volume, temperature class, and payload eligibility.
+normalize servings, weight, volume, temperature class, and transport suitability.
 
 ## API surface
 
@@ -243,8 +243,8 @@ metadata to the operator instead of presenting an unqualified number.
 - Restrict the local bridge to approved localhost origins.
 - Store aggregate observations, not identities or face-derived attributes.
 - Minimize raw-video retention and document any operational retention separately.
-- Require human approval for food rejection, mission launch, payload release, and
-  distribution completion.
+- Require human approval for food rejection, sensing mission launch, response
+  recommendations, dispatch, and distribution completion.
 - Do not infer homelessness from appearance or equate a visible-person estimate
   with consent, eligibility, or a complete population count.
 - Real flights require site-specific legal and safety review; simulation remains
@@ -260,7 +260,7 @@ metadata to the operator instead of presenting an unqualified number.
 | Routing | Straight depot-to-zone spokes | Approved route planning, constraints and geofencing |
 | Vision count | Single stabilized frame | Calibrated tracking/deduplication and coverage model |
 | Food quality | Vision suggestion | Auditable quarantine and human disposition workflow |
-| Allocation units | Heterogeneous generic quantities | Servings, mass, volume, temperature and payload constraints |
+| Allocation units | Heterogeneous generic quantities | Servings, mass, volume, temperature and transport constraints |
 | Model freshness | Latest block panel ends January 2025 | Regular field observations and scheduled retraining |
 
 ## Recommended production evolution
