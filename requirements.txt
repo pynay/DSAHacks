@@ -7,3 +7,6 @@ h3>=4.0
 pdfplumber>=0.11
 openpyxl>=3.1
 pytest>=8.0
+
+# ML pipeline deps (ml/forecast.py, ml/hotspot_*.py and their tests)
+-r ml/requirements.txt
