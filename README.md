@@ -23,7 +23,9 @@ are committed.
 
 ## The Parsel console
 
-Six screens (left sidebar). App state (inventory, donations, distributions) is held
+The public landing page at `/` explains Parsel's food-bank mission, workflow, platform
+features, and technology stack. Seven operational screens live in the left sidebar. App
+state (inventory, donations, distributions) is held
 in-memory by a single React context provider and is seeded with demo data — it survives
 sidebar navigation but resets on a full page reload. Delivery-zone data is real (see below).
 
@@ -35,6 +37,7 @@ sidebar navigation but resets on a full page reload. Delivery-zone data is real 
 | **Distributions** | Record outgoing food; inventory decreases automatically (floored at zero) |
 | **Delivery** | Mapbox GL 3D map of downtown SD (terrain + building extrusions): need-weighted drop zones from the data commons, a depot marker, straight-line spokes, click-to-add custom drops, per-zone popups (need / 311 requests / tents / vehicles / distance / elevation) |
 | **Allocation** | Splits current stock across zones proportionally to need; one click stages the plan as real distribution records (decrementing inventory). Includes the need-forecast chart, a model card, and a **predictive mode** that re-splits demand by predicted next-month 311 shares |
+| **Drone Ops** | Simulated need-ranked flight with live position, route progress, battery, altitude, payload, signal, and a vision-assisted clear-to-drop check; designed with seams for real flight-controller and EyePop feeds |
 
 ### How the delivery zones are computed
 
