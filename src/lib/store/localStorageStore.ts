@@ -61,7 +61,12 @@ export function loadSnapshot(): StoreSnapshot | null {
     const raw = localStorage.getItem(V2_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as StoreSnapshot;
-      if (parsed && parsed.version === 2 && Array.isArray(parsed.inventory)) return parsed;
+      if (parsed && parsed.version === 2 && Array.isArray(parsed.inventory)) {
+        // Backfill any PlanParams fields added since this snapshot was saved
+        // (e.g. runsPerWeek) so older persisted state doesn't leave params
+        // partially undefined.
+        return { ...parsed, params: { ...DEFAULT_PARAMS, ...parsed.params } };
+      }
     }
   } catch {
     // fall through to migration

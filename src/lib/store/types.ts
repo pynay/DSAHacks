@@ -33,6 +33,9 @@ export interface PlanParams {
   planTo: 'point' | 'upper80';
   horizonWeeks: 4 | 8 | 12;
   staleAfterDays: number;
+  // Runs the fleet can make in a week, across all zones — the capacity
+  // denominator for the Today KPI strip (capacity = runsPerWeek x vehicleCapacity).
+  runsPerWeek: number;
 }
 
 // visitsPerWeek default 1 per zone (applied lazily wherever a zone id is missing).
@@ -45,6 +48,7 @@ export const DEFAULT_PARAMS: PlanParams = {
   planTo: 'upper80',
   horizonWeeks: 8,
   staleAfterDays: 14,
+  runsPerWeek: 6,
 };
 
 export interface Override {

@@ -50,6 +50,16 @@ export default function PlanParamsPanel({
             onChange={(e) => set('vehicleCapacity', Number(e.target.value))}
           />
         </FormField>
+        <FormField label="Runs available / wk">
+          <input
+            type="number"
+            min={0}
+            step={1}
+            className={inputClass}
+            value={params.runsPerWeek}
+            onChange={(e) => set('runsPerWeek', Number(e.target.value))}
+          />
+        </FormField>
         <FormField label="Coverage share (%)">
           <input
             type="number"
