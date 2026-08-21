@@ -19,10 +19,10 @@
 
 ## Overview
 
-Parsel is a food-bank operations and decision-support platform built for the
-2026 Building for Good hackathon. It combines inventory management, San Diego
-community data, explainable forecasting, 3D response planning, and human-reviewed
-EyePop vision into one operational loop:
+Parsel is an EyePop-powered field-sensing and food-relief decision-support platform
+built for the 2026 Building for Good hackathon. It connects drone or camera evidence,
+San Diego community data, an adaptive outreach model, and food inventory in one
+human-controlled loop:
 
 ```text
 understand context -> map a historical prior -> gather a field observation
@@ -47,7 +47,7 @@ The repository contains three integrated systems:
 
 | Surface | What it does | Data mode |
 |---|---|---|
-| Landing | Presents source-linked San Diego impact statistics, then explains the sensing loop with a pinned Three.js mission concept | Public evidence + product narrative; not live telemetry |
+| Landing | Presents source-linked San Diego impact statistics, a pinned Three.js mission, and the exact EyePop sensing contract | Public evidence + product narrative; not live telemetry |
 | Dashboard | Stock KPIs and food-access need, with PIT, shelter, and parking kept as contextual signals | Demo operations + real aggregate data |
 | Inventory | Search, filter, add and adjust food inventory with derived status | In-memory demo state |
 | Donations | Record incoming items and update matching stock | In-memory demo state |
@@ -56,29 +56,41 @@ The repository contains three integrated systems:
 | Allocation | Apply deterministic FEFO and proportional allocation to field-updated zones | Demo inventory + reviewed zone updates |
 | Live Delivery | Dispatch a model-sized payload, capture one reviewed EyePop count, update future need, and return the drone | Live Mapbox mission + adaptive hotspot state |
 
-### What makes the loop adaptive
+### How EyePop works in Parsel
 
-Parsel does not rely on one static heatmap. The offline block model initializes a
-261-block visible-outreach intensity surface. It is not a direct measure of food
-insecurity, eligibility, or meals required. An operator can select a field-check
-target and apply one stabilized EyePop observation. The server updates nearby
-Gamma-Poisson priors and recomputes all six hotspot centers immediately. Only the
-zone containing that reviewed evidence becomes allocation-eligible; untouched
-zones remain labeled as historical priors.
+There are two working EyePop paths, and they are intentionally described separately:
+
+1. The optional Python bridge accepts a webcam, recorded file, or live DJI RTMP feed.
+   EyePop common-object inference returns labels, boxes, and confidence. The bridge
+   exposes an annotated MJPEG stream, people and vehicle counts, a low-median count
+   over the last five inference samples, face-blur status, and a GO/HOLD/NO-GO
+   landing-zone verdict. This path is continuous telemetry and does not currently
+   write observations into the model.
+2. Live Delivery uses a separate operator-triggered camera or upload capture. The
+   Next.js API sends that one frame to EyePop, derives an aggregate people count and
+   maximum person confidence, and posts the reviewed result to the hotspot API. The
+   captured image remains in browser memory and is not written to the observation log.
+
+The accepted aggregate observation updates nearby Gamma-Poisson block priors and
+recomputes all six hotspot centers. The offline 261-block surface is a visible-outreach
+prior, not a direct measure of food insecurity, eligibility, or meals required. Only
+a zone touched by field evidence becomes allocation-eligible.
 
 Repeated frames are never submitted automatically; doing so would count the same
-visible people many times. The endpoint stores only the aggregate observation in
-process memory. It stores no image, identity, face embedding, or person-level track.
+visible people many times. A tested occupancy-episode gate exists in the codebase,
+but automatic bridge-to-model assimilation is not wired into the dispatch workflow.
+Accepted observations are appended as aggregate JSONL records. They contain no image,
+identity, face embedding, or person-level track.
 
 The landing page opens with full-screen, source-linked evidence on San Diego
 nutrition insecurity, the monthly meal gap, Food Bank service scale, and annual
 food distribution. The pinned, scroll-controlled 3D mission scene then illustrates
-the intended sensing route, aggregate observation, reviewed outreach-map update,
-response optimization and return. The drone is an information-gathering input to
-the model, not a food-delivery mechanism, and the scene is not live flight telemetry.
-After the mission, the landing narrative continues through three operator chapters,
-the adaptive feedback loop, the field-evidence allocation gate, explicit human-control
-boundaries, and a direct path into the working demo.
+the EyePop camera workflow. The rest of the page explains source ingestion, common-object
+inference, privacy filtering, stabilization, the reviewed observation boundary, the
+Gamma-Poisson update, and the exact gap between live telemetry and model evidence.
+
+Read [`docs/EYEPOP_PIPELINE.md`](docs/EYEPOP_PIPELINE.md) for the current data flow,
+runtime contracts, privacy boundaries, and recommended next integration.
 
 ## Architecture
 
@@ -91,13 +103,16 @@ flowchart LR
     artifacts[Model artifacts]
     api[Next.js Node APIs]
     ui[Parsel web console]
-    bridge[EyePop camera bridge]
-    feedback[Online hotspot update]
+    bridge[Continuous EyePop bridge]
+    liveUi[Live delivery telemetry]
+    capture[Reviewed one-frame capture]
+    feedback[Gamma-Poisson hotspot update]
 
     sources --> etl --> marts --> models --> artifacts
     marts --> api
     artifacts --> api --> ui
-    bridge --> ui --> feedback --> api
+    bridge --> liveUi
+    capture --> api --> feedback --> ui
 ```
 
 The web request path never trains a model and does not require Python. Offline jobs
@@ -202,7 +217,9 @@ python scripts/eyepop_bridge.py
 
 The bridge serves the annotated MJPEG stream and latest aggregate detection at
 `http://127.0.0.1:8091`. `VIDEO_SOURCE` can point to a local video or URL when a
-webcam is unavailable.
+webcam is unavailable. For a DJI camera feed, follow
+[`docs/DRONE_RTMP_SETUP.md`](docs/DRONE_RTMP_SETUP.md) to relay DJI Fly through
+MediaMTX into the bridge.
 
 ### Build or refresh the Data Commons
 
@@ -295,8 +312,8 @@ before citing any value.
 ## Operational and safety boundaries
 
 - Inventory, donations and distributions reset on a full page reload.
-- Live hotspot observations reset when the Node process restarts and are not shared
-  across multiple server instances.
+- Accepted hotspot observations persist to a local JSONL file, but that file is not
+  a shared multi-instance production database.
 - Allocation currently treats heterogeneous packages as generic units. Production
   packing requires servings, mass, volume, temperature and transport constraints.
 - Staging an allocation decrements demo inventory; it is not proof of loading,
@@ -315,6 +332,7 @@ The prioritized production roadmap is maintained in
 
 ## Documentation
 
+- [`docs/EYEPOP_PIPELINE.md`](docs/EYEPOP_PIPELINE.md): current EyePop data flow and boundaries.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): current and target architecture.
 - [`docs/HOTSPOT_DRONE_CONTEXT.md`](docs/HOTSPOT_DRONE_CONTEXT.md): engineering handoff.
 - [`docs/HOTSPOT_MODEL_BENCHMARK.md`](docs/HOTSPOT_MODEL_BENCHMARK.md): model evidence.

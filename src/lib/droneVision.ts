@@ -44,7 +44,7 @@ export interface VisionDetection {
   label: 'people-detected' | 'no-people-detected'; // sensing-first naming (bridge sends clear/obstructed)
   confidence: number; // max person confidence (0 when none)
   count: number; // people in frame (the drop-zone hazard)
-  stablePeople: number; // median-low over the last 5 inference counts; the number assimilation uses
+  stablePeople: number; // median-low over the last 5 inference counts; displayed telemetry, not auto-assimilated
   persons: VisionPerson[];
   objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
   verdict: VisionVerdict | null; // drop-verdict pipeline (null on older bridges)

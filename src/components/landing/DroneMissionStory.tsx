@@ -14,31 +14,31 @@ import {
 const stages = [
   {
     icon: Route,
-    eyebrow: '01 · Plan',
-    title: 'Route to a priority zone',
-    body: 'The historical hotspot surface suggests where a field check may be useful. It does not authorize a delivery.',
-    sceneLabel: 'Planning route',
+    eyebrow: '01 · Connect',
+    title: 'Bring the camera to the field',
+    body: 'A webcam, recorded file, or DJI RTMP feed can enter the local bridge. The route remains an operator-controlled mission.',
+    sceneLabel: 'Camera source connected',
   },
   {
     icon: CameraIcon,
-    eyebrow: '02 · Capture',
-    title: 'Take a downward area picture',
-    body: 'At the delivery zone, the drone holds position and points its camera down. One area frame produces an aggregate visible-person count for operator review.',
-    sceneLabel: 'Camera down · capturing area frame',
+    eyebrow: '02 · Detect',
+    title: 'Let EyePop read the scene',
+    body: 'EyePop returns object labels, boxes, and confidence. Parsel separates people and vehicles while the served operator view obscures faces.',
+    sceneLabel: 'EyePop common objects running',
   },
   {
     icon: Radar,
-    eyebrow: '03 · Update',
-    title: 'Move the hotspot with evidence',
-    body: 'If the observation is accepted, the local intensity surface and all six hotspot centers are recomputed.',
-    sceneLabel: 'Updating hotspot surface',
+    eyebrow: '03 · Stabilize',
+    title: 'Check the signal before using it',
+    body: 'The bridge stabilizes recent counts and checks visibility plus landing-zone hazards. Continuous telemetry is not automatically written to the model.',
+    sceneLabel: 'Stabilizing field telemetry',
   },
   {
     icon: BrainCircuit,
-    eyebrow: '04 · Optimize',
-    title: 'Improve the response plan and return',
-    body: 'The reviewed signal helps rank locations and recommend food allocation. Distribution remains a separate, human-controlled operation.',
-    sceneLabel: 'Sending evidence to the planner',
+    eyebrow: '04 · Review',
+    title: 'Apply one count to the plan',
+    body: 'The working delivery flow uses one operator capture. An accepted aggregate count updates nearby block intensity and the next food recommendation.',
+    sceneLabel: 'Applying one reviewed observation',
   },
 ];
 
@@ -510,7 +510,7 @@ export default function DroneMissionStory() {
               <Crosshair size={14} /> Scroll-controlled mission
             </div>
             <h2 className="mt-4 max-w-xl text-3xl font-semibold leading-[1.02] tracking-[-0.04em] sm:mt-5 sm:text-4xl lg:text-5xl">
-              The drone observes. The model adapts.
+              EyePop reads the scene. Parsel controls the update.
             </h2>
             <p className="mt-3 max-w-lg text-sm leading-6 text-slate-400 sm:mt-4 sm:text-base sm:leading-7">
               Scroll to move through the sensing loop. The scene advances only with your position on the page.
@@ -543,7 +543,7 @@ export default function DroneMissionStory() {
 
             <div className="mt-5 hidden items-start gap-2.5 text-xs leading-5 text-slate-500 sm:flex lg:mt-8">
               <Check size={15} className="mt-0.5 shrink-0 text-amber-300" />
-              <p>Sensing concept only. Human review remains required before the model changes an operational plan.</p>
+              <p>The scene illustrates the current workflow. Human review remains required before the model changes an operational plan.</p>
             </div>
           </div>
 
@@ -567,7 +567,7 @@ export default function DroneMissionStory() {
             <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-4 bg-gradient-to-b from-[#071a2b]/90 to-transparent p-5 sm:p-6">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#76d6a7]">Illustrative sequence</p>
-                <p className="mt-1 text-sm font-semibold">Operations base → sensing pass → model update</p>
+                <p className="mt-1 text-sm font-semibold">Camera source → EyePop inference → reviewed model update</p>
               </div>
               <span className="rounded-full border border-white/15 bg-[#071a2b]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-300 backdrop-blur">
                 No autopilot
