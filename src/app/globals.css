@@ -1,20 +1,17 @@
 @import "tailwindcss";
 
-/* Food bank inventory: fixed light "pale yellow" theme.
-   Set the base canvas on <body> so overscroll and any area beyond
-   content stays on-palette. Inter is applied via next/font on <body>. */
 body {
-  background: #fefce8; /* yellow-50 canvas */
-  color: #1c1917; /* stone-900 text */
+  background: #ffffff;
+  color: #071a2b;
 }
 
 ::selection {
-  background: #fcd34d;
-  color: #1c1917;
+  background: #76d6a7;
+  color: #071a2b;
 }
 
 :focus-visible {
-  outline: 3px solid #d97706;
+  outline: 3px solid #27875b;
   outline-offset: 3px;
 }
 

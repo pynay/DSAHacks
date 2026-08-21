@@ -133,21 +133,70 @@ export default function DeliveryMap({
           "line-dasharray": [1.6, 1.1],
         },
       });
+      // Need heat surface: a continuous density field weighted by each zone's
+      // need. This is the primary read of "where need is" — it blooms and
+      // re-shapes itself as the forecast step changes the need values, instead
+      // of showing rigid pins. Sits under the circles; dominates when zoomed
+      // out, fades as the discrete circles take over on zoom-in.
+      map.addLayer({
+        id: "zones-heat",
+        type: "heatmap",
+        source: "zones",
+        maxzoom: 17,
+        paint: {
+          // Only real zones carry need; custom drops (need 0) add no heat.
+          "heatmap-weight": ["interpolate", ["linear"], ["get", "need"], 0, 0, 320, 1],
+          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 1.3, 16, 2.2],
+          // Transparent -> yellow -> amber -> red: same need semantics as the circles.
+          "heatmap-color": [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0, "rgba(0,0,0,0)",
+            0.12, "rgba(253,224,71,0.45)",
+            0.35, "rgba(245,158,11,0.72)",
+            0.65, "rgba(239,68,68,0.85)",
+            1, "rgba(185,28,28,0.95)",
+          ],
+          // Radius grows with zoom so the bloom stays geographically proportional.
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 20, 13, 42, 14, 58, 16, 88],
+          // Strong when zoomed out, fades as the clickable circles fade in.
+          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0.95, 14, 0.85, 15.5, 0.4, 16.5, 0.15],
+        },
+      });
+
       map.addLayer({
         id: "zones-circle",
         type: "circle",
         source: "zones",
         paint: {
-          "circle-radius": ["case", ["get", "custom"], 10, ["interpolate", ["linear"], ["get", "need"], 0, 7, 320, 34]],
+          "circle-radius": ["case", ["get", "custom"], 10, ["interpolate", ["linear"], ["get", "need"], 0, 6, 320, 26]],
           "circle-color": [
             "case",
             ["get", "custom"],
             "#22d3ee",
             ["interpolate", ["linear"], ["get", "need"], 0, "#fcd34d", 80, "#f59e0b", 200, "#ef4444", 320, "#b91c1c"],
           ],
-          "circle-opacity": 0.82,
+          // Custom drops stay solid; need-circles fade in as you zoom past the
+          // heatmap. Zoom must be the top-level interpolate input, so the
+          // custom-vs-need split lives in each stop's output.
+          "circle-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            13, ["case", ["get", "custom"], 0.9, 0.1],
+            14.5, ["case", ["get", "custom"], 0.9, 0.55],
+            16, ["case", ["get", "custom"], 0.9, 0.85],
+          ],
           "circle-stroke-width": 1.5,
           "circle-stroke-color": "#ffffff",
+          "circle-stroke-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            13, ["case", ["get", "custom"], 1, 0.15],
+            15, ["case", ["get", "custom"], 1, 0.8],
+          ],
         },
       });
       map.addLayer({
@@ -178,7 +227,7 @@ export default function DeliveryMap({
       // Depot marker.
       const el = document.createElement("div");
       el.style.cssText =
-        "width:26px;height:26px;border-radius:7px;background:#ca8a04;border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:14px";
+        "width:26px;height:26px;border-radius:7px;background:#059669;border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:14px";
       el.textContent = "▣";
       el.title = DEPOT.label;
       new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([DEPOT.lng, DEPOT.lat]).addTo(map);
@@ -289,7 +338,7 @@ export default function DeliveryMap({
 
   if (!TOKEN) {
     return (
-      <div className="grid h-full place-items-center bg-stone-100 text-sm text-stone-500">
+      <div className="grid h-full place-items-center bg-slate-100 text-sm text-slate-500">
         Set NEXT_PUBLIC_MAPBOX_TOKEN in .env.local to load the map.
       </div>
     );
