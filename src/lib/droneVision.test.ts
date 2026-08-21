@@ -33,7 +33,9 @@ test('parses a full bridge payload including the verdict', () => {
 });
 
 test('older bridge without verdict still parses, verdict is null', () => {
-  const { verdict: _omit, brightness: _omit2, ...older } = fullPayload;
+  const older: Record<string, unknown> = { ...fullPayload };
+  delete older.verdict;
+  delete older.brightness;
   const det = parseDetection(older);
   expect(det.verdict).toBeNull();
   expect(det.brightness).toBe(0);

@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, MapPin, Video, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, MapPin, Video, XCircle } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
 
@@ -9,6 +9,19 @@ export default function DronePage() {
   const vision = useDroneVision();
   const det = vision.detection;
   const clear = det?.label === 'clear';
+  const verdict = det?.verdict ?? null;
+  // Verdict pipeline drives the decision; older bridges fall back to the person heuristic.
+  const decision = det ? (verdict?.state ?? (clear ? 'GO' : 'HOLD')) : null;
+  const DECISION_UI = {
+    GO: { icon: CheckCircle2, title: 'CLEAR TO DROP', side: 'CLEAR', overlay: 'text-emerald-400', card: 'bg-emerald-100 text-emerald-800', bar: 'bg-emerald-500' },
+    HOLD: { icon: XCircle, title: 'OBSTRUCTED — HOLD', side: 'HOLD', overlay: 'text-amber-400', card: 'bg-amber-100 text-amber-800', bar: 'bg-amber-500' },
+    NO_GO: { icon: AlertTriangle, title: 'NO-GO — NO VISIBILITY', side: 'NO-GO', overlay: 'text-red-400', card: 'bg-red-100 text-red-800', bar: 'bg-red-500' },
+  } as const;
+  const ds = decision ? DECISION_UI[decision] : null;
+  const DecisionIcon = ds?.icon ?? null;
+  const score = verdict?.score ?? (det ? (clear ? 100 : 0) : 0);
+  const reason = verdict?.reason
+    ?? (det ? `${det.count} person${det.count === 1 ? '' : 's'} detected in the drop area` : '');
   const targets = [...zones].filter((z) => z.need > 0).sort((a, b) => b.need - a.need).slice(0, 4);
   const classCounts = (det?.objects ?? []).reduce<Record<string, number>>((m, o) => {
     m[o.label] = (m[o.label] ?? 0) + 1;
@@ -23,7 +36,8 @@ export default function DronePage() {
           <h2 className="font-semibold text-stone-900">Drone delivery ops</h2>
           <p className="text-sm text-stone-500">
             Live drone-camera vision by EyePop.ai detects people and objects in the drop area, and
-            holds the release while a person is in the zone.
+            holds the release while the landing zone is occupied — clearing only after it stays
+            empty for a few seconds.
           </p>
         </div>
         {vision.connected ? (
@@ -56,12 +70,10 @@ export default function DronePage() {
             {det && (
               <div className="absolute left-3 top-3 rounded-lg bg-black/65 px-3 py-2 backdrop-blur">
                 <div className="text-[10px] uppercase tracking-wide text-stone-400">EyePop.ai · drop-zone check · LIVE</div>
-                <div className={`flex items-center gap-2 text-base font-bold ${clear ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {clear ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
-                  {clear ? 'CLEAR TO DROP' : 'OBSTRUCTED — HOLD'}
-                  <span className="text-xs font-normal text-stone-300">
-                    {det.count} in frame{det.count > 0 ? ` · ${(det.confidence * 100).toFixed(0)}%` : ''}
-                  </span>
+                <div className={`flex items-center gap-2 text-base font-bold ${ds!.overlay}`}>
+                  {DecisionIcon && <DecisionIcon size={18} />}
+                  {ds!.title}
+                  <span className="text-xs font-normal text-stone-300">{reason}</span>
                 </div>
               </div>
             )}
@@ -75,15 +87,21 @@ export default function DronePage() {
 
         {/* Side: decision + detections + delivery targets */}
         <div className="space-y-3">
-          <div className={`rounded-xl border border-stone-200 p-4 shadow-sm ${det ? (clear ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800') : 'bg-white'}`}>
+          <div className={`rounded-xl border border-stone-200 p-4 shadow-sm ${ds ? ds.card : 'bg-white'}`}>
             <div className="text-xs font-medium uppercase tracking-wide opacity-70">Drop decision</div>
             <div className="mt-1 flex items-center gap-2 text-2xl font-bold">
-              {det ? (clear ? <CheckCircle2 size={22} /> : <XCircle size={22} />) : null}
-              {det ? (clear ? 'CLEAR' : 'HOLD') : '—'}
+              {DecisionIcon && <DecisionIcon size={22} />}
+              {ds ? ds.side : '—'}
             </div>
-            <div className="mt-1 text-xs opacity-80">
-              {det ? `${det.count} person${det.count === 1 ? '' : 's'} detected in the drop area` : 'Awaiting vision feed'}
-            </div>
+            <div className="mt-1 text-xs opacity-80">{det ? reason : 'Awaiting vision feed'}</div>
+            {det && (
+              <div className="mt-2">
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/60">
+                  <div className={`h-full rounded-full ${ds!.bar} transition-all`} style={{ width: `${score}%` }} />
+                </div>
+                <div className="mt-1 text-[11px] opacity-70">drop-safety score {score}/100</div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
@@ -125,6 +143,10 @@ export default function DronePage() {
             <code className="rounded bg-stone-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
             live webcam (run without <code className="rounded bg-stone-100 px-1">VIDEO_SOURCE</code>) or
             any video file; set <code className="rounded bg-stone-100 px-1">EYEPOP_ABILITY</code> to swap models.
+            Drop verdict = visibility gate + landing-zone filter + hazard severity + sustained-clear
+            hysteresis (tune <code className="rounded bg-stone-100 px-1">CLEAR_HOLD_S</code>,{' '}
+            <code className="rounded bg-stone-100 px-1">MIN_BRIGHTNESS</code>,{' '}
+            <code className="rounded bg-stone-100 px-1">DROP_ZONE</code>).
           </p>
         </div>
       </div>
