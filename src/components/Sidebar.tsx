@@ -2,24 +2,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, HandHeart, Truck } from 'lucide-react';
+import { LayoutDashboard, Package, HandHeart, Truck, MapPin } from 'lucide-react';
 
 export const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/donations', label: 'Donations', icon: HandHeart },
   { href: '/distributions', label: 'Distributions', icon: Truck },
+  { href: '/delivery', label: 'Delivery', icon: MapPin },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   return (
     <aside className="w-60 shrink-0 border-r border-stone-200 bg-white flex flex-col">
-      <div className="flex items-center gap-2 px-5 h-16 border-b border-stone-200">
-        <span className="grid place-items-center w-9 h-9 rounded-lg bg-yellow-600 text-white font-bold">
-          FB
-        </span>
-        <span className="font-semibold text-stone-900">FoodBank</span>
+      <div className="flex items-center px-5 h-16 border-b border-stone-200">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/parsel-logo.png" alt="Parsel" className="h-7 w-auto" />
       </div>
       <nav className="p-3 space-y-1">
         {NAV.map(({ href, label, icon: Icon }) => {

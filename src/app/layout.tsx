@@ -6,8 +6,8 @@ import Providers from '@/components/Providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'FoodBank Inventory',
-  description: 'Food bank inventory management',
+  title: 'Parsel',
+  description: 'Food relief inventory + autonomous delivery ops',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
