@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Python venv for the data pipeline / EyePop vision bridge (ships JS assets):
+    ".venv/**",
   ]),
 ]);
 
