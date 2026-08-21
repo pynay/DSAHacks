@@ -8,7 +8,6 @@ import type { Category, Status } from '@/lib/types';
 import InventoryTable from '@/components/InventoryTable';
 import Modal from '@/components/Modal';
 import FormField, { inputClass } from '@/components/FormField';
-import EngineBar from '@/components/warehouse/EngineBar';
 import ReorderQueue from '@/components/warehouse/ReorderQueue';
 import ExpiringPanel from '@/components/warehouse/ExpiringPanel';
 import ActivityTicker from '@/components/warehouse/ActivityTicker';
@@ -25,11 +24,6 @@ export default function InventoryPage() {
     reorders,
     prioritized,
     simDate,
-    running,
-    speed,
-    toggleRunning,
-    setSpeed,
-    resetDemo,
     approveReorder,
     togglePriority,
   } = useInventory();
@@ -39,8 +33,7 @@ export default function InventoryPage() {
   const [status, setStatus] = useState<string>('All');
   const [open, setOpen] = useState(false);
 
-  // "Now" tracks the simulated day, so statuses and expiry countdowns advance
-  // with the engine.
+  // "Now" tracks today's date, so statuses and expiry countdowns are current.
   const now = useMemo(() => new Date(simDate + 'T00:00:00Z'), [simDate]);
 
   const filtered = useMemo(
@@ -82,15 +75,6 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-4">
-      <EngineBar
-        running={running}
-        speed={speed}
-        simDate={simDate}
-        onToggle={toggleRunning}
-        onSpeed={setSpeed}
-        onReset={resetDemo}
-      />
-
       <div className="grid gap-4 lg:grid-cols-3">
         <ReorderQueue inventory={inventory} reorders={reorders} onApprove={approveReorder} />
         <ExpiringPanel inventory={inventory} now={now} prioritized={prioritized} onTogglePriority={togglePriority} />

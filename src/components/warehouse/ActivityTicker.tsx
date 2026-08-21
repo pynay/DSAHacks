@@ -14,7 +14,7 @@ export default function ActivityTicker({ events }: { events: SimEvent[] }) {
   return (
     <div className="flex h-72 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <h2 className="font-semibold text-slate-900">Live activity</h2>
-      <p className="text-xs text-slate-500">What the warehouse engine is doing.</p>
+      <p className="text-xs text-slate-500">Recent reorder activity.</p>
 
       <div className="mt-2 flex-1 space-y-1.5 overflow-y-auto pr-1">
         {events.map((e) => {
@@ -29,7 +29,7 @@ export default function ActivityTicker({ events }: { events: SimEvent[] }) {
         })}
 
         {events.length === 0 && (
-          <p className="py-6 text-center text-xs text-slate-400">Press Run to start the engine.</p>
+          <p className="py-6 text-center text-xs text-slate-400">No activity yet.</p>
         )}
       </div>
     </div>
