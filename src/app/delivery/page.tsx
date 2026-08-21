@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { MapPin, Package, Plus } from "lucide-react";
 import { DEPOT, haversineKm, type DeliveryZone } from "@/lib/delivery";
+import { useZones } from "@/lib/useZones";
 
 // mapbox-gl touches window on import, so load the map client-side only.
 const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
@@ -12,29 +13,18 @@ const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
 });
 
 export default function DeliveryPage() {
-  const [zones, setZones] = useState<DeliveryZone[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [customCount, setCustomCount] = useState(0);
-
-  useEffect(() => {
-    fetch("/api/zones")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.zones) setZones(d.zones);
-        else setError(d.error || "Failed to load zones");
-      })
-      .catch(() => setError("Failed to load zones"));
-  }, []);
+  const { zones: baseZones, error } = useZones();
+  const [custom, setCustom] = useState<DeliveryZone[]>([]);
+  const zones = useMemo(() => [...baseZones, ...custom], [baseZones, custom]);
 
   function addZone(lngLat: { lng: number; lat: number }) {
     const id = `custom-${Date.now()}`;
-    setCustomCount((n) => n + 1);
-    setZones((prev) => [
+    setCustom((prev) => [
       ...prev,
       {
         id,
         neighborhood: "custom",
-        label: `Drop ${customCount + 1}`,
+        label: `Drop ${prev.length + 1}`,
         lng: lngLat.lng,
         lat: lngLat.lat,
         blocks: 0,
@@ -51,7 +41,7 @@ export default function DeliveryPage() {
       .then((r) => r.json())
       .then((d) => {
         if (d.elevation != null) {
-          setZones((prev) => prev.map((z) => (z.id === id ? { ...z, elevation: d.elevation } : z)));
+          setCustom((prev) => prev.map((z) => (z.id === id ? { ...z, elevation: d.elevation } : z)));
         }
       })
       .catch(() => {});

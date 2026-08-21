@@ -1,9 +1,112 @@
-# DSAHacks — San Diego Food Relief
+<p align="center">
+  <img src="public/parsel-logo.png" alt="Parsel" width="340" />
+</p>
 
-Two-part 2026 DSA hackathon project in one repo:
+<p align="center"><b>Data-driven food relief for downtown San Diego.</b><br/>
+Built at the 2026 DSA hackathon.</p>
 
-1. **SD Homelessness Data Commons** — the Python/DuckDB pipeline documented below (fuses San Diego homelessness signal sources into analysis-ready marts).
-2. **Food-relief web app** — a Next.js inventory + autonomous-delivery console that consumes the commons data to target food drops at the highest-need blocks. See [Food-relief web app](#food-relief-web-app) at the end.
+---
+
+Parsel is a food-bank operations console that decides **where food should go** using real
+San Diego homelessness data, and shows **how to get it there** on a 3D delivery map. It is
+two connected projects in one repo:
+
+| Part | What it is | Where it lives |
+|---|---|---|
+| **Parsel console** | Next.js web app: inventory, donations, distributions, a Mapbox 3D delivery map, and a need-based allocation recommender | `src/`, `public/` |
+| **SD Homelessness Data Commons** | Python/DuckDB pipeline fusing eight SD homelessness signal sources into analysis-ready marts (documented in its own section below) | `commons/`, `data/`, `marts/`, `seeds/`, `tests/`, `run.py`, `refresh.py` |
+
+The console reads the commons' exported marts directly — the pipeline does not need to be
+run to use the app, because `marts/monthly_by_neighborhood.csv` and `marts/blocks.geojson`
+are committed.
+
+## The Parsel console
+
+Six screens (left sidebar). App state (inventory, donations, distributions) is held
+in-memory by a single React context provider and is seeded with demo data — it survives
+sidebar navigation but resets on a full page reload. Delivery-zone data is real (see below).
+
+| Screen | What it does |
+|---|---|
+| **Dashboard** | KPI cards (total stock, SKUs, low stock, expiring, weekly donation/distribution counts), inventory-by-category bar chart, 6-week intake-vs-outflow trend, stock-status breakdown, recent-activity feed |
+| **Inventory** | 20 seeded items; search + category/status filters, inline quantity +/-, add-item modal. Status is **derived, never stored**: `Out` (qty 0) → `Low` (≤ reorder threshold) → `Expiring` (≤ 14 days) → `OK` |
+| **Donations** | Log incoming donations; matching inventory increases automatically (case-insensitive name+category match; unknown items are added to stock) |
+| **Distributions** | Record outgoing food; inventory decreases automatically (floored at zero) |
+| **Delivery** | Mapbox GL 3D map of downtown SD (terrain + building extrusions): need-weighted drop zones from the data commons, a depot marker, straight-line spokes, click-to-add custom drops, per-zone popups (need / 311 requests / distance / elevation) |
+| **Allocation** | Splits current stock across zones proportionally to need; one click stages the plan as real distribution records (decrementing inventory) |
+
+### How the delivery zones are computed
+
+`GET /api/zones` (server route, cached per server process) derives zones from the commons
+marts at request time:
+
+1. **Need signals** — DuckDB (`@duckdb/node-api`) runs SQL over
+   `marts/monthly_by_neighborhood.csv` (`read_csv_auto` + a `ROW_NUMBER()` window) to get
+   the **latest** value per neighborhood for four metrics:
+   `dsdp_individuals` (the "need" score), `gid_requests` (311 reports),
+   `observed_individuals`, `violations_72hr_reports`.
+2. **Geometry** — each of the 6 downtown neighborhoods (East Village, City Center, Cortez,
+   Gaslamp, Columbia, Marina) is placed at the average-vertex centroid of its census-block
+   polygons from `marts/blocks.geojson` (287 blocks).
+3. **Elevation** — ground elevation per zone from the USGS EPQS API (1 m resolution), with
+   Open-Meteo as fallback. `GET /api/elevation?lng=&lat=` serves the same lookup for
+   custom map drops.
+
+**Read the commons caveats before citing numbers:** the need signals are *proxies with
+known biases, not a census* (see the Data Commons section below). `dsdp_individuals` is a
+digitized count of secondary reliability; Parsel uses it as a relative weighting between
+neighborhoods, not as a headcount claim.
+
+### How allocation works
+
+Deterministic and explainable (`src/lib/allocation.ts`, unit-tested):
+
+1. Zone demand = `need × units/person` (units/person is adjustable in the UI, default 3).
+2. Items ship **soonest-expiring first** (FEFO), so perishables move before they are lost.
+3. Each item's quantity is split across zones **proportionally to remaining demand**, with
+   largest-remainder rounding — every unit lands somewhere, no zone exceeds its demand.
+4. Allocation stops when demand is met or stock runs out.
+
+"Stage distributions" converts the plan into one mobile-pantry distribution record per
+zone via the same provider action the Distributions screen uses, so inventory, the
+dashboard, and the activity feed all update immediately.
+
+### Running the console
+
+Requires Node 20.9+ (developed on Node 25) and a free
+[Mapbox public token](https://account.mapbox.com/access-tokens/) for the map.
+
+```bash
+npm install
+cp .env.example .env.local   # then paste your Mapbox token into .env.local
+npm run dev                  # http://localhost:3000  (use `npm run dev -- -p 3007` if 3000 is taken)
+npm test                     # 22 unit tests (inventory logic, dashboard aggregations, allocation)
+npm run build                # production build / type-check
+```
+
+Without `NEXT_PUBLIC_MAPBOX_TOKEN` the app runs fine; the Delivery map area shows a
+set-your-token message instead of the map.
+
+`next.config.ts` marks `@duckdb/node-api` as a server-external package (it ships native
+bindings and must not be bundled).
+
+### Honest limitations
+
+- App state is in-memory demo state; a hard refresh resets inventory/donations/
+  distributions to seeds. All inventory/donation/distribution access goes through one
+  provider (`src/context/InventoryProvider.tsx`), so swapping in a real backend for app
+  state touches one file (zones already come from a server API).
+- Delivery spokes are straight lines (haversine distances), not routed flight paths, and
+  there is no visit-order optimization yet.
+- The depot is a fixed demo staging point on the waterfront edge of Little Italy, not the
+  real Jacobs & Cushman San Diego Food Bank warehouse (which is in Miramar).
+- Need values are as fresh as the committed marts (e.g. `dsdp_individuals` runs through
+  Dec 2025; 311 requests through Aug 2026). Re-run the pipeline to refresh them.
+
+### Console tech
+
+Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · Recharts 3 ·
+mapbox-gl 3 · @duckdb/node-api 1.5 · lucide-react · Vitest 4
 
 ---
 
@@ -174,24 +277,10 @@ is a small CSV with a `source_url` column per row so every number is traceable.
 
 ---
 
-## Food-relief web app
+## Repo conventions
 
-A Next.js + TypeScript + Tailwind ops console for a food bank, themed in a warm pale-yellow palette.
-
-**Screens**
-- **Dashboard** — KPIs, inventory-by-category and intake-vs-outflow charts, stock status, recent activity.
-- **Inventory** — searchable/filterable table with status pills and inline quantity adjust; add items.
-- **Donations** — log incoming donations; matching inventory increases automatically.
-- **Distributions** — record outgoing food; inventory decreases automatically.
-- **Delivery map** (in progress) — San Diego Mapbox map that places food-drop zones over the highest-need blocks from the data commons.
-
-App state is in-memory via `src/context/InventoryProvider.tsx`, seeded from `src/data/mock.ts` (resets on refresh). Item status (OK / Low / Expiring / Out) is derived, never stored.
-
-```bash
-npm install
-npm run dev      # http://localhost:3000
-npm test         # unit tests for domain + dashboard logic
-npm run build    # production build / type-check
-```
-
-The delivery map needs a Mapbox token in `.env.local` as `NEXT_PUBLIC_MAPBOX_TOKEN` (see `.env.example`).
+- The web app and the pipeline share this repo but have independent toolchains
+  (`package.json` / `requirements.txt`) and test suites (`npm test` / `python -m pytest`).
+- `docs/superpowers/` holds the design specs and implementation plans both parts were
+  built from.
+- `AGENTS.md` / `CLAUDE.md` are auto-generated by Next.js tooling.

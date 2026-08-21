@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, HandHeart, Truck, MapPin } from 'lucide-react';
+import { LayoutDashboard, Package, HandHeart, Truck, MapPin, Boxes } from 'lucide-react';
 
 export const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -10,6 +10,7 @@ export const NAV = [
   { href: '/donations', label: 'Donations', icon: HandHeart },
   { href: '/distributions', label: 'Distributions', icon: Truck },
   { href: '/delivery', label: 'Delivery', icon: MapPin },
+  { href: '/allocation', label: 'Allocation', icon: Boxes },
 ];
 
 export default function Sidebar() {
