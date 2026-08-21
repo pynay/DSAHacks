@@ -8,12 +8,13 @@ capabilities from future infrastructure.
 
 Parsel is designed around five principles:
 
-1. **Close the operational loop.** A prediction must connect to inventory,
-   field verification, allocation, and an auditable outcome.
+1. **Close the food-relief loop.** Food-access evidence must connect to inventory,
+   field verification, allocation, and an auditable distribution outcome.
 2. **Keep decisions explainable.** Operators should be able to see why a zone
    moved and why a quantity was recommended.
-3. **Treat signals honestly.** Complaints, parking activity, and enforcement are
-   contextual proxies, never person counts.
+3. **Treat food need and context honestly.** Nutrition insecurity, benefit use,
+   retailer access, and meal gaps retain their published grain. PIT, complaints,
+   parking activity, and enforcement are contextual proxies, not food need.
 4. **Keep people in control.** Vision suggests; operators approve food-safety,
    mission, and handoff decisions.
 5. **Separate offline learning from online feedback.** Reproducible Python jobs
@@ -138,7 +139,8 @@ unions and export policy stay in `commons/marts.py`.
 
 ### 2. Produce model artifacts
 
-Two models answer different questions:
+Two models support outreach routing. Neither directly predicts food insecurity,
+eligibility, or the number of meals a person requires:
 
 | Model | Question | Runtime artifact |
 |---|---|---|

@@ -48,7 +48,7 @@ The repository contains three integrated systems:
 | Surface | What it does | Data mode |
 |---|---|---|
 | Landing | Presents source-linked San Diego impact statistics, then explains the sensing loop with a pinned Three.js mission concept | Public evidence + product narrative; not live telemetry |
-| Dashboard | Stock KPIs, PIT/shelter context, parking activity and food-access signals | Demo operations + real aggregate data |
+| Dashboard | Stock KPIs and food-access need, with PIT, shelter, and parking kept as contextual signals | Demo operations + real aggregate data |
 | Inventory | Search, filter, add and adjust food inventory with derived status | In-memory demo state |
 | Donations | Record incoming items and update matching stock | In-memory demo state |
 | Distributions | Record outgoing items and decrement stock | In-memory demo state |
@@ -59,23 +59,23 @@ The repository contains three integrated systems:
 ### What makes the loop adaptive
 
 Parsel does not rely on one static heatmap. The offline block model initializes a
-261-block intensity surface. An operator can then select a delivery target and
-apply one stabilized EyePop observation. The server updates nearby Gamma-Poisson
-priors and recomputes all six hotspot centers immediately. Only the zone containing
-that reviewed evidence becomes allocation-eligible; untouched zones remain labeled
-as historical priors.
+261-block visible-outreach intensity surface. It is not a direct measure of food
+insecurity, eligibility, or meals required. An operator can select a field-check
+target and apply one stabilized EyePop observation. The server updates nearby
+Gamma-Poisson priors and recomputes all six hotspot centers immediately. Only the
+zone containing that reviewed evidence becomes allocation-eligible; untouched
+zones remain labeled as historical priors.
 
 Repeated frames are never submitted automatically; doing so would count the same
 visible people many times. The endpoint stores only the aggregate observation in
 process memory. It stores no image, identity, face embedding, or person-level track.
 
-The landing page opens with full-screen, source-linked evidence on the 2026 PIT
-count, monthly homelessness-system pressure, San Diego Food Bank service scale,
-and the limits of an annual one-night snapshot. The pinned, scroll-controlled 3D
-mission scene then illustrates the intended sensing route, aggregate observation,
-reviewed hotspot update, response optimization and return. The drone is an
-information-gathering input to the model, not a food-delivery mechanism, and the
-scene is not live flight telemetry.
+The landing page opens with full-screen, source-linked evidence on San Diego
+nutrition insecurity, the monthly meal gap, Food Bank service scale, and annual
+food distribution. The pinned, scroll-controlled 3D mission scene then illustrates
+the intended sensing route, aggregate observation, reviewed outreach-map update,
+response optimization and return. The drone is an information-gathering input to
+the model, not a food-delivery mechanism, and the scene is not live flight telemetry.
 
 ## Architecture
 
