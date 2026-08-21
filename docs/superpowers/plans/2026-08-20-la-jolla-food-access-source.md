@@ -25,6 +25,19 @@
 
 ### Task 1: Build the La Jolla FARA seed from real data
 
+> **STATUS: COMPLETE (controller-executed 2026-08-20, commit `8a5a832`).** Executed by the
+> controller while retiring the external-data-download risk. The committed builder
+> `scripts/build_food_access_seed.py` supersedes the sketch below: it **auto-downloads** the
+> three real FARA files (URLs verified live) and the Census crosswalk into `raw/fara/` (or
+> reuses local copies), reads them with **openpyxl read_only streaming** (memory-safe on the
+> 8 GB machine) rather than `pandas.read_excel`, and harmonizes the real-file quirks found on
+> inspection: `Pop2010` casing, `TractSNAP` absent in 2010, `'NULL'` literals → blank, and
+> **`low_access_pop_share` derived as `100*low_access_pop/pop_total`** (FARA's `lapop1share` is
+> a fraction in 2010/2015 but a percentage in 2019, so it is not read). Output verified: 42 rows
+> (14 La Jolla tracts × 3 vintages); 0 tracts LILA-flagged; per-tract share consistent across
+> vintages. The steps below are retained for provenance; the sketch's manual-download and
+> `pandas.read_excel` approach was not used.
+
 **Files:**
 - Create: `scripts/build_food_access_seed.py` (dev-only one-off builder)
 - Create: `seeds/food_access_la_jolla.csv` (its output, committed)

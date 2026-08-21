@@ -1,0 +1,43 @@
+vintage_year,census_tract,pop_total,low_access_pop,low_access_pop_share,low_income_low_access_pop,lila_flag,snap_housing_units,source_url,note
+2010,06073008006,3805,0,0.0,0,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008101,4009,47.72578418,1.190466,2.874250434,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008102,3395,1232.811195,36.312554,136.2776288,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008200,3022,0,0.0,0,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008301,3094,2468.346162,79.77848,326.0254004,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008303,3446,1757.160032,50.991295,149.3383747,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008305,10482,71.31973577,0.680402,43.43500137,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008310,5392,3274.437589,60.7277,256.2686165,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008311,2884,1179.29121,40.890819,129.2032056,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008312,3629,2466.312284,67.961209,211.0005443,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008313,2225,599.5574082,26.9464,13.93066584,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008341,7614,0,0.0,0,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008361,2642,0,0.0,0,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2010,06073008362,3141,1.178383827,0.037516,0.384448737,0,,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2010 (FoodAccessResearchAtlasData2010.xlsx); fields absent this vintage: snap_housing_units
+2015,06073008006,3805,0,0.0,0,0,22,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008101,4009,47.7257841825485,1.190466,8.07345815002918,0,13,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008102,3395,1232.81119537074,36.312554,57.8621769862002,0,6,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008200,3022,0,0.0,0,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008301,3094,2468.34616154432,79.77848,344.228709824383,0,8,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008303,3446,1757.16003164835,50.991295,260.948179638129,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008305,10482,71.3197357654571,0.680402,41.9185714721679,0,75,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008310,5392,3274.43758863018,60.7277,378.538324454326,0,31,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008311,2884,1179.29121025651,40.890819,137.861732752993,0,14,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008312,3629,2466.31228384747,67.961209,280.944819934666,0,1,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008313,2225,599.557408241555,26.9464,48.86391160544,0,7,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008341,7614,0,0.0,0,0,24,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008361,2642,0,0.0,0,0,14,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2015,06073008362,3141,1.17838382720947,0.037516,0.496630042791367,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2015 (FoodAccessResearchAtlasData2015.xlsx)
+2019,06073008006,3805,,,,0,11,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008101,4009,47.7257841825485,1.190466,8.26164788007736,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008102,3395,1232.81119537074,36.312554,150.608415120456,0,10,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008200,3022,,,,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008301,3094,2468.34616154432,79.77848,167.743196318857,0,8,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008303,3446,1757.16003164835,50.991295,330.125884589041,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008305,10482,,,,0,106,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008310,5392,3274.43758863019,60.7277,450.516265033672,0,0,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008311,2884,1179.29121025652,40.890819,110.167756772367,0,10,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008312,3629,2440.78900763764,67.257895,414.543681089766,0,19,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008313,2225,861.908536581323,38.737462,62.0899821091443,0,2,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008341,7614,,,,0,27,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008361,2642,,,,0,32,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
+2019,06073008362,3141,1.50432080030441,0.047893,0.469323210418224,0,55,https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data,FARA 2019 (FoodAccessResearchAtlasData2019.xlsx)
