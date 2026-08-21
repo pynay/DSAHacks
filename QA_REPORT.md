@@ -1,28 +1,19 @@
-# QA Report - generated 2026-08-20 20:06
+# QA Report - generated 2026-08-20 20:12
 
 ## Run summary
 
 | step | status | rows | note |
 |---|---|---|---|
-| load_src_a | ok | 41166 | files: ['cached', 'cached', 'cached', 'cached', 'cached']; imputed rows: 1964 |
-| load_src_h | ok | 7027 | monthly=2880 blocklevel=3737 grid=382 methods=4 crosswalk=24 |
-| load_src_c | ok | 329515 | kept categories=['encampment', 'outreach_request']; failed files=[] |
-| load_src_d_72hr | ok | 334073 |  |
-| load_src_d_citations | ok | 78158 | failed files=[] |
-| load_src_b_dsdp | stubbed | 0 | pdf_rows=0 seed_rows=0 |
-| load_src_f_pit | ok | 9 |  |
-| load_src_e_capacity | stubbed | 23 | pdf_rows=0 seed_rows=23 |
-| load_src_g_weather | ok | 5342 |  |
-| load_src_g_zori | ok | 3507 |  |
-| load_src_g_events | ok | 9 |  |
+| refresh_311 | ok | 329515 | kept categories=['encampment', 'outreach_request']; failed files=[] |
+| refresh_72hr | ok | 334073 |  |
+| refresh_citations | ok | 78158 | failed files=[] |
 | build_marts | ok | 54211 |  |
 | export_marts | ok | 287 | 4 files exported |
-| data_dictionary | ok | 22 | /Users/pynay/Documents/DSAHacks/DATA_DICTIONARY.md |
+| data_dictionary | ok | 7 | /Users/pynay/Documents/DSAHacks/DATA_DICTIONARY.md |
 
 ## Source gaps
 
-- `load_src_b_dsdp`: stubbed - pdf_rows=0 seed_rows=0
-- `load_src_e_capacity`: stubbed - pdf_rows=0 seed_rows=23
+None - all steps ok.
 
 ## Table inventory
 

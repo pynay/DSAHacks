@@ -7,7 +7,7 @@ Complaint (311) and enforcement tables measure reporting and enforcement activit
 they are NOT counts of people experiencing homelessness and must never be presented
 as such. Each table's **Known bias** section is part of the data.
 
-_Generated 2026-08-20 20:06_
+_Generated 2026-08-20 20:12_
 
 ## Sources
 
@@ -73,44 +73,6 @@ _Generated 2026-08-20 20:06_
 
 
 ## Tables
-
-### `dim_blocks`
-
-- **Grain:** 2010 census block
-- **Signal type:** context  |  **Source:** A (https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/)
-- **Refresh:** static archive
-- **Measures:** Downtown block polygons (WKT) with derived neighborhood.
-- **Known bias:** neighborhood derived as modal neighborhood of source-A observations per block; blocks with no observations have NULL neighborhood.
-
-| column | type |
-|---|---|
-| geo_block | VARCHAR |
-| block_name | VARCHAR |
-| neighborhood | VARCHAR |
-| zip | VARCHAR |
-| aland_m2 | BIGINT |
-| intpt_lat | DOUBLE |
-| intpt_lon | DOUBLE |
-| geometry_wkt | VARCHAR |
-
-### `dim_h_blockgrid`
-
-- **Grain:** one row per downtown block-grid polygon (382 blocks)
-- **Signal type:** context  |  **Source:** H (https://downtownsandiego.org/clean-and-safe/unhoused-care/)
-- **Refresh:** static bundle
-- **Measures:** Block-grid polygons (WKT) for the DSDP block-count footprint, with canonical area/neighborhood and an overlay bridge (geo_block) into the 2010-census-block grid used by source A.
-- **Known bias:** geo_block is NULL for expansion-area blocks (Barrio Logan/Golden Hill/Sherman Heights) that fall outside the 287-block downtown census footprint - expected, not a join failure. Representative points (not CSV centroids) are used for spatial joins; two CSV centroids are documented to fall outside their own polygon.
-
-| column | type |
-|---|---|
-| block_id | VARCHAR |
-| area | VARCHAR |
-| neighborhood | VARCHAR |
-| lon | DOUBLE |
-| lat | DOUBLE |
-| geometry_wkt | VARCHAR |
-| geo_block | VARCHAR |
-| h3_r8 | VARCHAR |
 
 ### `mart_daily_downtown`
 
@@ -183,74 +145,6 @@ _Generated 2026-08-20 20:06_
 | is_imputed | BOOLEAN |
 | source_id | VARCHAR |
 
-### `stg_a_monthly_totals`
-
-- **Grain:** month
-- **Signal type:** observation  |  **Source:** A (https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/)
-- **Refresh:** static archive
-- **Measures:** Downtown total counted units per month, 2012-2019.
-- **Known bias:** Pre-2014 rows lack point detail; single-count-per-month.
-
-| column | type |
-|---|---|
-| obs_month | DATE |
-| total | BIGINT |
-
-### `stg_a_neighborhood_totals`
-
-- **Grain:** month x neighborhood
-- **Signal type:** observation  |  **Source:** A (https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/)
-- **Refresh:** static archive
-- **Measures:** Counted units per downtown neighborhood per month (2018-2019 DSDP-era).
-- **Known bias:** Overlaps DSDP reporting era; may not match sum of point data months.
-
-| column | type |
-|---|---|
-| obs_month | DATE |
-| neighborhood | VARCHAR |
-| total | BIGINT |
-
-### `stg_a_observations`
-
-- **Grain:** one row per counted entity (person/structure/vehicle) per count date
-- **Signal type:** observation  |  **Source:** A (https://data.sandiegodata.org/dataset/sandiegodata-org-dowtown-homeless/)
-- **Refresh:** static archive
-- **Measures:** Each row is one unit physically counted downtown on the count date.
-- **Known bias:** Raw counted units; NO occupancy multipliers applied (a structure = 1, not est. occupants). Imputed months flagged is_imputed.
-
-| column | type |
-|---|---|
-| obs_date | DATE |
-| obs_month | DATE |
-| neighborhood | VARCHAR |
-| entity_type | VARCHAR |
-| geo_block | VARCHAR |
-| lon | DOUBLE |
-| lat | DOUBLE |
-| h3_r8 | VARCHAR |
-| zip | VARCHAR |
-| source_file | VARCHAR |
-| is_imputed | BOOLEAN |
-
-### `stg_capacity_monthly`
-
-- **Grain:** month x record_type x program x site
-- **Signal type:** capacity  |  **Source:** E (https://www.sandiego.gov/homelessness-strategies-and-solutions/data-reports)
-- **Refresh:** monthly (manual PDF drop or seed edit)
-- **Measures:** Shelter beds and occupancy by program/site.
-- **Known bias:** Reporting formats vary by month/provider; occupancy definitions differ; months missing where reports unpublished. Two incompatible row shapes share this table, distinguished by record_type: 'site_roster' rows are point-in-time bed counts per named site (obs_month is the fetch month - the source page carries no published as-of date, not a real historical month), while 'category_occupancy' rows are true monthly occupancy-rate aggregates published per shelter category. Never join or sum across the two record_types without filtering to one - a roster row's beds and a category row's occupancy_pct do not describe the same population.
-
-| column | type |
-|---|---|
-| record_type | VARCHAR |
-| obs_month | DATE |
-| program | VARCHAR |
-| site | VARCHAR |
-| beds | BIGINT |
-| occupancy_pct | DOUBLE |
-| source_url | VARCHAR |
-| method | VARCHAR |
-
 ### `stg_citations`
 
 - **Grain:** one row per parking citation under selected codes
@@ -275,39 +169,6 @@ _Generated 2026-08-20 20:06_
 | neighborhood | INTEGER |
 | zip | INTEGER |
 | source_file | VARCHAR |
-
-### `stg_dsdp_monthly`
-
-- **Grain:** month x (neighborhood|downtown-wide NULL)
-- **Signal type:** observation  |  **Source:** B (https://downtownsandiego.org/)
-- **Refresh:** monthly (manual PDF drop or seed edit)
-- **Measures:** DSDP-reported monthly unsheltered totals for downtown.
-- **Known bias:** Post-2017 DSDP methodology may apply occupancy multipliers - levels not directly comparable to source A raw counts. Rows collected from press coverage carry transcription risk (source_url per row). Source H already covers verified DSDP totals 2017-2025; this seed only carries months outside that bundle (2025 reporting gaps or later), and is header-only where no verifiable month total could be sourced this session.
-
-| column | type |
-|---|---|
-| obs_month | INTEGER |
-| neighborhood | VARCHAR |
-| total | INTEGER |
-| source_url | INTEGER |
-| method | VARCHAR |
-
-### `stg_events`
-
-- **Grain:** event
-- **Signal type:** context  |  **Source:** G_events (seeds/events.csv)
-- **Refresh:** manual
-- **Measures:** Hand-curated dated policy/shelter/sweep events with sources.
-- **Known bias:** Curated selection is itself editorial; rows marked date_certainty=verify need human confirmation.
-
-| column | type |
-|---|---|
-| event_date | DATE |
-| event_type | VARCHAR |
-| title | VARCHAR |
-| description | VARCHAR |
-| date_certainty | VARCHAR |
-| source_url | VARCHAR |
 
 ### `stg_gid_requests`
 
@@ -341,101 +202,6 @@ _Generated 2026-08-20 20:06_
 | is_child_duplicate | BOOLEAN |
 | source_file | VARCHAR |
 
-### `stg_h_area_crosswalk`
-
-- **Grain:** one row per source-file x source-label area mapping
-- **Signal type:** context  |  **Source:** H (https://downtownsandiego.org/clean-and-safe/unhoused-care/)
-- **Refresh:** static bundle
-- **Measures:** Crosswalk from raw source labels/files to canonical area names, parent areas, and hierarchy level (neighborhood, ev_subarea, block_neighborhood, supplemental).
-- **Known bias:** Curated mapping; canonical renames (e.g. Core -> City Center, Jan 2019) are applied retroactively here but source_label preserves the original as published.
-
-| column | type |
-|---|---|
-| source_file | VARCHAR |
-| source_label | VARCHAR |
-| canonical_area | VARCHAR |
-| parent_area | VARCHAR |
-| level | VARCHAR |
-
-### `stg_h_blocklevel`
-
-- **Grain:** one row per block x count date (report_month)
-- **Signal type:** observation  |  **Source:** H (https://downtownsandiego.org/clean-and-safe/unhoused-care/)
-- **Refresh:** static bundle (2018-2025, 12 count dates)
-- **Measures:** Digitized block-level unsheltered counts (individuals, tents/structures, vehicles) for downtown blocks across 12 count dates, 2018-2025.
-- **Known bias:** Block footprint expanded 261->382 in Jan 2022 (Barrio Logan, Golden Hill, Sherman Heights added) - use in_panel_261 for any longitudinal comparison. Zero-inflation is real: 55.5% of rows are all-zero and 116 of 382 blocks are never non-zero, not a data defect.
-
-| column | type |
-|---|---|
-| block_id | VARCHAR |
-| area | VARCHAR |
-| neighborhood | VARCHAR |
-| count_date | DATE |
-| obs_month | DATE |
-| individuals | BIGINT |
-| tents_structures | BIGINT |
-| vehicles | BIGINT |
-| in_panel_261 | BOOLEAN |
-
-### `stg_h_method_periods`
-
-- **Grain:** one row per methodology period
-- **Signal type:** context  |  **Source:** H (https://downtownsandiego.org/clean-and-safe/unhoused-care/)
-- **Refresh:** static bundle
-- **Measures:** The four occupancy-multiplier methodology periods (PRE2017, APR2017, MAY2018, POST2020) governing how tents/vehicles were converted to estimated persons.
-- **Known bias:** PRE2017 multipliers (2.00/2.00) cannot be unwound from the 18 total-only rows. POST2020 is not a multiplier change - RTFH stopped using multipliers in Jan 2020 but DSDP continued, so post-2020 DSDP totals remain adjusted while RTFH/PIT figures are not.
-
-| column | type |
-|---|---|
-| method | VARCHAR |
-| effective_from | VARCHAR |
-| effective_to | VARCHAR |
-| individual_multiplier | DOUBLE |
-| tent_multiplier | DOUBLE |
-| vehicle_multiplier | DOUBLE |
-| note | VARCHAR |
-
-### `stg_h_monthly`
-
-- **Grain:** one row per date x area x component
-- **Signal type:** observation  |  **Source:** H (https://downtownsandiego.org/clean-and-safe/unhoused-care/)
-- **Refresh:** static bundle (2017-2025)
-- **Measures:** Downtown unsheltered totals by area and month, 2017-2025. total is the published, verified series (checked cell-by-cell against source reports); individual/tent/vehicle are secondary component rows.
-- **Known bias:** Totals are occupancy-multiplier-adjusted (tent x1.75-2.00, vehicle x1.66-2.03) - never compare to raw counted units (source A) or post-2020 RTFH/PIT raw counts, and never sum total with components (double-counts). individual/tent/vehicle components are digitized from block-map images, exist only 2018+, and are secondary reliability vs the published total.
-
-| column | type |
-|---|---|
-| obs_month | DATE |
-| area | VARCHAR |
-| area_source_label | VARCHAR |
-| area_type | VARCHAR |
-| parent_area | VARCHAR |
-| component | VARCHAR |
-| value | DOUBLE |
-| method | VARCHAR |
-| tent_multiplier | DOUBLE |
-| vehicle_multiplier | DOUBLE |
-| fellowship_month | BOOLEAN |
-| flag | VARCHAR |
-| neighborhood | VARCHAR |
-
-### `stg_pit_annual`
-
-- **Grain:** year x geography
-- **Signal type:** observation  |  **Source:** F (https://www.rtfhsd.org/)
-- **Refresh:** annual (edit seed)
-- **Measures:** Annual one-night Point-in-Time sheltered/unsheltered counts (RTFH).
-- **Known bias:** One night per year; methodology varies by year (2021 unsheltered count skipped - RTFH received a HUD COVID exception and only conducted the sheltered/HIC count that year, so 2021 is absent here rather than faked as zero); undercounts hidden homelessness. Region vs city geography noted per row. From 2020 on, RTFH/PIT reports raw one-night counts with no occupancy multiplier, while DSDP (source B/H) applies tent/vehicle occupancy multipliers to its totals - PIT figures are therefore NOT directly comparable to DSDP-adjusted totals from 2020 onward (see docs/hackathon/METHODOLOGY_CHANGELOG.md).
-
-| column | type |
-|---|---|
-| year | BIGINT |
-| geography | VARCHAR |
-| sheltered | BIGINT |
-| unsheltered | BIGINT |
-| total | BIGINT |
-| source_url | VARCHAR |
-
 ### `stg_violations_72hr`
 
 - **Grain:** one row per 72-hour-violation 311 report
@@ -460,33 +226,3 @@ _Generated 2026-08-20 20:06_
 | h3_r8 | VARCHAR |
 | neighborhood | VARCHAR |
 | source_file | VARCHAR |
-
-### `stg_weather_daily`
-
-- **Grain:** day
-- **Signal type:** context  |  **Source:** G_weather (https://www.ncei.noaa.gov/)
-- **Refresh:** daily (re-fetch)
-- **Measures:** Daily max/min temp (C) and precipitation (mm), San Diego Intl Airport.
-- **Known bias:** Single coastal station; inland microclimates differ.
-
-| column | type |
-|---|---|
-| obs_date | DATE |
-| tmax_c | DOUBLE |
-| tmin_c | DOUBLE |
-| prcp_mm | DOUBLE |
-| station | VARCHAR |
-
-### `stg_zori_monthly`
-
-- **Grain:** month x zip
-- **Signal type:** context  |  **Source:** G_zori (https://www.zillow.com/research/data/)
-- **Refresh:** monthly
-- **Measures:** Zillow Observed Rent Index (smoothed typical asking rent) for City of San Diego zips.
-- **Known bias:** Asking rents only; smoothed; some zips missing early years.
-
-| column | type |
-|---|---|
-| obs_month | DATE |
-| zip | VARCHAR |
-| zori | DOUBLE |
