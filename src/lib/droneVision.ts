@@ -41,7 +41,7 @@ export interface VisionStats {
 }
 
 export interface VisionDetection {
-  label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
+  label: 'people-detected' | 'no-people-detected'; // sensing-first naming (bridge sends clear/obstructed)
   confidence: number; // max person confidence (0 when none)
   count: number; // people in frame (the drop-zone hazard)
   stablePeople: number; // median-low over the last 5 inference counts; the number assimilation uses
@@ -69,7 +69,7 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     video_fps?: number; infer_fps?: number; ts?: number;
   };
   return {
-    label: raw.label === 'obstructed' ? 'obstructed' : 'clear',
+    label: raw.label === 'obstructed' ? 'people-detected' : 'no-people-detected',
     confidence: raw.confidence ?? 0,
     count: raw.count ?? 0,
     stablePeople: raw.stable_people ?? raw.count ?? 0,

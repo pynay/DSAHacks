@@ -50,7 +50,7 @@ test('older bridge without verdict still parses, verdict is null', () => {
   expect(det.verdict).toBeNull();
   expect(det.brightness).toBe(0);
   expect(det.count).toBe(1);
-  expect(det.label).toBe('obstructed');
+  expect(det.label).toBe('people-detected');
 });
 
 test('empty payload parses to safe defaults', () => {
@@ -61,7 +61,7 @@ test('empty payload parses to safe defaults', () => {
   expect(det.blurred).toBe(0);
   expect(det.stats).toBeNull();
   expect(det.count).toBe(0);
-  expect(det.label).toBe('clear');
+  expect(det.label).toBe('no-people-detected');
   expect(det.objects).toEqual([]);
   expect(det.videoFps).toBe(0);
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, Loader2, MapPin, RefreshCw, ScanFace, Video, XCircle } from 'lucide-react';
+import { Activity, Loader2, MapPin, RefreshCw, ScanFace, ScanLine, Video } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
 import { DEFAULT_GATE, gateStatus, initialGateState, nextGate } from '@/lib/observationGate';
@@ -21,20 +21,6 @@ export default function DronePage() {
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, []);
-  const clear = det?.label === 'clear';
-  const verdict = det?.verdict ?? null;
-  // Verdict pipeline drives the decision; older bridges fall back to the person heuristic.
-  const decision = det ? (verdict?.state ?? (clear ? 'GO' : 'HOLD')) : null;
-  const DECISION_UI = {
-    GO: { icon: CheckCircle2, title: 'CLEAR TO DROP', side: 'CLEAR', overlay: 'text-emerald-400', card: 'bg-emerald-100 text-emerald-800', bar: 'bg-emerald-500' },
-    HOLD: { icon: XCircle, title: 'OBSTRUCTED — HOLD', side: 'HOLD', overlay: 'text-amber-400', card: 'bg-amber-100 text-amber-800', bar: 'bg-amber-500' },
-    NO_GO: { icon: AlertTriangle, title: 'NO-GO — NO VISIBILITY', side: 'NO-GO', overlay: 'text-red-400', card: 'bg-red-100 text-red-800', bar: 'bg-red-500' },
-  } as const;
-  const ds = decision ? DECISION_UI[decision] : null;
-  const DecisionIcon = ds?.icon ?? null;
-  const score = verdict?.score ?? (det ? (clear ? 100 : 0) : 0);
-  const reason = verdict?.reason
-    ?? (det ? `${det.count} person${det.count === 1 ? '' : 's'} detected in the drop area` : '');
   const targets = [...zones].filter((z) => z.need > 0).sort((a, b) => b.need - a.need).slice(0, 4);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -135,11 +121,13 @@ export default function DronePage() {
 
             {det && (
               <div className="absolute left-3 top-3 rounded-lg bg-black/65 px-3 py-2 backdrop-blur">
-                <div className="text-[10px] uppercase tracking-wide text-slate-400">EyePop.ai · drop-zone check · LIVE</div>
-                <div className={`flex items-center gap-2 text-base font-bold ${ds!.overlay}`}>
-                  {DecisionIcon && <DecisionIcon size={18} />}
-                  {ds!.title}
-                  <span className="text-xs font-normal text-slate-300">{reason}</span>
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">EyePop.ai · aggregate field observation · LIVE</div>
+                <div className="flex items-center gap-2 text-base font-bold text-emerald-400">
+                  <ScanLine size={18} />
+                  {det.count > 0 ? 'FIELD SIGNAL OBSERVED' : 'NO PEOPLE VISIBLE'}
+                  <span className="text-xs font-normal text-slate-300">
+                    {det.count} in frame{det.count > 0 ? ` · ${(det.confidence * 100).toFixed(0)}%` : ''}
+                  </span>
                 </div>
               </div>
             )}
@@ -153,21 +141,15 @@ export default function DronePage() {
 
         {/* Side: decision + detections + delivery targets */}
         <div className="space-y-3">
-          <div className={`rounded-xl border border-slate-200 p-4 shadow-sm ${ds ? ds.card : 'bg-white'}`}>
-            <div className="text-xs font-medium uppercase tracking-wide opacity-70">Drop decision</div>
+          <div className={`rounded-xl border border-slate-200 p-4 shadow-sm ${det ? 'bg-emerald-50 text-emerald-900' : 'bg-white'}`}>
+            <div className="text-xs font-medium uppercase tracking-wide opacity-70">Observation snapshot</div>
             <div className="mt-1 flex items-center gap-2 text-2xl font-bold">
-              {DecisionIcon && <DecisionIcon size={22} />}
-              {ds ? ds.side : '—'}
+              {det ? <ScanLine size={22} /> : null}
+              {det ? det.count : 'N/A'}
             </div>
-            <div className="mt-1 text-xs opacity-80">{det ? reason : 'Awaiting vision feed'}</div>
-            {det && (
-              <div className="mt-2">
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/60">
-                  <div className={`h-full rounded-full ${ds!.bar} transition-all`} style={{ width: `${score}%` }} />
-                </div>
-                <div className="mt-1 text-[11px] opacity-70">drop-safety score {score}/100</div>
-              </div>
-            )}
+            <div className="mt-1 text-xs opacity-80">
+              {det ? `${det.count} visible ${det.count === 1 ? 'person' : 'people'} in this frame · review required` : 'Awaiting vision feed'}
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
