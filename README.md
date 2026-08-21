@@ -21,12 +21,12 @@
 
 Parsel is a food-bank operations and decision-support platform built for the
 2026 Building for Good hackathon. It combines inventory management, San Diego
-community data, explainable forecasting, 3D delivery planning, and human-reviewed
+community data, explainable forecasting, 3D response planning, and human-reviewed
 EyePop vision into one operational loop:
 
 ```text
-understand context -> map a historical prior -> verify a target -> allocate food
-  -> complete a safe handoff -> record the outcome -> improve the next plan
+understand context -> map a historical prior -> gather a field observation
+  -> update the model -> optimize allocation -> complete a human-led distribution
 ```
 
 The repository contains three integrated systems:
@@ -47,12 +47,12 @@ The repository contains three integrated systems:
 
 | Surface | What it does | Data mode |
 |---|---|---|
-| Landing | Explains the food-relief workflow with an interactive Three.js mission concept | Product narrative; not live telemetry |
+| Landing | Presents source-linked San Diego impact statistics, then explains the sensing loop with a pinned Three.js mission concept | Public evidence + product narrative; not live telemetry |
 | Dashboard | Stock KPIs, PIT/shelter context, parking activity and food-access signals | Demo operations + real aggregate data |
 | Inventory | Search, filter, add and adjust food inventory with derived status | In-memory demo state |
 | Donations | Record incoming items and update matching stock | In-memory demo state |
 | Distributions | Record outgoing items and decrement stock | In-memory demo state |
-| Delivery | Render six movable model hotspots on a Mapbox 3D downtown map | Real marts + model artifacts |
+| Response map | Render six movable model hotspots on a Mapbox 3D downtown map | Real marts + model artifacts |
 | Allocation | Apply deterministic FEFO and proportional allocation to field-updated zones | Demo inventory + reviewed zone updates |
 | Drone Ops | View the EyePop scene feed and apply one stabilized aggregate person count | Live bridge + adaptive hotspot state |
 
@@ -67,11 +67,15 @@ as historical priors.
 
 Repeated frames are never submitted automatically; doing so would count the same
 visible people many times. The endpoint stores only the aggregate observation in
-process memory—no image, identity, face embedding, or person-level track.
+process memory. It stores no image, identity, face embedding, or person-level track.
 
-The landing-page mission scene is an interactive 3D explainer. It illustrates the
-intended route, field review, hotspot update, allocation and return sequence; it is
-not connected to autopilot, payload release or live drone telemetry.
+The landing page opens with full-screen, source-linked evidence on the 2026 PIT
+count, monthly homelessness-system pressure, San Diego Food Bank service scale,
+and the limits of an annual one-night snapshot. The pinned, scroll-controlled 3D
+mission scene then illustrates the intended sensing route, aggregate observation,
+reviewed hotspot update, response optimization and return. The drone is an
+information-gathering input to the model, not a food-delivery mechanism, and the
+scene is not live flight telemetry.
 
 ## Architecture
 
@@ -290,30 +294,30 @@ before citing any value.
 - Live hotspot observations reset when the Node process restarts and are not shared
   across multiple server instances.
 - Allocation currently treats heterogeneous packages as generic units. Production
-  packing requires servings, mass, volume, temperature and payload constraints.
+  packing requires servings, mass, volume, temperature and transport constraints.
 - Staging an allocation decrements demo inventory; it is not proof of loading,
   delivery, uptake or partner confirmation.
 - Drone Ops uses selected target coordinates, not flight-controller GPS or a
   calibrated camera footprint.
-- Vision output is an operator aid. A person must approve food disposition,
-  missions, payload release and delivery completion.
+- Vision output is an operator aid. A person must approve observations, sensing
+  missions, response recommendations, dispatch and distribution completion.
 - Do not infer homelessness from appearance, perform face recognition, or treat a
   visible-person estimate as identity, consent, eligibility, or a complete census.
-- Real drone operations require an approved ground handoff and site-specific legal,
-  airspace, safety and insurance review.
+- Real sensing flights require site-specific legal, airspace, safety, privacy and
+  insurance review.
 
 The prioritized production roadmap is maintained in
 [`docs/HOTSPOT_DRONE_CONTEXT.md`](docs/HOTSPOT_DRONE_CONTEXT.md).
 
 ## Documentation
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — current and target architecture.
-- [`docs/HOTSPOT_DRONE_CONTEXT.md`](docs/HOTSPOT_DRONE_CONTEXT.md) — engineering handoff.
-- [`docs/HOTSPOT_MODEL_BENCHMARK.md`](docs/HOTSPOT_MODEL_BENCHMARK.md) — model evidence.
-- [`docs/DATA_COMMONS.md`](docs/DATA_COMMONS.md) — pipeline and interpretation guide.
-- [`docs/DATA_SOURCE_CATALOG.md`](docs/DATA_SOURCE_CATALOG.md) — 58-source expansion catalog.
-- [`docs/hackathon/PROVENANCE.md`](docs/hackathon/PROVENANCE.md) — mandatory dataset provenance.
-- [`docs/README.md`](docs/README.md) — documentation index.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): current and target architecture.
+- [`docs/HOTSPOT_DRONE_CONTEXT.md`](docs/HOTSPOT_DRONE_CONTEXT.md): engineering handoff.
+- [`docs/HOTSPOT_MODEL_BENCHMARK.md`](docs/HOTSPOT_MODEL_BENCHMARK.md): model evidence.
+- [`docs/DATA_COMMONS.md`](docs/DATA_COMMONS.md): pipeline and interpretation guide.
+- [`docs/DATA_SOURCE_CATALOG.md`](docs/DATA_SOURCE_CATALOG.md): 58-source expansion catalog.
+- [`docs/hackathon/PROVENANCE.md`](docs/hackathon/PROVENANCE.md): mandatory dataset provenance.
+- [`docs/README.md`](docs/README.md): documentation index.
 
 ## Technology
 

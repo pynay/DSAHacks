@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: '%s · Parsel',
   },
   description:
-    'A research platform for combining food inventory, documented community signals, experimental hotspot forecasts, and operator-reviewed field feedback.',
+    'Parsel helps San Diego food-relief teams combine inventory, documented community signals, experimental hotspot forecasts, and operator-reviewed drone observations.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
