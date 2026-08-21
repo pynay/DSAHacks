@@ -52,7 +52,9 @@ ALLOWED_ORIGINS = {
     origin.strip()
     for origin in os.environ.get(
         "EYEPOP_BRIDGE_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000",
+        # The Parsel dev server runs on 3007 (3000 is often hijacked by a stale
+        # service worker); allow both, plus their 127.0.0.1 forms.
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3007,http://127.0.0.1:3007",
     ).split(",")
     if origin.strip()
 }
