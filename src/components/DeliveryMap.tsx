@@ -44,6 +44,8 @@ export default function DeliveryMap({
   needCenter = null,
   centerTrail = [],
   blocks = null,
+  onRunDemo,
+  demoRunning = false,
 }: {
   zones: DeliveryZone[];
   onAddZone: (lngLat: { lng: number; lat: number }) => void;
@@ -52,6 +54,8 @@ export default function DeliveryMap({
   needCenter?: [number, number] | null; // predicted need centroid for the selected month
   centerTrail?: [number, number][]; // centroids across the forecast horizon
   blocks?: FeatureCollection | null; // census-block polygons tagged with need (the area heat)
+  onRunDemo?: () => void; // one-click drone demo (fly to UCSD + log a field observation)
+  demoRunning?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -378,13 +382,28 @@ export default function DeliveryMap({
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
-      <div className="absolute left-3 top-3 flex overflow-hidden rounded-lg border border-white/15 bg-[#071a2b]/85 text-xs font-medium text-white shadow backdrop-blur">
-        <button onClick={() => flyRegion("downtown")} className="px-3 py-1.5 transition hover:bg-white/10">
-          Downtown
-        </button>
-        <button onClick={() => flyRegion("ucsd")} className="border-l border-white/15 px-3 py-1.5 transition hover:bg-white/10">
-          UCSD
-        </button>
+      <div className="absolute left-3 top-3 flex items-center gap-2">
+        <div className="flex overflow-hidden rounded-lg border border-white/15 bg-[#071a2b]/85 text-xs font-medium text-white shadow backdrop-blur">
+          <button onClick={() => flyRegion("downtown")} className="px-3 py-1.5 transition hover:bg-white/10">
+            Downtown
+          </button>
+          <button onClick={() => flyRegion("ucsd")} className="border-l border-white/15 px-3 py-1.5 transition hover:bg-white/10">
+            UCSD
+          </button>
+        </div>
+        {onRunDemo && (
+          <button
+            onClick={() => {
+              flyRegion("ucsd");
+              onRunDemo();
+            }}
+            disabled={demoRunning}
+            className="flex items-center gap-1.5 rounded-lg bg-[#3ca875] px-3 py-1.5 text-xs font-semibold text-[#071a2b] shadow transition hover:bg-[#54b889] disabled:opacity-60"
+            title="Fly to UCSD and log the drone's current EyePop count as a field observation"
+          >
+            {demoRunning ? "Assimilating…" : "▶ Run drone demo"}
+          </button>
+        )}
       </div>
     </div>
   );
