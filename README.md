@@ -103,6 +103,121 @@ python3 -m pip install -r ml/requirements.txt
 python3 ml/forecast.py    # deterministic; rewrites marts/forecast_*
 ```
 
+### Drone verification and delivery roadmap
+
+The intended operating loop is:
+
+`forecast a zone → inspect and pack food → launch → verify visible demand → hand off food → return → record the outcome → improve the next forecast`
+
+This is a roadmap, not a claim about the current demo. Today Parsel has the inventory,
+donation, distribution, FEFO allocation, data API, and Mapbox delivery-zone surfaces. The
+Delivery screen renders terrain, buildings, zone markers, and straight depot-to-zone
+spokes when a Mapbox token is configured. It does **not** yet control a drone, stream
+video, call EyePop, animate a mission, persist operational state, or distinguish food
+that was loaded, delivered, taken, returned, or wasted.
+
+The current forecast is also deliberately narrower than the product vision: it predicts
+monthly neighborhood-level **311 request pressure**, then uses those predicted shares to
+redistribute a fixed total need. It does not currently predict a future headcount at an
+exact date and time. Repeated field observations and distribution outcomes are the
+missing labels needed to train and evaluate that model honestly.
+
+#### Proposed mission flow
+
+1. **Select a zone and time.** Combine historical need signals, shelter and meal-service
+   schedules, weather, events, mobility/activity proxies, and previous delivery outcomes
+   to forecast servings needed, with a confidence interval.
+2. **Inspect inventory before flight.** A fixed camera/inspection station at the food
+   center checks package damage, visible spoilage, expiration, and temperature records.
+   Automation may quarantine a suspect lot; a person approves disposal or donation
+   rejection. A drone should not autonomously throw food away.
+3. **Create and approve a manifest.** Allocate normalized servings that fit the aircraft's
+   weight, volume, temperature, range, and battery limits. FEFO remains the tie-breaker.
+4. **Fly a mission.** A drone adapter supplies telemetry and live/recorded video. The same
+   mission contract powers either real hardware or a 3D simulator, so the hackathon demo
+   can animate the route and POV before hardware is available.
+5. **Verify aggregate demand.** EyePop detects and tracks visible people within a defined
+   observation zone and time window. Tracking IDs deduplicate people across video frames;
+   the UI shows an estimate, confidence, occlusion warning, and optional human correction.
+6. **Complete a safe handoff.** Record what was delivered to an authorized distribution
+   point or ground partner, what was actually distributed/taken, what remained, and what
+   returned. Do not equate an aerial detection with consent to receive a package.
+7. **Close the loop.** Compare forecast demand, verified visible count, delivered servings,
+   and actual uptake. These outcomes become training and calibration data for future runs.
+
+A drone that first counts people cannot then return to the warehouse and still be the same
+one-pass delivery. Parsel should support both operationally honest patterns:
+
+- **Scout then deliver:** observe first, calculate the manifest, then dispatch a delivery
+  mission. This is more responsive but uses two flight legs or two aircraft.
+- **Forecast-loaded delivery:** load from the forecast, verify on arrival, hand off the
+  safe amount, return surplus, and create a follow-up mission when verified demand exceeds
+  the payload. This is the simplest credible demo flow.
+
+#### Operational data contract
+
+The existing commons tells Parsel where need pressure may be concentrated. A production
+delivery system also needs persistent operational tables like these:
+
+| Entity | Minimum fields | Why it is needed |
+|---|---|---|
+| `inventory_lots` | item/lot, quantity, **servings per unit**, weight, volume, expiration, temperature class, quality status, drone eligibility | Prevents the current mistake of adding cans, pounds, bottles, and gallons as though they were interchangeable payload units |
+| `quality_inspections` | lot, inspection time, camera/model version, visible condition, temperature, confidence, quarantine state, human decision | Creates an auditable food-safety gate before packing |
+| `forecast_runs` | zone, service window, model/data version, predicted people or servings, lower/upper bound, feature snapshot | Makes every recommendation reproducible and measurable |
+| `allocation_decisions` | forecast, verified count, servings/person, safety buffer, recommended/approved quantity, limiting constraint, approver | Explains why a specific amount was selected |
+| `drone_missions` | mission, zone, aircraft/operator, planned/actual times, status, manifest, route, handoff method, failure reason | Drives the mission timeline rather than decrementing stock immediately |
+| `drone_telemetry` | mission, timestamp, latitude/longitude, altitude, speed, heading, battery, link/GPS health | Powers the 3D aircraft view, ETA, safety alerts, and replay |
+| `video_streams` | mission, source/protocol, start/stop time, status, retention policy | Connects live hardware or simulated/recorded POV to the same UI |
+| `eyepop_observations` | mission, zone/window, unique visible-person estimate, confidence, occlusion, trace count, model version, manual correction | Provides privacy-limited field verification and future training labels |
+| `delivery_events` | planned, packed, loaded, launched, arrived, observed, handed-off, returned, failed timestamps | Prevents a staged plan from being counted as a completed delivery |
+| `distribution_outcomes` | delivered servings, distributed/taken, remaining, returned, spoiled, unmet estimate, partner confirmation | Supplies the dashboard funnel and the learning signal the current app lacks |
+
+The dashboard should therefore report a traceable funnel—**available → allocated → loaded →
+delivered → distributed/taken → remaining/returned/spoiled**—plus forecast error, verified
+demand, fulfillment rate, unmet servings, waste avoided, mission success, battery, and ETA.
+
+#### Data still needed for date-and-time forecasts
+
+The 58-source [`data source catalog`](docs/DATA_SOURCE_CATALOG.md) maps the larger backlog.
+The highest-value additions for this product are time-stamped, location-aligned features:
+
+- historical verified observations from missions or trained outreach teams;
+- food-bank, pantry, shelter, meal-service, and outreach schedules plus capacity/occupancy;
+- donation arrivals, inventory lots, spoilage, servings distributed, leftovers, and unmet need;
+- pedestrian counters where available, with bike counts, parking transactions, transit
+  boardings, and road volumes used only as calibrated **activity proxies**, not headcounts;
+- weather and heat alerts, holidays, major events, construction/closures, service changes,
+  and documented policy/enforcement events; and
+- block/zone geometry, legal launch/landing sites, obstacles, airspace, route distance,
+  payload limits, battery consumption, and ground-partner availability.
+
+Every source must carry its observation time, geography, refresh time, missingness, method,
+and known bias. Models should be backtested by **future time windows and held-out zones**;
+success means better serving/allocation accuracy than simple recent-value and seasonal
+baselines, not merely fitting historical proxy data.
+
+#### EyePop, privacy, and flight guardrails
+
+[EyePop's React/Node SDK](https://docs.eyepop.ai/developer-documentation/sdks/react-node-sdk)
+can process live ingress and video streams, and its documented
+[video tracking](https://docs.eyepop.ai/developer-documentation/self-service-training/how-to-train-a-model/deployment)
+can attach trace IDs across frames. The integration still needs a local validation set for
+the actual camera height, angle, motion, lighting, density, and occlusion; dense aerial
+scenes must not be assumed accurate from a generic person detector.
+
+Parsel must never classify a person as homeless from appearance, perform face recognition,
+or infer demographics. Count only visible people in an approved service area, store the
+aggregate and confidence needed for operations, minimize raw-video retention, restrict
+access, and document consent/signage and deletion rules with participating organizations.
+Use server-only credentials such as `EYEPOP_API_KEY`/`EYEPOP_POP_ID`; never expose them as
+`NEXT_PUBLIC_*` variables.
+
+Real flights require an operator and site-specific safety review. In the United States,
+confirm [FAA Part 107](https://www.faa.gov/newsroom/small-unmanned-aircraft-systems-uas-regulations-part-107),
+airspace authorization, operations-over-people rules, visual-line-of-sight or waiver needs,
+payload-release safety, local restrictions, insurance, and an approved ground handoff. The
+3D simulation and recorded POV remain the default when those prerequisites are not met.
+
 ### Running the console
 
 Requires Node 20.9+ (developed on Node 25) and a free
@@ -129,7 +244,13 @@ bindings and must not be bundled).
   provider (`src/context/InventoryProvider.tsx`), so swapping in a real backend for app
   state touches one file (zones already come from a server API).
 - Delivery spokes are straight lines (haversine distances), not routed flight paths, and
-  there is no visit-order optimization yet.
+  there is no visit-order optimization, drone telemetry, video stream, EyePop integration,
+  or mission-state machine yet.
+- Allocation currently totals heterogeneous inventory as generic "units." Real packing
+  requires servings, weight, volume, temperature, and aircraft payload constraints.
+- Staging an allocation immediately creates distribution records and decrements inventory;
+  it is not proof that items were loaded, delivered, or taken. The mission/outcome tables
+  above are required before those dashboard metrics can be operational claims.
 - The depot is a fixed demo staging point on the waterfront edge of Little Italy, not the
   real Jacobs & Cushman San Diego Food Bank warehouse (which is in Miramar).
 - Need values are as fresh as the committed marts (e.g. `dsdp_individuals` runs through
