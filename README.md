@@ -54,7 +54,7 @@ The repository contains three integrated systems:
 | Distributions | Record outgoing items and decrement stock | In-memory demo state |
 | Response map | Render six movable model hotspots on a Mapbox 3D downtown map | Real marts + model artifacts |
 | Allocation | Apply deterministic FEFO and proportional allocation to field-updated zones | Demo inventory + reviewed zone updates |
-| Drone Ops | View the EyePop scene feed and apply one stabilized aggregate person count | Live bridge + adaptive hotspot state |
+| Live Delivery | Dispatch a model-sized payload, capture one reviewed EyePop count, update future need, and return the drone | Live Mapbox mission + adaptive hotspot state |
 
 ### What makes the loop adaptive
 
@@ -189,7 +189,7 @@ Keep `EYEPOP_API_KEY` in `.env.local` for the browser capture API and in
 
 ### Run the optional EyePop drone bridge
 
-The Drone Ops camera feed is a separate local Python adapter:
+The optional continuous camera feed is a separate local Python adapter:
 
 ```bash
 python3.12 -m venv .venv-vision
@@ -301,7 +301,7 @@ before citing any value.
   packing requires servings, mass, volume, temperature and transport constraints.
 - Staging an allocation decrements demo inventory; it is not proof of loading,
   delivery, uptake or partner confirmation.
-- Drone Ops uses selected target coordinates, not flight-controller GPS or a
+- Live Delivery uses selected target coordinates, not flight-controller GPS or a
   calibrated camera footprint.
 - Vision output is an operator aid. A person must approve observations, sensing
   missions, response recommendations, dispatch and distribution completion.

@@ -4,11 +4,11 @@ import type { Material, Mesh as ThreeMesh } from 'three';
 import { useEffect, useRef, useState } from 'react';
 import {
   BrainCircuit,
+  Camera as CameraIcon,
   Check,
   Crosshair,
   Radar,
   Route,
-  ScanLine,
 } from 'lucide-react';
 
 const stages = [
@@ -20,11 +20,11 @@ const stages = [
     sceneLabel: 'Planning route',
   },
   {
-    icon: ScanLine,
-    eyebrow: '02 · Verify',
-    title: 'Observe current conditions',
-    body: 'A camera pass produces an aggregate visible-person count for operator review. No identity or face data is required.',
-    sceneLabel: 'Reviewing field signal',
+    icon: CameraIcon,
+    eyebrow: '02 · Capture',
+    title: 'Take a downward area picture',
+    body: 'At the delivery zone, the drone holds position and points its camera down. One area frame produces an aggregate visible-person count for operator review.',
+    sceneLabel: 'Camera down · capturing area frame',
   },
   {
     icon: Radar,
@@ -269,6 +269,20 @@ export default function DroneMissionStory() {
             cameraEye.position.set(0.37, -0.14, 0);
             drone.add(cameraEye);
 
+            const downwardCamera = new THREE.Group();
+            const gimbalBody = new THREE.Mesh(
+              new THREE.BoxGeometry(0.3, 0.2, 0.28),
+              new THREE.MeshStandardMaterial({ color: '#dbe8ec', roughness: 0.28, metalness: 0.7 }),
+            );
+            const downwardLens = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.08, 0.11, 0.13, 18),
+              new THREE.MeshStandardMaterial({ color: '#071a2b', emissive: '#54b889', emissiveIntensity: 0.55, metalness: 0.8 }),
+            );
+            downwardLens.position.y = -0.15;
+            downwardCamera.add(gimbalBody, downwardLens);
+            downwardCamera.position.set(0, -0.3, 0);
+            drone.add(downwardCamera);
+
             const armGeometry = new THREE.BoxGeometry(1.72, 0.07, 0.09);
             [Math.PI / 4, -Math.PI / 4].forEach((rotation) => {
               const arm = new THREE.Mesh(armGeometry, droneMaterial);
@@ -305,6 +319,34 @@ export default function DroneMissionStory() {
             scanCone.rotation.z = Math.PI;
             scanCone.position.y = -1.1;
             drone.add(scanCone);
+
+            const photoReticleMaterial = new THREE.MeshBasicMaterial({
+              color: '#f7fff9',
+              transparent: true,
+              opacity: 0,
+              depthWrite: false,
+              side: THREE.DoubleSide,
+            });
+            const photoReticle = new THREE.Mesh(
+              new THREE.RingGeometry(0.5, 0.56, 40),
+              photoReticleMaterial,
+            );
+            photoReticle.rotation.x = -Math.PI / 2;
+            photoReticle.position.set(verifiedHotspot.x, -1.05, verifiedHotspot.z);
+            scene.add(photoReticle);
+
+            const photoFlashMaterial = new THREE.MeshBasicMaterial({
+              color: '#ffffff',
+              transparent: true,
+              opacity: 0,
+              depthWrite: false,
+              blending: THREE.AdditiveBlending,
+              side: THREE.DoubleSide,
+            });
+            const photoFlash = new THREE.Mesh(new THREE.CircleGeometry(0.78, 40), photoFlashMaterial);
+            photoFlash.rotation.x = -Math.PI / 2;
+            photoFlash.position.set(verifiedHotspot.x, -1.04, verifiedHotspot.z);
+            scene.add(photoFlash);
 
             const dataPacketGroup = new THREE.Group();
             const dataCore = new THREE.Mesh(
@@ -375,6 +417,17 @@ export default function DroneMissionStory() {
               scanMaterial.opacity = scanStrength * 0.16;
               scanCone.scale.x = scanCone.scale.z = 0.85 + scanStrength * 0.35;
 
+              const photoPulse = stage === 1 && stageProgress >= 0.16 && stageProgress <= 0.42
+                ? Math.sin(((stageProgress - 0.16) / 0.26) * Math.PI)
+                : 0;
+              photoReticleMaterial.opacity = stage === 1 ? 0.3 + Math.sin(stageProgress * Math.PI) * 0.55 : 0;
+              photoReticle.rotation.z = reducedMotion ? 0 : timeline * Math.PI * 1.7;
+              photoReticle.scale.setScalar(stage === 1 ? 1.45 - Math.min(stageProgress * 1.8, 0.45) : 1);
+              photoFlashMaterial.opacity = photoPulse * 0.78;
+              photoFlash.scale.setScalar(0.75 + photoPulse * 1.5);
+              downwardCamera.position.y = -0.3 - (stage === 1 ? Math.sin(Math.min(stageProgress * 2, 1) * Math.PI / 2) * 0.11 : 0);
+              downwardLens.rotation.y = reducedMotion ? 0 : timeline * Math.PI * 3;
+
               const hotspotProgress = stage < 2 ? 0 : stage === 2 ? easeInOut(stageProgress) : 1;
               hotspotPosition.copy(oldHotspot).lerp(verifiedHotspot, hotspotProgress);
               hotspotGroup.position.copy(hotspotPosition);
@@ -437,6 +490,10 @@ export default function DroneMissionStory() {
 
   const active = stages[activeStage];
   const ActiveIcon = active.icon;
+  const activeStageProgress = scrollProgress * stages.length - activeStage;
+  const photoUiPulse = activeStage === 1 && activeStageProgress >= 0.16 && activeStageProgress <= 0.42
+    ? Math.sin(((activeStageProgress - 0.16) / 0.26) * Math.PI)
+    : 0;
 
   return (
     <section
@@ -516,6 +573,20 @@ export default function DroneMissionStory() {
                 No autopilot
               </span>
             </div>
+
+            {activeStage === 1 && (
+              <div className="pointer-events-none absolute right-5 top-24 flex items-center gap-3 rounded-xl border border-white/15 bg-[#071a2b]/82 px-3 py-2.5 shadow-xl backdrop-blur-md sm:right-6">
+                <span className="relative grid h-9 w-9 place-items-center rounded-full bg-[#54b889] text-[#071a2b]">
+                  <CameraIcon size={17} />
+                  <span className="absolute inset-0 animate-ping rounded-full border border-[#76d6a7]/70" />
+                </span>
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#76d6a7]">Downward camera</p>
+                  <p className="mt-0.5 text-xs font-semibold">Area picture captured</p>
+                </div>
+              </div>
+            )}
+            <div className="pointer-events-none absolute inset-0 bg-white" style={{ opacity: photoUiPulse * 0.34 }} aria-hidden="true" />
 
             <div className="pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-6 sm:bottom-6">
               <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#071a2b]/88 p-4 shadow-xl backdrop-blur-md sm:max-w-sm">

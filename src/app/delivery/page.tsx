@@ -263,10 +263,10 @@ export default function DeliveryPage() {
                 The 311 forecast suggests increasing pressure here. Verify on the ground before pre-positioning food.
               </p>
               <Link
-                href="/drone"
+                href="/dispatch"
                 className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
               >
-                <Plane size={13} /> Open drone verification
+                <Plane size={13} /> Open live delivery
               </Link>
             </div>
           )}

@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ArrowDown,
   Battery,
   CheckCircle2,
   Clock3,
@@ -78,6 +79,7 @@ export default function DispatchPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mission, setMission] = useState<ActiveMission | null>(null);
   const [records, setRecords] = useState<DeliveryRecord[]>([]);
+  const observationPanelRef = useRef<HTMLDivElement>(null);
   const droppedIds = useRef(new Set<string>());
   const returnedIds = useRef(new Set<string>());
   const recordDistributionRef = useRef(recordDistribution);
@@ -253,6 +255,10 @@ export default function DispatchPage() {
     ? 'Operations depot'
     : mission?.target.label ?? selected?.target.label ?? 'Loading…';
 
+  function scrollToObservation() {
+    observationPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -284,6 +290,22 @@ export default function DispatchPage() {
             zoom={13.2}
             focusRoute={mission ? { from: [DEPOT.lng, DEPOT.lat], to: [mission.target.lng, mission.target.lat] } : null}
           />
+          {telemetry?.phase === 'observing' && !mission?.observation && (
+            <button
+              type="button"
+              onClick={scrollToObservation}
+              className="absolute left-1/2 top-1/2 z-30 flex w-[min(19rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border border-white/20 bg-black/75 px-5 py-4 text-center text-white shadow-2xl backdrop-blur-md transition hover:bg-black/85 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              aria-label="Scroll to the camera and take an area picture"
+            >
+              <span className="absolute inset-0 animate-pulse rounded-2xl ring-1 ring-emerald-300/35" />
+              <span className="relative text-sm font-semibold">Please take an area picture</span>
+              <span className="relative mt-1 text-xs text-slate-300">The drone is holding at the delivery zone.</span>
+              <span className="relative mt-3 grid h-9 w-9 animate-bounce place-items-center rounded-full bg-emerald-400 text-emerald-950">
+                <ArrowDown size={19} />
+              </span>
+              <span className="relative mt-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-300">Camera controls below</span>
+            </button>
+          )}
           <div className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-[#071a2b]/90 p-4 text-white shadow-xl backdrop-blur">
             {mission && telemetry ? (
               <>
@@ -331,14 +353,16 @@ export default function DispatchPage() {
       </div>
 
       {mission && telemetry && ['observing', 'returning', 'delivered'].includes(telemetry.phase) && (
-        <DeliveryObservationPanel
-          key={mission.id}
-          active={telemetry.phase === 'observing' && !mission.observation}
-          missionId={mission.id}
-          destination={mission.target.label}
-          modelNeedBefore={mission.target.need}
-          onSave={saveMissionObservation}
-        />
+        <div ref={observationPanelRef} id="delivery-observation" className="scroll-mt-5">
+          <DeliveryObservationPanel
+            key={mission.id}
+            active={telemetry.phase === 'observing' && !mission.observation}
+            missionId={mission.id}
+            destination={mission.target.label}
+            modelNeedBefore={mission.target.need}
+            onSave={saveMissionObservation}
+          />
+        </div>
       )}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
