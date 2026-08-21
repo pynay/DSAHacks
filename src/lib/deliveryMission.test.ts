@@ -29,12 +29,20 @@ describe('automated delivery mission', () => {
     expect(plan.coverage).toBeCloseTo(4 / 15);
   });
 
-  it('progresses from preparation to flight, arrival, and delivery', () => {
+  it('flies out, releases the food, and returns over the same route', () => {
     expect(missionTelemetry(0).phase).toBe('preparing');
     expect(missionTelemetry(8_000).phase).toBe('en-route');
-    expect(missionTelemetry(14_000).phase).toBe('arriving');
-    expect(missionTelemetry(16_000).phase).toBe('delivered');
-    expect(missionTelemetry(16_000).routeProgress).toBe(1);
+    expect(missionTelemetry(13_000).phase).toBe('arriving');
+    expect(missionTelemetry(15_000).phase).toBe('returning');
+    expect(missionTelemetry(20_000).routeProgress).toBeCloseTo(0.5);
+    expect(missionTelemetry(25_000).phase).toBe('delivered');
+    expect(missionTelemetry(25_000).routeProgress).toBe(0);
+  });
+
+  it('uses equal travel time for the outbound and return legs', () => {
+    expect(missionTelemetry(7_000).routeProgress).toBeCloseTo(0.5);
+    expect(missionTelemetry(20_000).routeProgress).toBeCloseTo(0.5);
+    expect(missionTelemetry(7_000).groundSpeedMps).toBe(missionTelemetry(20_000).groundSpeedMps);
   });
 
   it('interpolates and calculates a valid route heading', () => {
