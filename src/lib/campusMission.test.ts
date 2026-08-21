@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { campusTelemetry, campusDronePosition, FOOTAGE_DURATION_S, GEISEL, HDSI } from './campusMission';
+import { campusTelemetry, campusDronePosition, campusDetections, FOOTAGE_DURATION_S, GEISEL, HDSI, PERSON_SPOTS } from './campusMission';
 
 describe('campusTelemetry', () => {
   it('starts over Geisel, climbing, at t=0', () => {
@@ -38,5 +38,19 @@ describe('campusDronePosition', () => {
     const mid = campusDronePosition(0.5);
     expect(mid.lng).toBeCloseTo((GEISEL.lng + HDSI.lng) / 2, 6);
     expect(mid.lat).toBeCloseTo((GEISEL.lat + HDSI.lat) / 2, 6);
+  });
+});
+
+describe('campusDetections', () => {
+  it('finds nobody in the air early, then ramps to 3 at the ground', () => {
+    expect(campusDetections(0)).toBe(0);
+    expect(campusDetections(30)).toBe(1);
+    expect(campusDetections(FOOTAGE_DURATION_S)).toBe(3);
+  });
+
+  it('never exceeds the number of person markers available', () => {
+    for (let t = 0; t <= FOOTAGE_DURATION_S; t += 3) {
+      expect(campusDetections(t)).toBeLessThanOrEqual(PERSON_SPOTS.length);
+    }
   });
 });

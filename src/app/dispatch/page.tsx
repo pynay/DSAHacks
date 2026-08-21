@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useInventory } from '@/context/InventoryProvider';
 import DroneDispatchFeed from '@/components/DroneDispatchFeed';
+import CampusTracking from '@/components/CampusTracking';
 import DeliveryObservationPanel, { type SavedDeliveryObservation } from '@/components/DeliveryObservationPanel';
 import { useZones } from '@/lib/useZones';
 import { DEPOT, haversineKm, type DeliveryZone } from '@/lib/delivery';
@@ -77,6 +78,7 @@ export default function DispatchPage() {
   const { inventory, recordDistribution, simDate } = useInventory();
   const { zones, error, refresh } = useZones();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [droneDeployed, setDroneDeployed] = useState(false);
   const [mission, setMission] = useState<ActiveMission | null>(null);
   const [records, setRecords] = useState<DeliveryRecord[]>([]);
   const observationPanelRef = useRef<HTMLDivElement>(null);
@@ -259,6 +261,15 @@ export default function DispatchPage() {
     observationPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // "Deploy drone" swaps the downtown dispatch view for the UCSD campus flight demo.
+  if (droneDeployed) {
+    return (
+      <div className="space-y-5">
+        <CampusTracking onExit={() => setDroneDeployed(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -274,8 +285,18 @@ export default function DispatchPage() {
             and Parsel loads FEFO inventory, flies the route, releases the food, and returns to depot.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
-          <RadioTower size={14} /> Command link online · Mapbox telemetry
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDroneDeployed(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            title="Launch the UCSD campus flight demo (Geisel → HDSI, real DJI footage)"
+          >
+            <Plane size={14} /> Deploy drone · UCSD campus
+          </button>
+          <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+            <RadioTower size={14} /> Command link online · Mapbox telemetry
+          </div>
         </div>
       </div>
 

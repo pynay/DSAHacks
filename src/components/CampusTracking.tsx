@@ -2,9 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Battery, Camera, Clock3, MapPin, Navigation, Play, Plane, RotateCcw, ScanLine, TowerControl } from 'lucide-react';
+import { ArrowLeft, Battery, Camera, Clock3, MapPin, Navigation, Play, Plane, RotateCcw, ScanLine, Users } from 'lucide-react';
 import {
   CAMPUS_HEADING_DEG,
+  campusDetections,
   campusDronePosition,
   campusTelemetry,
   FOOTAGE_DURATION_S,
@@ -22,7 +23,10 @@ function fmt(s: number): string {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 }
 
-export default function CampusPage() {
+// The UCSD campus drone demo: the team's real DJI flight (Geisel -> HDSI), with
+// the annotated EyePop feed as the camera and a live map track. Rendered when a
+// dispatcher "deploys the drone" from Live Delivery.
+export default function CampusTracking({ onExit }: { onExit?: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -32,12 +36,22 @@ export default function CampusPage() {
   const tel = campusTelemetry(elapsed);
   const pos = campusDronePosition(tel.routeProgress);
   const drone = started ? { ...pos, headingDeg: CAMPUS_HEADING_DEG } : null;
+  const peopleCount = started ? campusDetections(elapsed) : 0;
+  const dropZone = started && tel.routeProgress >= 1;
   const progressPct = Math.min(100, (elapsed / FOOTAGE_DURATION_S) * 100);
 
-  // Drive the map + telemetry off the video clock so they stay in lockstep with
-  // the footage. Sampled ~9 fps (every 110 ms): the CSS transition on the drone
-  // marker bridges the gaps, and this keeps the render + Mapbox setData load off
-  // the main thread on modest hardware.
+  // Deploying the drone launches the flight straight away (muted autoplay is
+  // allowed); if the browser blocks it, fall back to the manual play button.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    setStarted(true);
+    setEnded(false);
+    void v.play().catch(() => setStarted(false));
+  }, []);
+
+  // Drive the map + telemetry off the video clock. Sampled ~9 fps (110 ms): the
+  // marker's CSS transition bridges the gaps and keeps render load modest.
   useEffect(() => {
     if (!playing) return;
     let raf = 0;
@@ -79,9 +93,18 @@ export default function CampusPage() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-slate-900">UCSD campus tracking · Geisel → HDSI</h2>
+            {onExit && (
+              <button
+                type="button"
+                onClick={onExit}
+                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                <ArrowLeft size={13} /> Dispatch
+              </button>
+            )}
+            <h2 className="font-semibold text-slate-900">UCSD campus flight · Geisel → HDSI</h2>
             <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
-              <span className={`h-2 w-2 rounded-full ${playing ? 'animate-pulse bg-emerald-500' : 'bg-slate-400'}`} /> {playing ? 'TRACKING' : started ? 'HOLD' : 'STANDBY'}
+              <span className={`h-2 w-2 rounded-full ${playing ? 'animate-pulse bg-emerald-500' : 'bg-slate-400'}`} /> {playing ? 'DRONE DEPLOYED' : ended ? 'FLIGHT COMPLETE' : 'HOLD'}
             </span>
           </div>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">
@@ -91,13 +114,13 @@ export default function CampusPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
-          <TowerControl size={14} /> Flight replay · Mapbox + EyePop
+          <Plane size={14} /> Flight replay · Mapbox + EyePop
         </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.5fr_.9fr]">
         <div className="relative h-[560px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 shadow-sm">
-          <CampusTrackingMap drone={drone} />
+          <CampusTrackingMap drone={drone} peopleCount={peopleCount} dropZone={dropZone} />
 
           {!started && (
             <button
@@ -108,7 +131,7 @@ export default function CampusPage() {
             >
               <span className="flex flex-col items-center gap-3 rounded-2xl border border-white/15 bg-black/65 px-8 py-6 text-white shadow-2xl">
                 <span className="grid h-14 w-14 place-items-center rounded-full bg-emerald-400 text-emerald-950"><Play size={26} className="ml-1" /></span>
-                <span className="text-sm font-semibold">Fly the mission</span>
+                <span className="text-sm font-semibold">Launch flight</span>
                 <span className="text-xs text-slate-300">Geisel Library → HDSI · {Math.round(FOOTAGE_DURATION_S)}s replay</span>
               </span>
             </button>
@@ -138,7 +161,6 @@ export default function CampusPage() {
         </div>
 
         <div className="space-y-4">
-          {/* Drone camera: the real EyePop-annotated footage as the feed. */}
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-[#071a2b] shadow-sm" aria-label="Drone camera feed">
             <div className="flex items-center justify-between border-b border-white/10 px-3 py-2 text-white">
               <div className="flex items-center gap-2 text-xs font-semibold"><Camera size={14} className="text-emerald-300" /> Drone camera · EyePop</div>
@@ -180,7 +202,7 @@ export default function CampusPage() {
             <div className="flex items-center gap-2 border-t border-white/10 p-3">
               {!started || ended ? (
                 <button type="button" onClick={ended ? replay : play} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-400">
-                  {ended ? <><RotateCcw size={16} /> Replay mission</> : <><Play size={16} /> Fly the mission</>}
+                  {ended ? <><RotateCcw size={16} /> Replay flight</> : <><Play size={16} /> Launch flight</>}
                 </button>
               ) : (
                 <div className="flex-1 text-center text-xs font-medium text-slate-300">{fmt(elapsed)} / {fmt(FOOTAGE_DURATION_S)} · {tel.phase}</div>
@@ -190,13 +212,19 @@ export default function CampusPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live mission status</p><Navigation size={15} className="text-emerald-600" /></div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700"><Users size={13} /> People detected (EyePop)</div>
+                <p className="mt-0.5 text-2xl font-semibold text-emerald-900">{peopleCount}</p>
+              </div>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">{dropZone ? 'At drop-off' : peopleCount > 0 ? 'Tracking' : 'Scanning'}</span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><MapPin size={13} /> Origin</div><p className="mt-1 truncate font-semibold text-slate-900">{GEISEL.label}</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Navigation size={13} /> Destination</div><p className="mt-1 truncate font-semibold text-slate-900">{HDSI.label}</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Plane size={13} /> Altitude</div><p className="mt-1 font-semibold text-slate-900">{tel.altitudeM} m</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Battery size={13} /> Battery</div><p className="mt-1 font-semibold text-slate-900">{tel.batteryPct}%</p></div>
-              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> Elapsed</div><p className="mt-1 font-semibold text-slate-900">{fmt(elapsed)} / {fmt(FOOTAGE_DURATION_S)}</p></div>
-              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Navigation size={13} /> Ground speed</div><p className="mt-1 font-semibold text-slate-900">{tel.groundSpeedMps} m/s</p></div>
+              <div className="col-span-2 rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> Elapsed</div><p className="mt-1 font-semibold text-slate-900">{fmt(elapsed)} / {fmt(FOOTAGE_DURATION_S)} · {tel.phase}</p></div>
             </div>
           </div>
         </div>
@@ -206,8 +234,8 @@ export default function CampusPage() {
         Reconstructed from the team&apos;s real DJI flight (DJI_0044, 72 s, recorded at UCSD). The
         takeoff carries the clip&apos;s embedded GPS tag (32.8812, -117.2366, beside Geisel); the clip
         has no per-frame GPS track, so the path between the two campus landmarks is interpolated, not
-        surveyed. Detections and face blurring in the feed are produced by EyePop&apos;s
-        common-objects model.
+        surveyed. Person markers, detection counts and face blurring come from EyePop&apos;s
+        common-objects model running on the feed.
       </p>
     </div>
   );
