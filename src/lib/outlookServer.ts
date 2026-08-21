@@ -45,7 +45,7 @@ export interface OutlookPayload {
   history: MonthPoint[]; // downtown DSDP sum, published months only
   forecast: ForecastPoint[]; // downtown DSDP sum, nowcast + forecast horizon
   requests: MonthPoint[]; // downtown 311 sum, last 36 months (reality check)
-  its: Record<"dsdp_adjusted_total" | "gid_requests", ItsSeries>;
+  its: Partial<Record<"dsdp_adjusted_total" | "gid_requests", ItsSeries>>;
   backtest: BacktestRow[];
   beatsNaiveThrough: number;
 }

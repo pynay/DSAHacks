@@ -26,6 +26,26 @@ type Row = {
 
 const COLOR = '#0369a1';
 
+// All 'YYYY-MM' months from start to end inclusive, so unpublished months
+// that never appear in the source data still get a row (actual: null) and
+// render as a genuine break in the line, not a skipped-over connection.
+function monthRange(start: string, end: string): string[] {
+  const [sy, sm] = start.split('-').map(Number);
+  const [ey, em] = end.split('-').map(Number);
+  const out: string[] = [];
+  let y = sy;
+  let m = sm;
+  while (y < ey || (y === ey && m <= em)) {
+    out.push(`${y}-${String(m).padStart(2, '0')}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
 // Downtown DSDP total: actual history, then the model's nowcast (unpublished
 // recent months) bridging into the forecast horizon, with an 80% band. Single
 // hue throughout (no dual axis) — nowcast vs. forecast is a dash-weight
@@ -33,7 +53,9 @@ const COLOR = '#0369a1';
 export default function OutlookChart({ history, forecast }: { history: HistoryPoint[]; forecast: ForecastPoint[] }) {
   const histMap = new Map(history.map((h) => [h.month, h.value]));
   const fcMap = new Map(forecast.map((f) => [f.month, f]));
-  const months = [...new Set([...history.map((h) => h.month), ...forecast.map((f) => f.month)])].sort();
+  const allMonths = [...history.map((h) => h.month), ...forecast.map((f) => f.month)].sort();
+  const months =
+    allMonths.length > 0 ? monthRange(allMonths[0], allMonths[allMonths.length - 1]) : [];
 
   const lastHistoryMonth = history[history.length - 1]?.month;
   const firstNowcastMonth = forecast.find((f) => f.kind === 'nowcast')?.month;
@@ -88,7 +110,15 @@ export default function OutlookChart({ history, forecast }: { history: HistoryPo
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Area dataKey="band" name="80% band" stroke="none" fill={COLOR} fillOpacity={0.12} connectNulls legendType="rect" />
-          <Line type="monotone" dataKey="actual" name="Actual (DSDP)" stroke={COLOR} strokeWidth={2} dot={false} connectNulls />
+          <Line
+            type="monotone"
+            dataKey="actual"
+            name="Actual (DSDP)"
+            stroke={COLOR}
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+          />
           <Line
             type="monotone"
             dataKey="nowcast"

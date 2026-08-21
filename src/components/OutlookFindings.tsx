@@ -9,6 +9,11 @@ function signed(n: number): string {
   return r >= 0 ? `+${r.toLocaleString()}` : r.toLocaleString();
 }
 
+function signedPct(n: number): string {
+  const r = Math.round(n);
+  return r >= 0 ? `+${r}%` : `${r}%`;
+}
+
 // Three tiles: the 12-month forecast headline, then the camping ban's
 // immediate level change on counted units and on 311 reports. Per controller
 // ruling OL-R3, the ban tiles headline the term='post' level change (the more
@@ -26,7 +31,7 @@ export default function OutlookFindings({
 }) {
   const dsdp = its.dsdp_adjusted_total;
   const requests = its.gid_requests;
-  const beats = beatsNaiveThrough >= 12;
+  const beats = beatsNaiveThrough > 0;
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
@@ -51,7 +56,9 @@ export default function OutlookFindings({
           }`}
         >
           {beats
-            ? `Beats seasonal-naive through horizon ${beatsNaiveThrough}`
+            ? `Beats seasonal-naive through horizon ${beatsNaiveThrough}${
+                beatsNaiveThrough < 12 ? ' — beyond that, use the band' : ''
+              }`
             : 'Does not beat seasonal-naive — use the band'}
         </p>
       </div>
@@ -62,7 +69,7 @@ export default function OutlookFindings({
           <>
             <div className="mt-1 text-2xl font-semibold text-slate-700">
               {signed(dsdp.post.estimate)}
-              <span className="text-sm font-normal text-slate-500"> ({dsdp.post.pct}%)</span>
+              <span className="text-sm font-normal text-slate-500"> ({signedPct(dsdp.post.pct)})</span>
             </div>
             <div className="text-xs text-slate-500">
               {fmt(dsdp.post.lo)} to {fmt(dsdp.post.hi)} (95% CI) &middot; placebo {signed(dsdp.post.placebo)}
@@ -88,7 +95,7 @@ export default function OutlookFindings({
           <>
             <div className="mt-1 text-2xl font-semibold text-slate-700">
               {signed(requests.post.estimate)}
-              <span className="text-sm font-normal text-slate-500"> ({requests.post.pct}%)</span>
+              <span className="text-sm font-normal text-slate-500"> ({signedPct(requests.post.pct)})</span>
             </div>
             <div className="text-xs text-slate-500">
               {fmt(requests.post.lo)} to {fmt(requests.post.hi)} (95% CI) &middot; placebo{' '}
