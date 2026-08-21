@@ -20,8 +20,8 @@ register_table("dim_blocks", grain="2010 census block", signal_type="context", s
     known_bias="neighborhood derived as modal neighborhood of source-A observations per block; blocks with no observations have NULL neighborhood.")
 
 
-def _points(path, is_imputed_file):
-    df = pd.read_csv(path)
+def _points(path):
+    df = pd.read_csv(path, dtype={"geoid": str})
     df["obs_date"] = pd.to_datetime(df["date"]).dt.date
     df["obs_month"] = pd.to_datetime(df["date"]).dt.to_period("M").dt.to_timestamp().dt.date
     # geometry is 'POINT (lon lat)'
@@ -44,8 +44,8 @@ def load(con) -> LoadResult:
             return LoadResult("failed", 0, f"unreachable: {url}")
         paths[rel.split("/")[-1]] = r.path
 
-    base = _points(paths["homeless_counts.csv"], False)
-    imputed_all = _points(paths["imputed_counts.csv"], True)
+    base = _points(paths["homeless_counts.csv"])
+    imputed_all = _points(paths["imputed_counts.csv"])
     # imputed file = full series with gaps filled; keep only months absent from base
     base_months = set(base["obs_month"].unique())
     imputed_only = imputed_all[~imputed_all["obs_month"].isin(base_months)].copy()
