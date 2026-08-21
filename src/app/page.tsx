@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {
   ArrowRight, BarChart3, Box, Boxes, BrainCircuit, CheckCircle2, ChevronRight,
   CircleDot, Database, Drone, HandHeart, HeartHandshake, Map, PackageCheck,
-  Plane, Radar, Route, ScanSearch, ShieldCheck, Sparkles, TrendingUp, Warehouse,
+  Plane, Radar, Route, ShieldCheck, Sparkles, TrendingUp, Warehouse,
 } from 'lucide-react';
 
 const workflow = [
@@ -19,7 +19,6 @@ const features = [
   { icon: HeartHandshake, title: 'Donations in, impact out', body: 'Log incoming donations and outgoing distributions while inventory updates automatically across the whole operation.', href: '/donations', accent: 'bg-rose-100 text-rose-800' },
   { icon: Map, title: 'Moving delivery hotspots', body: 'See model-derived downtown hotspots in 3D with need, requests, tents, vehicles, distance, terrain, and custom points.', href: '/delivery', accent: 'bg-sky-100 text-sky-800' },
   { icon: TrendingUp, title: 'Explainable allocation', body: 'Compare model demand and 311 context, split available stock proportionally, and stage distribution records with one click.', href: '/allocation', accent: 'bg-violet-100 text-violet-800' },
-  { icon: ScanSearch, title: 'Food intake checks', body: 'Use EyePop object detection and a reviewable freshness check to flag questionable donations without replacing food-safety staff.', href: '/food-check', accent: 'bg-cyan-100 text-cyan-800' },
   { icon: Plane, title: 'Drone operations', body: 'View the live camera, receive an operator-facing clear or hold signal, and apply one stabilized aggregate count to the hotspot model.', href: '/drone', accent: 'bg-orange-100 text-orange-800' },
 ];
 
@@ -120,9 +119,9 @@ export default function Home() {
 
       <section className="bg-amber-400 py-20 sm:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-2">
-          <div><p className="text-sm font-bold uppercase tracking-[0.18em] text-stone-700">Food quality, protected</p><h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] text-stone-950 sm:text-5xl">Better allocation starts inside the warehouse.</h2><p className="mt-5 max-w-xl text-lg leading-8 text-stone-800">Before a delivery goes out, Parsel considers what is available and what expires first. Food Check uses EyePop to identify donated items and flag possible freshness concerns for safe staff review—keeping quality high and waste low.</p></div>
+          <div><p className="text-sm font-bold uppercase tracking-[0.18em] text-stone-700">Less waste, more meals</p><h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] text-stone-950 sm:text-5xl">Better allocation starts inside the warehouse.</h2><p className="mt-5 max-w-xl text-lg leading-8 text-stone-800">Before a delivery goes out, Parsel considers what is available and what expires first, moving soonest-expiring food to the neighborhoods that need it most. Quality stays high and waste stays low, without slowing the team down.</p></div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {[[ScanSearch, 'Vision-assisted checks', 'Flag quality concerns without replacing trained food-safety decisions.'], [Warehouse, 'Live availability', 'Know exactly what can be packed before promising a delivery.'], [Route, 'FEFO planning', 'Move soonest-expiring food first to protect every donation.'], [HandHeart, 'Right-sized drops', 'Match available food to verified neighborhood demand.']].map(([Icon, title, body]) => { const FeatureIcon = Icon as typeof ScanSearch; return <div key={title as string} className="rounded-2xl bg-stone-950 p-5 text-white"><FeatureIcon size={22} className="text-amber-400" /><h3 className="mt-4 font-semibold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-stone-400">{body as string}</p></div>; })}
+            {[[PackageCheck, 'Expiration-aware stock', 'Track expiration dates so soonest-to-expire food is flagged and moved first.'], [Warehouse, 'Live availability', 'Know exactly what can be packed before promising a delivery.'], [Route, 'FEFO planning', 'Move soonest-expiring food first to protect every donation.'], [HandHeart, 'Right-sized drops', 'Match available food to verified neighborhood demand.']].map(([Icon, title, body]) => { const FeatureIcon = Icon as typeof PackageCheck; return <div key={title as string} className="rounded-2xl bg-stone-950 p-5 text-white"><FeatureIcon size={22} className="text-amber-400" /><h3 className="mt-4 font-semibold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-stone-400">{body as string}</p></div>; })}
           </div>
         </div>
       </section>

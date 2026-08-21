@@ -1,15 +1,8 @@
-// Server-only EyePop.ai vision for food intake.
-//   - detect():   fast object detection (~1s) for the live camera feed.
-//   - checkFood(): VLM fresh/spoiled verdict (~10-15s), on demand. Uses a
-//     food-freshness ability if EYEPOP_FOOD_ABILITY_UUID is set, else the
-//     public image-contents model (which identifies the item).
+// Server-only EyePop.ai vision for the live drone camera feed.
+//   - detect():  fast object detection (~1s) on a single JPEG frame.
+//   - warmup():  pre-connect the detection endpoint so the first frame is fast.
 // Worker endpoints are cached per ability for the process lifetime.
 import { EyePop, TransientPopId, PopComponentType } from "@eyepop.ai/eyepop";
-
-const FRESH_PROMPT =
-  "You are a food-bank intake inspector examining a donated food item. " +
-  "Reply with exactly one label: 'fresh', 'spoiled', or 'no food'. " +
-  "Choose 'spoiled' if there is visible mold, rot, heavy bruising, sliminess, or strong discoloration.";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Inference = Record<string, any>;
@@ -37,13 +30,11 @@ async function getEndpoint(inference: Inference): Promise<any> {
   return p;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function runOnce(inference: Inference, bytes: Uint8Array, componentParams?: any): Promise<Inference | null> {
+async function runOnce(inference: Inference, bytes: Uint8Array): Promise<Inference | null> {
   const attempt = async () => {
     const ep = await getEndpoint(inference);
     const results = await ep.process({
       source: { stream: bytes, mimeType: "image/jpeg", size: bytes.length },
-      ...(componentParams ? { componentParams } : {}),
     });
     for await (const r of results as AsyncIterable<Inference>) return r;
     return null;
@@ -97,29 +88,4 @@ export async function detect(bytes: Uint8Array): Promise<DetectResult> {
     sourceWidth: Number(r?.source_width ?? 0),
     sourceHeight: Number(r?.source_height ?? 0),
   };
-}
-
-export interface FoodResult {
-  label: "fresh" | "spoiled" | "no food" | "unknown";
-  rawLabel: string;
-  category?: string;
-  confidence: number;
-}
-
-function normalize(label: string): FoodResult["label"] {
-  const l = label.toLowerCase();
-  if (l.includes("spoil") || l.includes("rot") || l.includes("mold") || l.includes("bad")) return "spoiled";
-  if (l.includes("no food") || l.includes("not food") || l.includes("none")) return "no food";
-  if (l.includes("fresh") || l.includes("good") || l.includes("safe")) return "fresh";
-  return "unknown";
-}
-
-export async function checkFood(bytes: Uint8Array): Promise<FoodResult> {
-  const abilityUuid = process.env.EYEPOP_FOOD_ABILITY_UUID;
-  const inference: Inference = abilityUuid ? { abilityUuid } : { ability: "eyepop.image-contents:latest" };
-  const params = [{ componentId: 1, values: { prompts: [{ prompt: FRESH_PROMPT }] } }];
-  const r = await runOnce(inference, bytes, params);
-  const c = r?.classes?.[0];
-  const rawLabel = String(c?.classLabel ?? c?.category ?? "unknown");
-  return { label: normalize(rawLabel), rawLabel, category: c?.category, confidence: Number(c?.confidence ?? 0) };
 }
