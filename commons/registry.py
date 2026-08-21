@@ -49,6 +49,11 @@ SOURCES = {
         signal_type="context", refresh_cadence="manual",
         measures="Dated policy/shelter/sweep events with source URLs.",
         known_bias="Curated selection; some dates uncertain and flagged for verification."),
+    "H": dict(name="Hackathon curated DSDP downtown counts bundle (Data Science Alliance)",
+        url="https://downtownsandiego.org/clean-and-safe/unhoused-care/",
+        signal_type="observation", refresh_cadence="static bundle (2017-2025), committed in data/hackathon/",
+        measures="Verified published DSDP monthly unsheltered totals by area (2017-2025), digitized block-level counts (2018-2025, 12 count dates), block-grid polygons, area crosswalk, and the multiplier schedule.",
+        known_bias="Published totals ARE occupancy-multiplier-adjusted (tents x1.75-2.00, vehicles x1.66-2.03) - not comparable to raw counted units (source A) nor to post-2020 RTFH/PIT raw counts. Components digitized from map images (secondary reliability, 2018+). Block footprint grew 261->382 in Jan 2022. Counting effort varied (fellowship months 2017-2020). Four 2025 months unreported."),
 }
 
 TABLE_DOCS: dict[str, dict] = {}  # table_name -> doc dict; loaders register at import

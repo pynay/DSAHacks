@@ -1,8 +1,9 @@
 from commons import db
-from commons.staging import src_a
+from commons.staging import src_a, src_h
 
 STEPS = []  # (name, source_id, fn) appended as loaders land
 STEPS.append(("load_src_a", "A", src_a.load))
+STEPS.append(("load_src_h", "H", src_h.load))
 
 def main():
     con = db.connect()

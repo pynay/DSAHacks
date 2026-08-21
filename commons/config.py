@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "raw"
+HACKATHON_DIR = ROOT / "data" / "hackathon"
 MARTS_DIR = ROOT / "marts"
 SEEDS_DIR = ROOT / "seeds"
 DB_PATH = ROOT / "commons.duckdb"
