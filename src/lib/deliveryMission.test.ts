@@ -29,12 +29,24 @@ describe('automated delivery mission', () => {
     expect(plan.coverage).toBeCloseTo(4 / 15);
   });
 
-  it('progresses from preparation to flight, arrival, and delivery', () => {
+  it('flies out, holds for a field observation, and returns after verification', () => {
     expect(missionTelemetry(0).phase).toBe('preparing');
     expect(missionTelemetry(8_000).phase).toBe('en-route');
-    expect(missionTelemetry(14_000).phase).toBe('arriving');
-    expect(missionTelemetry(16_000).phase).toBe('delivered');
-    expect(missionTelemetry(16_000).routeProgress).toBe(1);
+    expect(missionTelemetry(13_000).phase).toBe('arriving');
+    expect(missionTelemetry(15_000, null).phase).toBe('observing');
+    expect(missionTelemetry(60_000, null).phase).toBe('observing');
+    expect(missionTelemetry(60_000, null).routeProgress).toBe(1);
+    expect(missionTelemetry(60_000, null).etaSeconds).toBeNull();
+    expect(missionTelemetry(30_000, 25_000).phase).toBe('returning');
+    expect(missionTelemetry(30_000, 25_000).routeProgress).toBeCloseTo(0.5);
+    expect(missionTelemetry(35_000, 25_000).phase).toBe('delivered');
+    expect(missionTelemetry(35_000, 25_000).routeProgress).toBe(0);
+  });
+
+  it('uses equal travel time for the outbound and return legs', () => {
+    expect(missionTelemetry(7_000).routeProgress).toBeCloseTo(0.5);
+    expect(missionTelemetry(30_000, 25_000).routeProgress).toBeCloseTo(0.5);
+    expect(missionTelemetry(7_000).groundSpeedMps).toBe(missionTelemetry(30_000, 25_000).groundSpeedMps);
   });
 
   it('interpolates and calculates a valid route heading', () => {

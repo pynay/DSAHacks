@@ -15,8 +15,11 @@ async function getEndpoint(inference: Inference): Promise<any> {
   let p = endpoints.get(key);
   if (!p) {
     p = (async () => {
-      const apiKey = process.env.EYEPOP_SECRET_KEY;
-      if (!apiKey) throw new Error("EYEPOP_SECRET_KEY not set");
+      const configuredKey = process.env.EYEPOP_SECRET_KEY ?? process.env.EYEPOP_API_KEY;
+      if (!configuredKey) throw new Error("EYEPOP_SECRET_KEY or EYEPOP_API_KEY not set");
+      // EyePop's issued prefix is lowercase. Normalize the common copy/paste
+      // variant without ever rewriting or exposing the configured secret.
+      const apiKey = configuredKey.startsWith('Eyp_') ? `eyp_${configuredKey.slice(4)}` : configuredKey;
       const ep = EyePop.workerEndpoint({ auth: { apiKey }, popId: TransientPopId.Transient });
       await ep.connect();
       await ep.changePop({ components: [{ type: PopComponentType.INFERENCE, id: 1, ...inference }] });
@@ -67,7 +70,8 @@ export async function warmup(): Promise<boolean> {
   try {
     await getEndpoint(DETECT_ABILITY);
     return true;
-  } catch {
+  } catch (error) {
+    console.warn('[eyepop] warmup failed:', error instanceof Error ? error.message : error);
     return false;
   }
 }

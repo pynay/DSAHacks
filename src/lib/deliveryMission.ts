@@ -2,7 +2,7 @@ import type { InventoryItem } from './types';
 import type { DeliveryZone } from './delivery';
 import { allocate, type AllocatedItem } from './allocation';
 
-export type DeliveryMissionPhase = 'preparing' | 'en-route' | 'arriving' | 'delivered';
+export type DeliveryMissionPhase = 'preparing' | 'en-route' | 'arriving' | 'observing' | 'returning' | 'delivered';
 
 export interface DeliveryPlan {
   zoneId: string;
@@ -21,11 +21,17 @@ export interface MissionTelemetry {
   altitudeM: number;
   groundSpeedMps: number;
   batteryPct: number;
-  etaSeconds: number;
+  etaSeconds: number | null;
 }
 
-const PREPARE_END = 0.12;
-const ARRIVE_START = 0.82;
+const PREPARE_MS = 2_000;
+const OUTBOUND_MS = 10_000;
+const DROP_MS = 3_000;
+const RETURN_MS = OUTBOUND_MS;
+export const MISSION_DURATION_MS = PREPARE_MS + OUTBOUND_MS + DROP_MS + RETURN_MS;
+
+const OUTBOUND_END_MS = PREPARE_MS + OUTBOUND_MS;
+export const OBSERVATION_START_MS = OUTBOUND_END_MS + DROP_MS;
 
 export function buildDeliveryPlan(
   inventory: InventoryItem[],
@@ -45,28 +51,67 @@ export function buildDeliveryPlan(
   };
 }
 
-export function missionTelemetry(elapsedMs: number, durationMs = 16_000): MissionTelemetry {
-  const overallProgress = Math.min(1, Math.max(0, elapsedMs / durationMs));
-  const routeProgress = Math.min(
-    1,
-    Math.max(0, (overallProgress - PREPARE_END) / (ARRIVE_START - PREPARE_END)),
-  );
+export function missionTelemetry(
+  elapsedMs: number,
+  observationCompletedAtMs: number | null = OBSERVATION_START_MS,
+): MissionTelemetry {
+  const elapsed = Math.max(0, elapsedMs);
+  const returnElapsed = observationCompletedAtMs === null ? 0 : Math.max(0, elapsed - observationCompletedAtMs);
 
   let phase: DeliveryMissionPhase;
-  if (overallProgress < PREPARE_END) phase = 'preparing';
-  else if (overallProgress < ARRIVE_START) phase = 'en-route';
-  else if (overallProgress < 1) phase = 'arriving';
-  else phase = 'delivered';
+  let routeProgress = 0;
+  if (elapsed < PREPARE_MS) {
+    phase = 'preparing';
+  } else if (elapsed < OUTBOUND_END_MS) {
+    phase = 'en-route';
+    routeProgress = (elapsed - PREPARE_MS) / OUTBOUND_MS;
+  } else if (elapsed < OBSERVATION_START_MS) {
+    phase = 'arriving';
+    routeProgress = 1;
+  } else if (observationCompletedAtMs === null || elapsed < observationCompletedAtMs) {
+    phase = 'observing';
+    routeProgress = 1;
+  } else if (returnElapsed < RETURN_MS) {
+    phase = 'returning';
+    routeProgress = 1 - returnElapsed / RETURN_MS;
+  } else phase = 'delivered';
 
-  const flying = phase === 'en-route';
+  const overallProgress = phase === 'observing'
+    ? 0.6
+    : phase === 'returning'
+      ? 0.6 + (returnElapsed / RETURN_MS) * 0.4
+      : phase === 'delivered'
+        ? 1
+        : Math.min(0.6, (elapsed / OBSERVATION_START_MS) * 0.6);
+
+  const outboundProgress = Math.min(1, Math.max(0, (elapsed - PREPARE_MS) / OUTBOUND_MS));
+  const returnProgress = Math.min(1, returnElapsed / RETURN_MS);
+  let altitudeM = 0;
+  if (phase === 'preparing') altitudeM = Math.round(60 * (elapsed / PREPARE_MS));
+  if (phase === 'en-route') altitudeM = outboundProgress < 0.15 ? Math.round(18 + 42 * (outboundProgress / 0.15)) : 60;
+  if (phase === 'arriving') altitudeM = Math.max(18, Math.round(60 - 42 * ((elapsed - OUTBOUND_END_MS) / DROP_MS)));
+  if (phase === 'observing') altitudeM = 18;
+  if (phase === 'returning') {
+    if (returnProgress < 0.15) altitudeM = Math.round(18 + 42 * (returnProgress / 0.15));
+    else if (returnProgress > 0.82) altitudeM = Math.round(60 * (1 - (returnProgress - 0.82) / 0.18));
+    else altitudeM = 60;
+  }
+
+  const flying = phase === 'en-route' || phase === 'returning';
   return {
     phase,
     routeProgress,
     overallProgress,
-    altitudeM: phase === 'preparing' ? Math.round(60 * (overallProgress / PREPARE_END)) : phase === 'arriving' ? Math.round(60 * (1 - (overallProgress - ARRIVE_START) / (1 - ARRIVE_START))) : phase === 'delivered' ? 0 : 60,
+    altitudeM,
     groundSpeedMps: flying ? 12 : phase === 'arriving' ? 4 : 0,
-    batteryPct: Math.max(72, Math.round(100 - overallProgress * 24)),
-    etaSeconds: Math.max(0, Math.ceil((durationMs - elapsedMs) / 1000)),
+    batteryPct: Math.max(64, Math.round(100 - overallProgress * 34)),
+    etaSeconds: phase === 'observing'
+      ? null
+      : phase === 'returning'
+        ? Math.max(0, Math.ceil((RETURN_MS - returnElapsed) / 1000))
+        : phase === 'delivered'
+          ? 0
+          : Math.max(0, Math.ceil((OBSERVATION_START_MS - elapsed) / 1000)),
   };
 }
 
