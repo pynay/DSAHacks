@@ -47,7 +47,7 @@ interface DeliveryRecord {
   units: number;
   requestedUnits: number;
   completedAt: string;
-  status: 'Delivered';
+  status: 'Drone returning' | 'Delivered';
 }
 
 const LEDGER_KEY = 'parsel-drone-delivery-ledger-v1';
@@ -70,7 +70,8 @@ export default function DispatchPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mission, setMission] = useState<ActiveMission | null>(null);
   const [records, setRecords] = useState<DeliveryRecord[]>([]);
-  const completedIds = useRef(new Set<string>());
+  const droppedIds = useRef(new Set<string>());
+  const returnedIds = useRef(new Set<string>());
   const recordDistributionRef = useRef(recordDistribution);
 
   useEffect(() => {
@@ -115,34 +116,48 @@ export default function DispatchPage() {
   }, [missionId, missionPhase]);
 
   useEffect(() => {
-    if (!mission || mission.telemetry.phase !== 'delivered' || completedIds.current.has(mission.id)) return;
-    completedIds.current.add(mission.id);
-    recordDistributionRef.current({
-      date: simDate,
-      recipient: `${mission.target.label} drone delivery site`,
-      type: 'mobile-pantry',
-      items: mission.plan.items.map(({ name, quantity, unit }) => ({ name, quantity, unit })),
-      notes: `[Automated drone delivery] mission ${mission.id} · model predicted ${mission.plan.predictedPeople} people · ${mission.plan.allocatedUnits} units delivered`,
-    });
-    const delivered: DeliveryRecord = {
-      id: mission.id,
-      destination: mission.target.label,
-      units: mission.plan.allocatedUnits,
-      requestedUnits: mission.plan.requestedUnits,
-      completedAt: new Date().toISOString(),
-      status: 'Delivered',
-    };
-    setRecords((existing) => {
-      const next = [delivered, ...existing].slice(0, 20);
-      try { localStorage.setItem(LEDGER_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
+    if (!mission) return;
+    const foodDropped = mission.telemetry.phase === 'returning' || mission.telemetry.phase === 'delivered';
+    if (foodDropped && !droppedIds.current.has(mission.id)) {
+      droppedIds.current.add(mission.id);
+      recordDistributionRef.current({
+        date: simDate,
+        recipient: `${mission.target.label} drone delivery site`,
+        type: 'mobile-pantry',
+        items: mission.plan.items.map(({ name, quantity, unit }) => ({ name, quantity, unit })),
+        notes: `[Automated drone delivery] mission ${mission.id} · model predicted ${mission.plan.predictedPeople} people · ${mission.plan.allocatedUnits} units delivered`,
+      });
+      const delivered: DeliveryRecord = {
+        id: mission.id,
+        destination: mission.target.label,
+        units: mission.plan.allocatedUnits,
+        requestedUnits: mission.plan.requestedUnits,
+        completedAt: new Date().toISOString(),
+        status: mission.telemetry.phase === 'returning' ? 'Drone returning' : 'Delivered',
+      };
+      setRecords((existing) => {
+        const next = [delivered, ...existing].slice(0, 20);
+        try { localStorage.setItem(LEDGER_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    }
+    if (mission.telemetry.phase === 'delivered' && !returnedIds.current.has(mission.id)) {
+      returnedIds.current.add(mission.id);
+      setRecords((existing) => {
+        const next = existing.map((record) => record.id === mission.id
+          ? { ...record, completedAt: new Date().toISOString(), status: 'Delivered' as const }
+          : record);
+        try { localStorage.setItem(LEDGER_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        return next;
+      });
+    }
   }, [mission, simDate]);
 
   function dispatch(target: DeliveryZone, plan: DeliveryPlan) {
     if (missionBusy || plan.allocatedUnits <= 0) return;
     const id = `DR-${Date.now().toString(36).toUpperCase()}`;
-    completedIds.current.delete(id);
+    droppedIds.current.delete(id);
+    returnedIds.current.delete(id);
     setSelectedId(target.id);
     setMission({ id, target, plan, startedAt: Date.now(), telemetry: missionTelemetry(0) });
   }
