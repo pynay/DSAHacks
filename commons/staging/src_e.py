@@ -6,16 +6,18 @@ import pdfplumber
 from commons.config import RAW_DIR, SEEDS_DIR
 from commons.registry import LoadResult, register_table
 
-register_table("stg_capacity_monthly", grain="month x program x site",
+register_table("stg_capacity_monthly", grain="month x record_type x program x site",
     signal_type="capacity", source_id="E", refresh="monthly (manual PDF drop or seed edit)",
     measures="Shelter beds and occupancy by program/site.",
-    known_bias="Reporting formats vary by month/provider; occupancy definitions differ; months missing where reports unpublished.")
+    known_bias="Reporting formats vary by month/provider; occupancy definitions differ; months missing where reports unpublished. Two incompatible row shapes share this table, distinguished by record_type: 'site_roster' rows are point-in-time bed counts per named site (obs_month is the fetch month - the source page carries no published as-of date, not a real historical month), while 'category_occupancy' rows are true monthly occupancy-rate aggregates published per shelter category. Never join or sum across the two record_types without filtering to one - a roster row's beds and a category row's occupancy_pct do not describe the same population.")
 
 
 def _parse_pdfs():
     """Mirrors src_b: any PDFs dropped in raw/capacity_pdfs/*.pdf get table-extracted.
     Expects rows shaped (program/site, beds, occupancy) somewhere in an extracted table;
-    obs_month is taken from the filename (YYYY-MM*.pdf convention)."""
+    obs_month is taken from the filename (YYYY-MM*.pdf convention). Parsed rows are treated
+    as site_roster (per-site beds/occupancy for a real reporting month, unlike the seed's
+    fetch-dated roster rows)."""
     rows = []
     for pdf_path in sorted((RAW_DIR / "capacity_pdfs").glob("*.pdf")):
         m = re.match(r"(\d{4})-(\d{2})", pdf_path.stem)
@@ -34,7 +36,7 @@ def _parse_pdfs():
                         if beds_val is None and occ_val is None:
                             continue
                         rows.append(dict(
-                            obs_month=obs_month, program=cells[0], site=cells[0],
+                            record_type="site_roster", obs_month=obs_month, program=cells[0], site=cells[0],
                             beds=int(beds_val) if beds_val else None,
                             occupancy_pct=float(str(occ_val).rstrip("%")) if occ_val else None,
                             source_url=f"file://{pdf_path.name}", method="pdf_parsed"))
@@ -44,13 +46,13 @@ def _parse_pdfs():
 def load(con) -> LoadResult:
     seed = pd.read_csv(SEEDS_DIR / "capacity_manual.csv")
     seed["method"] = "manual_seed"
-    seed = seed[["obs_month", "program", "site", "beds", "occupancy_pct", "source_url", "method"]]
+    seed = seed[["record_type", "obs_month", "program", "site", "beds", "occupancy_pct", "source_url", "method"]]
     parsed = _parse_pdfs()
     df = pd.concat([parsed, seed], ignore_index=True)
     df["obs_month"] = pd.to_datetime(df["obs_month"]).dt.date
     df["beds"] = pd.to_numeric(df["beds"], errors="coerce").astype("Int64")
     df["occupancy_pct"] = pd.to_numeric(df["occupancy_pct"], errors="coerce")
-    df = df.drop_duplicates(["obs_month", "program", "site"], keep="first")  # pdf wins over seed
+    df = df.drop_duplicates(["obs_month", "record_type", "program", "site"], keep="first")  # pdf wins over seed
     con.register("_df", df)
     con.execute("CREATE OR REPLACE TABLE stg_capacity_monthly AS SELECT * FROM _df")
     con.unregister("_df")
