@@ -1,11 +1,9 @@
 // Durable store for accepted hotspot observations (the teammates' P0:
 // "persist the feedback loop"). Aggregate-only records — count, coordinates,
-// confidence — matching the same privacy posture as the Snowflake
-// DRONE_OBSERVATION schema; never imagery or person-level data.
+// confidence — never imagery or person-level data.
 //
-// JSONL on local disk so the need surface survives server restarts; a future
-// write-through to snowflake.ts can hang off appendObservation when
-// snowflakeConfigured turns on.
+// JSONL on local disk (via DuckDB-served marts + this append log) so the need
+// surface survives server restarts.
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseHotspotObservation } from './hotspotObservation';
