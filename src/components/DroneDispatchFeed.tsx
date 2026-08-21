@@ -32,9 +32,23 @@ export default function DroneDispatchFeed({
         </div>
         <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em]">
           {!vision.connected && <span className="text-slate-400">DEMO SOURCE</span>}
+          {vision.connected && vision.detection && (
+            <span className="text-slate-300" data-testid="vision-counts">
+              {vision.detection.stablePeople} PEOPLE · {vision.detection.vehicleCount} VEHICLES
+            </span>
+          )}
+          {vision.connected && vision.detection && (
+            <span className="uppercase text-sky-300" data-testid="vision-source">
+              {vision.detection.source.label}
+            </span>
+          )}
           <span className="flex items-center gap-1 text-emerald-300">
             <span className={`h-1.5 w-1.5 rounded-full ${missionComplete ? 'bg-emerald-300' : 'animate-pulse bg-red-400'}`} />
-            {missionComplete ? 'FEED COMPLETE' : 'LIVE'}
+            {missionComplete
+              ? 'FEED COMPLETE'
+              : vision.connected && vision.detection && !vision.detection.source.live
+                ? 'RECORDED'
+                : 'LIVE'}
           </span>
         </div>
       </div>
