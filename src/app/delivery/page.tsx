@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { MapPin, Plane, Plus, ShieldCheck, TrendingUp } from "lucide-react";
+import type { FeatureCollection } from "geojson";
 import { DEPOT, haversineKm, type DeliveryZone } from "@/lib/delivery";
 import { useZones } from "@/lib/useZones";
 
@@ -27,11 +28,16 @@ export default function DeliveryPage() {
   const [custom, setCustom] = useState<DeliveryZone[]>([]);
   const [series, setSeries] = useState<Series | null>(null);
   const [step, setStep] = useState(0); // 0 = historical prior, 1..3 = 311 scenario months
+  const [blocks, setBlocks] = useState<FeatureCollection | null>(null);
 
   useEffect(() => {
     fetch("/api/forecast")
       .then((r) => r.json())
       .then((d) => d.series && setSeries(d.series))
+      .catch(() => {});
+    fetch("/api/blocks")
+      .then((r) => r.json())
+      .then((d) => d.features && setBlocks(d))
       .catch(() => {});
   }, []);
 
@@ -48,6 +54,21 @@ export default function DeliveryPage() {
     [baseZones, series, step],
   );
   const zones = useMemo(() => [...predictedBase, ...custom], [predictedBase, custom]);
+
+  // Block choropleth scaled by the same 311-pressure scenario (per neighborhood),
+  // so the area heat responds to the horizon like the rest of the map.
+  const scaledBlocks = useMemo(() => {
+    if (!blocks) return null;
+    return {
+      ...blocks,
+      features: blocks.features.map((f) => {
+        const nb = String(f.properties?.neighborhood ?? "");
+        const need = Math.round(Number(f.properties?.need ?? 0) * ratioAt(nb, step) * 100) / 100;
+        return { ...f, properties: { ...f.properties, need } };
+      }),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks, series, step]);
 
   // Need-weighted scenario centroid for a step, and the full trail.
   const centroidAt = (s: number): [number, number] | null => {
@@ -100,7 +121,7 @@ export default function DeliveryPage() {
   return (
     <div className="flex h-[calc(100vh-7rem)] gap-4">
       <div className="relative flex-1 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
-        <DeliveryMap zones={zones} onAddZone={addZone} needCenter={needCenter} centerTrail={trail} />
+        <DeliveryMap zones={zones} onAddZone={addZone} needCenter={needCenter} centerTrail={trail} blocks={scaledBlocks} />
         <div className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-white/90 px-3 py-2 text-xs text-slate-600 shadow">
           <div className="mb-1 font-medium text-slate-800">
             {verifiedCount ? "Updated planning surface" : "Historical prior density"}
@@ -118,7 +139,7 @@ export default function DeliveryPage() {
             {step === 0
               ? verifiedCount
                 ? "reviewed feedback applied locally · unverified areas remain historical"
-                : "not current headcounts · zoom in for zone pins"
+                : "block-level need · not current headcounts · click a block"
               : `context-only 311 scenario: ${horizonLabels[step]}`}
           </div>
         </div>

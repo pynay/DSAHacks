@@ -43,6 +43,7 @@ export default function DeliveryMap({
   zoom,
   needCenter = null,
   centerTrail = [],
+  blocks = null,
 }: {
   zones: DeliveryZone[];
   onAddZone: (lngLat: { lng: number; lat: number }) => void;
@@ -50,6 +51,7 @@ export default function DeliveryMap({
   zoom?: number;
   needCenter?: [number, number] | null; // predicted need centroid for the selected month
   centerTrail?: [number, number][]; // centroids across the forecast horizon
+  blocks?: FeatureCollection | null; // census-block polygons tagged with need (the area heat)
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -58,6 +60,8 @@ export default function DeliveryMap({
   const centerMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Keep latest props reachable from stable map event handlers.
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
   const zonesRef = useRef(zones);
   zonesRef.current = zones;
   const addRef = useRef(onAddZone);
@@ -124,6 +128,36 @@ export default function DeliveryMap({
         },
       });
 
+      // Block-level need choropleth (the area heat). A translucent overlay on
+      // top of the 3D buildings so all of downtown reads as a continuous heat
+      // surface of filled areas rather than dots; the city shows through.
+      map.addSource("blocks", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({
+        id: "blocks-fill",
+        type: "fill",
+        source: "blocks",
+        paint: {
+          "fill-color": [
+            "interpolate",
+            ["linear"],
+            ["get", "need"],
+            0, "#fde68a",
+            3, "#fcd34d",
+            6, "#fbbf24",
+            12, "#f59e0b",
+            20, "#ef4444",
+            34, "#b91c1c",
+          ],
+          "fill-opacity": ["interpolate", ["linear"], ["get", "need"], 0, 0.08, 2, 0.28, 6, 0.55, 15, 0.76, 30, 0.88],
+        },
+      });
+      map.addLayer({
+        id: "blocks-outline",
+        type: "line",
+        source: "blocks",
+        paint: { "line-color": "rgba(255,255,255,0.14)", "line-width": 0.6 },
+      });
+
       // Empty sources, filled by the sync effect.
       map.addSource("spokes", { type: "geojson", data: spokesFC([]) });
       map.addSource("zones", { type: "geojson", data: zonesFC([]) });
@@ -139,70 +173,19 @@ export default function DeliveryMap({
           "line-dasharray": [1.6, 1.1],
         },
       });
-      // Need heat surface: a continuous density field weighted by each zone's
-      // need. This is the primary read of "where need is". It blooms and
-      // re-shapes itself as the forecast step changes the need values, instead
-      // of showing rigid pins. Sits under the circles; dominates when zoomed
-      // out, fades as the discrete circles take over on zoom-in.
-      map.addLayer({
-        id: "zones-heat",
-        type: "heatmap",
-        source: "zones",
-        maxzoom: 17,
-        paint: {
-          // Only real zones carry need; custom drops (need 0) add no heat.
-          "heatmap-weight": ["interpolate", ["linear"], ["get", "need"], 0, 0, 320, 1],
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 1.3, 16, 2.2],
-          // Transparent -> yellow -> amber -> red: same need semantics as the circles.
-          "heatmap-color": [
-            "interpolate",
-            ["linear"],
-            ["heatmap-density"],
-            0, "rgba(0,0,0,0)",
-            0.12, "rgba(253,224,71,0.45)",
-            0.35, "rgba(245,158,11,0.72)",
-            0.65, "rgba(239,68,68,0.85)",
-            1, "rgba(185,28,28,0.95)",
-          ],
-          // Radius grows with zoom so the bloom stays geographically proportional.
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 20, 13, 42, 14, 58, 16, 88],
-          // Strong when zoomed out, fades as the clickable circles fade in.
-          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0.95, 14, 0.85, 15.5, 0.4, 16.5, 0.15],
-        },
-      });
-
+      // Custom drops the operator clicks onto the map (the only remaining point
+      // markers — real need now reads from the block choropleth, not dots).
       map.addLayer({
         id: "zones-circle",
         type: "circle",
         source: "zones",
+        filter: ["==", ["get", "custom"], true],
         paint: {
-          "circle-radius": ["case", ["get", "custom"], 10, ["interpolate", ["linear"], ["get", "need"], 0, 6, 320, 26]],
-          "circle-color": [
-            "case",
-            ["get", "custom"],
-            "#22d3ee",
-            ["interpolate", ["linear"], ["get", "need"], 0, "#fcd34d", 80, "#f59e0b", 200, "#ef4444", 320, "#b91c1c"],
-          ],
-          // Custom drops stay solid; need-circles fade in as you zoom past the
-          // heatmap. Zoom must be the top-level interpolate input, so the
-          // custom-vs-need split lives in each stop's output.
-          "circle-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            13, ["case", ["get", "custom"], 0.9, 0.1],
-            14.5, ["case", ["get", "custom"], 0.9, 0.55],
-            16, ["case", ["get", "custom"], 0.9, 0.85],
-          ],
+          "circle-radius": 9,
+          "circle-color": "#22d3ee",
+          "circle-opacity": 0.9,
           "circle-stroke-width": 1.5,
-          "circle-stroke-color": ["case", ["get", "verified"], "#34d399", "#ffffff"],
-          "circle-stroke-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            13, ["case", ["get", "custom"], 1, 0.15],
-            15, ["case", ["get", "custom"], 1, 0.8],
-          ],
+          "circle-stroke-color": "#ffffff",
         },
       });
       map.addLayer({
@@ -242,32 +225,41 @@ export default function DeliveryMap({
       syncData();
     });
 
-    // Click: popup on an existing zone, otherwise drop a new zone.
+    // Click: custom-drop popup, else block-need popup, else drop a new zone.
     map.on("click", (e) => {
-      const hits = map.queryRenderedFeatures(e.point, { layers: ["zones-circle"] });
-      if (hits.length) {
-        const p = (hits[0].properties ?? {}) as { id?: string; label?: string };
+      const dropHits = map.queryRenderedFeatures(e.point, { layers: ["zones-circle"] });
+      if (dropHits.length) {
+        const p = (dropHits[0].properties ?? {}) as { id?: string; label?: string };
         const z = zonesRef.current.find((x) => x.id === p.id);
         const dist = z ? haversineKm(DEPOT, z).toFixed(2) : "?";
-        const elev = z?.elevation != null ? `${Math.round(z.elevation)} m` : "N/A";
-        new mapboxgl.Popup({ offset: 14, closeButton: false })
+        new mapboxgl.Popup({ offset: 12, closeButton: false })
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font:12px/1.4 Inter,sans-serif;color:#1c1917">
-               <b>${p.label}</b><br/>
-               ${z?.confidence === "drone-updated" ? "updated estimate" : z?.predicted ? "historical prior" : "need"} ${z?.need ?? "?"} · ${z?.requests ?? "?"} 311 reqs<br/>
-               ${z?.tents ?? 0} tents · ${z?.vehicles ?? 0} vehicles<br/>
-               ${z?.confidence === "drone-updated" ? "reviewed field evidence · allocation eligible" : z?.predicted ? "planning only · verification required" : "current data"}<br/>
-               ${dist} km from depot · elev ${elev}
-             </div>`,
+            `<div style="font:12px/1.4 Inter,sans-serif;color:#0f172a"><b>${p.label ?? "Drop"}</b><br/>${dist} km from base</div>`,
+          )
+          .addTo(map);
+        return;
+      }
+      const blockHits = map.queryRenderedFeatures(e.point, { layers: ["blocks-fill"] });
+      if (blockHits.length) {
+        const p = (blockHits[0].properties ?? {}) as { neighborhood?: string; need?: number; zip?: string };
+        const nb = String(p.neighborhood ?? "")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        new mapboxgl.Popup({ offset: 6, closeButton: false })
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<div style="font:12px/1.4 Inter,sans-serif;color:#0f172a"><b>${nb || "Block"}</b>${p.zip ? ` · ${p.zip}` : ""}<br/>predicted need ${Number(p.need ?? 0).toFixed(1)}</div>`,
           )
           .addTo(map);
         return;
       }
       addRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
     });
-    map.on("mouseenter", "zones-circle", () => (map.getCanvas().style.cursor = "pointer"));
-    map.on("mouseleave", "zones-circle", () => (map.getCanvas().style.cursor = ""));
+    for (const layer of ["zones-circle", "blocks-fill"]) {
+      map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
+      map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
+    }
 
     return () => {
       readyRef.current = false;
@@ -285,11 +277,19 @@ export default function DeliveryMap({
     const zs = zonesRef.current;
     (map.getSource("zones") as mapboxgl.GeoJSONSource | undefined)?.setData(zonesFC(zs));
     (map.getSource("spokes") as mapboxgl.GeoJSONSource | undefined)?.setData(spokesFC(zs));
+    if (blocksRef.current) (map.getSource("blocks") as mapboxgl.GeoJSONSource | undefined)?.setData(blocksRef.current);
   }
 
   useEffect(() => {
     syncData();
   }, [zones]);
+
+  // Block choropleth data (fetched + scenario-scaled by the page).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current || !blocks) return;
+    (map.getSource("blocks") as mapboxgl.GeoJSONSource | undefined)?.setData(blocks);
+  }, [blocks]);
 
   // Live drone marker: created once, then glides to each new position.
   useEffect(() => {
