@@ -1,0 +1,3 @@
+fy_end,supply_lbs,volunteers_needed,volunteers_current,kind,source_url,note
+2026,37400000,146,146,actual,https://feedingsandiego.org/about-us/our-impact/,"FSD impact FY24-25: 37.4M lbs distributed (31M+ meals, 90% rescued food). Volunteer headcount 146 per FSD head of software engineering/data analysis, in-person hackathon interview 2026-08-21."
+2031,87400000,240,146,projected,interview:fsd-engineering-lead-2026-08-21,"FSD engineering-lead projection (hackathon interview 2026-08-21): food volume grows ~+50M lbs within 5 years (37.4M -> ~87.4M, more than doubling); ~240 volunteers needed vs 146 today. volunteers_current held flat to quantify the unfilled 94-volunteer gap."

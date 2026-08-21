@@ -62,12 +62,25 @@ export interface CommonsStats {
   requests311: { month: string; value: number }[];
   // Per-neighborhood 311 over the recent window, for the need heatmap.
   heatmap: { months: string[]; rows: { neighborhood: string; label: string; values: number[] }[] };
+  // Feeding San Diego 5-year scale-up anchors (hand-curated seed; primary
+  // source: FSD engineering lead, hackathon interview 2026-08-21). Carries
+  // source_url/note so citations reach the client.
+  scaleup: {
+    fyEnd: number;
+    supplyLbs: number;
+    volunteersNeeded: number;
+    volunteersCurrent: number;
+    kind: string;
+    sourceUrl: string;
+    note: string;
+  }[];
 }
 
 async function build(): Promise<CommonsStats> {
   const pitCsv = path.join(SEEDS, "pit_annual.csv").replace(/'/g, "''");
   const capCsv = path.join(SEEDS, "capacity_manual.csv").replace(/'/g, "''");
   const martCsv = path.join(process.cwd(), "marts", "monthly_by_neighborhood.csv").replace(/'/g, "''");
+  const scaleupCsv = path.join(SEEDS, "feeding_sd_scaleup.csv").replace(/'/g, "''");
 
   const instance = await DuckDBInstance.create(":memory:");
   const conn = await instance.connect();
@@ -201,6 +214,20 @@ async function build(): Promise<CommonsStats> {
     }))
     .sort((a, b) => b.values.reduce((s, x) => s + x, 0) - a.values.reduce((s, x) => s + x, 0));
 
+  const scaleupReader = await conn.runAndReadAll(`
+    SELECT fy_end, supply_lbs, volunteers_needed, volunteers_current, kind, source_url, note
+    FROM read_csv_auto('${scaleupCsv}')
+    ORDER BY fy_end`);
+  const scaleup = scaleupReader.getRowObjects().map((r) => ({
+    fyEnd: Number(r.fy_end),
+    supplyLbs: Number(r.supply_lbs),
+    volunteersNeeded: Number(r.volunteers_needed),
+    volunteersCurrent: Number(r.volunteers_current),
+    kind: String(r.kind),
+    sourceUrl: String(r.source_url),
+    note: String(r.note),
+  }));
+
   return {
     pit,
     shelters: {
@@ -213,6 +240,7 @@ async function build(): Promise<CommonsStats> {
     dsdp,
     parking,
     laJolla,
+    scaleup,
     requests311,
     heatmap: { months: hmMonths, rows: heatmapRows },
   };

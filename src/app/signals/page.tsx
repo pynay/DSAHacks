@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { BedDouble } from 'lucide-react';
 import type { CommonsStats } from '@/lib/commonsStats';
+import { buildScaleupSeries } from '@/lib/scaleupSeries';
+import ScaleupChart from '@/components/charts/ScaleupChart';
 import PitChart from '@/components/charts/PitChart';
 import NeedHeatmap from '@/components/charts/NeedHeatmap';
 import IndexedSignals from '@/components/charts/IndexedSignals';
@@ -10,6 +13,7 @@ import LaJollaSlope from '@/components/charts/LaJollaSlope';
 
 export default function SignalsPage() {
   const [commons, setCommons] = useState<CommonsStats | null>(null);
+  const scaleup = commons?.scaleup?.length ? buildScaleupSeries(commons.scaleup) : null;
 
   useEffect(() => {
     fetch('/api/commons')
@@ -103,6 +107,7 @@ export default function SignalsPage() {
               <li><b>Paid parking sessions:</b> downtown activity proxy, 2021 to 2026 (Source J)</li>
               <li><b>USDA FARA:</b> La Jolla food access by tract, 2010/2015/2019 (Source I)</li>
               <li><b>USGS / Mapbox terrain:</b> target-site ground elevation</li>
+              <li><b>Feeding San Diego scale-up:</b> FY24-25 impact report + FSD engineering-lead interview (Aug 2026)</li>
             </ul>
             <p className="mt-2 text-[11px] text-slate-400">
               Signals are proxies with known biases, not headcounts. See the repo data dictionary.
@@ -152,6 +157,71 @@ export default function SignalsPage() {
               );
             })()}
           </div>
+          {/* Feeding San Diego scale-up: supply doubles, the workforce doesn't. */}
+          {scaleup && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
+              <h2 className="font-semibold text-slate-900">
+                Feeding San Diego: 2&times; the food, the same hands?
+              </h2>
+              <p className="mb-3 text-xs text-slate-500">
+                Indexed to FY26 = 100 (one axis, mixed units). FSD moved 37.4M lbs last year and
+                projects ~+50M lbs within five years; its own estimate says 240 volunteers will be
+                needed against 146 today. The amber band is the unfilled workforce.
+              </p>
+              <ScaleupChart data={scaleup.series} />
+              <p className="mt-2 text-[11px] text-slate-400">
+                Projection: FSD head of software engineering &amp; data analysis, hackathon
+                interview (Aug 21, 2026) &middot; baseline{' '}
+                <a className="underline hover:text-slate-600" href="https://feedingsandiego.org/about-us/our-impact/" target="_blank" rel="noreferrer">
+                  FSD FY24-25 impact
+                </a>
+                . Demand context:{' '}
+                <a className="underline hover:text-slate-600" href="https://www.sdhunger.org/research" target="_blank" rel="noreferrer">
+                  25% of San Diegans nutrition insecure (SDHC)
+                </a>
+                ,{' '}
+                <a className="underline hover:text-slate-600" href="https://feedingsandiego.org/2026-food-insecurity-in-san-diego-county/" target="_blank" rel="noreferrer">
+                  food insecurity past its pandemic peak (Map the Meal Gap, Jul 2026)
+                </a>
+                ,{' '}
+                <a className="underline hover:text-slate-600" href="https://www.cafoodbanks.org/what-we-do/policy/calfresh-changes-hr1/" target="_blank" rel="noreferrer">
+                  H.R.1 CalFresh cuts shifting demand to food banks
+                </a>
+                . Distinct from the SD Food Bank figures on the landing page.
+              </p>
+            </div>
+          )}
+
+          {scaleup && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h2 className="font-semibold text-slate-900">The automation case</h2>
+              <div className="mt-3 border-l-4 pl-3" style={{ borderColor: '#b8860b' }}>
+                <div className="text-3xl font-semibold text-slate-900">
+                  {scaleup.stats.gapFinal}
+                  <span className="ml-2 text-sm font-normal text-slate-500">volunteers missing by FY{String(scaleup.stats.finalYear).slice(2)}</span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  {Math.round(scaleup.stats.gapPct * 100)}% of the workforce FSD says it needs.
+                </p>
+              </div>
+              <p className="mt-3 text-xs text-slate-600">
+                If nobody new signs up, each volunteer would have to move{' '}
+                <b>{scaleup.stats.loadPerVolunteerFlat.toLocaleString()} lbs a year</b> &mdash; up
+                from {scaleup.stats.loadPerVolunteerNow.toLocaleString()} today. Even at full
+                strength it&apos;s {scaleup.stats.loadPerVolunteerTarget.toLocaleString()}.
+              </p>
+              <p className="mt-3 text-xs text-slate-600">
+                A gap this size can&apos;t be recruited away. Sensing and distribution have to
+                automate &mdash; that&apos;s what Parsel is for.
+              </p>
+              <Link
+                href="/drone"
+                className="mt-3 inline-block rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800"
+              >
+                See the automated response &rarr;
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
