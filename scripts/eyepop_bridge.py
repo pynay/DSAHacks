@@ -37,6 +37,8 @@ from dotenv import load_dotenv
 from eyepop import EyePopSdk
 from eyepop.worker.worker_types import Pop, InferenceComponent
 
+from drop_verdict import VerdictEngine
+
 load_dotenv(Path(__file__).parent / ".env", override=True)
 # override=True: a stale shell var must not silently win over scripts/.env
 
@@ -51,6 +53,11 @@ CONFIDENCE = 0.5
 # Detect the whole delivery scene (people, packages, objects). Override with
 # EYEPOP_ABILITY (e.g. eyepop.person:latest for people only).
 EYEPOP_ABILITY = os.environ.get("EYEPOP_ABILITY", "eyepop.common-objects:latest")
+# Drop-verdict pipeline knobs (see scripts/drop_verdict.py).
+CLEAR_HOLD_S = float(os.environ.get("CLEAR_HOLD_S", "3.0"))
+MIN_BRIGHTNESS = float(os.environ.get("MIN_BRIGHTNESS", "8.0"))
+DROP_ZONE = tuple(float(v) for v in os.environ.get("DROP_ZONE", "0.25,0.25,0.75,0.75").split(","))
+ENGINE = VerdictEngine(clear_hold_s=CLEAR_HOLD_S, min_brightness=MIN_BRIGHTNESS, zone=DROP_ZONE)
 
 POP = Pop(components=[
     InferenceComponent(ability=EYEPOP_ABILITY, confidenceThreshold=CONFIDENCE)
@@ -59,7 +66,8 @@ POP = Pop(components=[
 # Latest state, shared between loops and the web app.
 state: dict = {"ready": False, "ts": 0, "count": 0, "label": "clear",
                "confidence": 0.0, "persons": [], "objects": [], "jpeg": b"", "frame_seq": 0,
-               "video_fps": 0.0, "infer_fps": 0.0}
+               "video_fps": 0.0, "infer_fps": 0.0,
+               "brightness": 0.0, "frame_wh": (1920, 1080), "verdict": None}
 latest_raw: dict = {"jpg": b""}  # newest un-annotated frame (jpeg bytes) for the inference loop
 
 
@@ -69,7 +77,7 @@ def ema(prev: float, dt: float) -> float:
     return inst if prev == 0.0 else prev * 0.9 + inst * 0.1
 
 
-def grab_and_annotate(cap, objects, video_fps, infer_fps):
+def grab_and_annotate(cap, objects, video_fps, infer_fps, verdict, zone):
     """Blocking: read one frame, return (raw_jpeg, annotated_jpeg) bytes.
 
     Runs in the executor; ALL cv2/numpy work happens here. Only bytes cross
@@ -80,12 +88,14 @@ def grab_and_annotate(cap, objects, video_fps, infer_fps):
     if not ok:
         return None
     frame = frame.copy()  # detach from the capture buffer immediately
+    brightness = float(frame[::16, ::16].mean())  # subsampled: feeds the visibility gate
+    fh, fw = frame.shape[:2]
     ok_raw, raw_buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
     for o in objects:
         x, y = int(o["x"]), int(o["y"])
         w, h = int(o["width"]), int(o["height"])
-        # People are the drop-zone hazard (red); everything else is cyan.
-        color = (60, 60, 235) if o.get("label") == "person" else (220, 200, 40)
+        # In-zone detections are the hazard (red); everything else is cyan.
+        color = (60, 60, 235) if o.get("in_zone") else (220, 200, 40)
         cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
         tag = f"{o.get('label', 'object')} {o['confidence'] * 100:.0f}%"
         cv2.rectangle(frame, (x, y - 22), (x + 8 + 10 * len(tag), y), color, -1)
@@ -93,8 +103,16 @@ def grab_and_annotate(cap, objects, video_fps, infer_fps):
     banner = (f"EyePop.ai {EYEPOP_ABILITY}  |  {len(objects)} detected  |  "
               f"{video_fps:.0f} fps video / {infer_fps:.1f} fps inference")
     cv2.putText(frame, banner, (12, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    # Landing-zone reticle + verdict line, colored by state.
+    zx0, zy0, zx1, zy1 = int(zone[0] * fw), int(zone[1] * fh), int(zone[2] * fw), int(zone[3] * fh)
+    zcol = {"GO": (80, 220, 80), "HOLD": (40, 190, 255), "NO_GO": (60, 60, 235)}.get(
+        verdict["state"] if verdict else "", (200, 200, 200))
+    cv2.rectangle(frame, (zx0, zy0), (zx1, zy1), zcol, 2)
+    line2 = (f"{verdict['state'].replace('_', '-')}: {verdict['reason']}  |  safety {verdict['score']}"
+             if verdict else "verdict warming up...")
+    cv2.putText(frame, line2, (12, 52), cv2.FONT_HERSHEY_SIMPLEX, 0.6, zcol, 2)
     ok_ann, ann_buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-    return (raw_buf.tobytes() if ok_raw else b"", ann_buf.tobytes() if ok_ann else b"")
+    return (raw_buf.tobytes() if ok_raw else b"", ann_buf.tobytes() if ok_ann else b"", brightness, (fw, fh))
 
 
 def _warmup_mean(cap, frames=6):
@@ -162,7 +180,8 @@ async def capture_loop():
     try:
         while True:
             got_frame = await loop.run_in_executor(
-                None, grab_and_annotate, cap, state["objects"], state["video_fps"], state["infer_fps"])
+                None, grab_and_annotate, cap, state["objects"], state["video_fps"],
+                state["infer_fps"], state["verdict"], DROP_ZONE)
             if got_frame is None:
                 if VIDEO_SOURCE:  # end of file -> loop it
                     await loop.run_in_executor(None, cap.set, cv2.CAP_PROP_POS_FRAMES, 0)
@@ -184,6 +203,8 @@ async def capture_loop():
             last = now
             latest_raw["jpg"] = got_frame[0]
             state["jpeg"] = got_frame[1]
+            state["brightness"] = got_frame[2]
+            state["frame_wh"] = got_frame[3]
             state["frame_seq"] += 1
             if VIDEO_SOURCE:  # pace file playback to ~25 fps (a live camera self-paces)
                 await asyncio.sleep(1 / 25)
@@ -215,6 +236,10 @@ async def inference_loop(endpoint):
                  "width": o.get("width", 0), "height": o.get("height", 0)}
                 for o in result.get("objects", [])
             ]
+            fw, fh = state["frame_wh"]
+            for o in objects:
+                o["in_zone"] = ENGINE.in_zone(o, fw, fh)
+            verdict = ENGINE.update(objects, fw, fh, state["brightness"], time.monotonic())
             persons = [o for o in objects if o["label"] == "person"]
             now = time.monotonic()
             state["infer_fps"] = ema(state["infer_fps"], now - last)
@@ -227,6 +252,8 @@ async def inference_loop(endpoint):
                 confidence=max((p["confidence"] for p in persons), default=0.0),
                 persons=persons,
                 objects=objects,
+                verdict={"state": verdict.state, "reason": verdict.reason, "score": verdict.score,
+                         "inZone": verdict.in_zone, "nearby": verdict.nearby, "zone": list(DROP_ZONE)},
             )
     finally:
         tmp.unlink(missing_ok=True)
@@ -238,6 +265,8 @@ async def get_detection(_req):
     body = {k: state[k] for k in ("ts", "count", "label", "confidence", "persons", "objects")}
     body["video_fps"] = round(state["video_fps"], 1)
     body["infer_fps"] = round(state["infer_fps"], 1)
+    body["verdict"] = state["verdict"]
+    body["brightness"] = round(state["brightness"], 1)
     return web.json_response(body)
 
 

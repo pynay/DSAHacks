@@ -34,7 +34,7 @@ class VerdictEngine:
         self.zone = zone  # (x0, y0, x1, y1) as fractions of the frame
         self._last_hazard_ts = None
 
-    def _in_zone(self, o, frame_w, frame_h):
+    def in_zone(self, o, frame_w, frame_h):
         zx0, zy0 = self.zone[0] * frame_w, self.zone[1] * frame_h
         zx1, zy1 = self.zone[2] * frame_w, self.zone[3] * frame_h
         x0, y0 = o.get("x", 0), o.get("y", 0)
@@ -47,7 +47,7 @@ class VerdictEngine:
             return Verdict("NO_GO", f"no visibility (brightness {brightness:.0f}/255)", 0, 0, 0)
 
         # 2. Zone filter.
-        in_zone = [o for o in objects if self._in_zone(o, frame_w, frame_h)]
+        in_zone = [o for o in objects if self.in_zone(o, frame_w, frame_h)]
         nearby = len(objects) - len(in_zone)
 
         # 3. Severity: the worst in-zone hazard drives the verdict and score.
