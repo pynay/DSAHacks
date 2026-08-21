@@ -107,6 +107,7 @@ def la_jolla_tracts():
         r = requests.get(CENSUS_REL, timeout=300)
         r.raise_for_status()
         text = r.text
+    text = text.lstrip("﻿")  # strip a UTF-8 BOM so the first column stays 'ZCTA5'
     rows = csv.DictReader(io.StringIO(text))
     tracts = sorted({row["GEOID"].zfill(11) for row in rows if row.get("ZCTA5") == LA_JOLLA_ZCTA})
     if not tracts:

@@ -211,6 +211,10 @@ tracts. The share column is *derived*, not FARA's `lapop1share`, because that co
 fraction (0–1) in 2010/2015 but a percentage (0–100) in 2019 — not comparable across vintages.
 FARA 2010 has no SNAP field and 2019 marks 5 tracts `NULL` for low access; those cells are
 left blank (never 0), and a metric absent for a whole vintage is omitted from the rollup.
+Because count metrics are summed only over reporting tracts while the share is weighted over
+those same tracts, in a vintage with unreported tracts (2019) the rollup `low_access_pop` and
+`pop_total` span different tract sets — read the share from `low_access_pop_share`, don't
+recompute it by dividing the two rollup counts.
 
 **Rebuild the seed** from the real FARA files (auto-downloaded to `raw/fara/`):
 `python scripts/build_food_access_seed.py`.

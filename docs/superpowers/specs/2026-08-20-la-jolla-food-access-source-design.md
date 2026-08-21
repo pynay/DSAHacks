@@ -112,12 +112,18 @@ than in marts SQL.
      dropping NULL values.
   3. Set `geography = 'tract_' || census_tract` for per-tract rows.
   4. Compute the **`la_jolla` rollup** per (vintage_year, metric):
-     - **Summed** across La Jolla tracts: `pop_total`, `low_access_pop`,
-       `low_income_low_access_pop`, `snap_housing_units`.
-     - `low_access_pop_share` (rollup) = `sum(low_access_pop) / sum(pop_total) * 100`
-       (recomputed from summed counts, **not** an average of tract shares).
-     - `lila_flag` (rollup) = fraction of La Jolla tracts flagged (`sum(lila_flag)/n_tracts`),
-       i.e. 0–1. Documented as "share of La Jolla tracts flagged LILA" at rollup grain.
+     - **Summed** across La Jolla tracts with `min_count=1` (so a metric absent for the whole
+       vintage — e.g. `snap_housing_units` in 2010 — stays NaN and is dropped, never 0):
+       `pop_total`, `low_access_pop`, `low_income_low_access_pop`, `snap_housing_units`.
+     - `low_access_pop_share` (rollup) = `100 * sum(low_access_pop) / sum(pop_total)` computed
+       **over only the tracts that reported low access** (numerator and denominator span the
+       same tract set; in 2019 that is 9 of 14 tracts), **not** an average of tract shares.
+     - `lila_flag` (rollup) = fraction of La Jolla tracts flagged (`mean(lila_flag)`), i.e. 0–1.
+       Documented as "share of La Jolla tracts flagged LILA" at rollup grain.
+     Note: because count metrics are summed missing-safe while the share uses only reporting
+       tracts, in vintages with unreported tracts the rollup `low_access_pop` and `pop_total`
+       span different tract sets — read the share from `low_access_pop_share`, do not recompute
+       it from the two rollup counts.
   5. Append rollup rows with `geography = 'la_jolla'` (rollup `source_url` = the FARA download
      page).
   6. Write `stg_i_food_access (geography, vintage_year, metric, value, source_url)` via the
