@@ -18,8 +18,9 @@ export default function DroneDispatchFeed({
   telemetry,
 }: DroneDispatchFeedProps) {
   const vision = useDroneVision();
-  const landed = telemetry.phase === 'delivered';
-  const nearingSite = telemetry.phase === 'arriving' || landed;
+  const missionComplete = telemetry.phase === 'delivered';
+  const returning = telemetry.phase === 'returning';
+  const nearingSite = telemetry.phase === 'arriving';
   const terrainTransform = `translate3d(${-5 - telemetry.routeProgress * 13}%, ${-4 - telemetry.routeProgress * 9}%, 0) rotate(${-7 + telemetry.routeProgress * 3}deg) scale(1.24)`;
 
   return (
@@ -31,8 +32,8 @@ export default function DroneDispatchFeed({
         <div className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.14em]">
           {!vision.connected && <span className="text-slate-400">DEMO SOURCE</span>}
           <span className="flex items-center gap-1 text-emerald-300">
-            <span className={`h-1.5 w-1.5 rounded-full ${landed ? 'bg-emerald-300' : 'animate-pulse bg-red-400'}`} />
-            {landed ? 'FEED COMPLETE' : 'LIVE'}
+            <span className={`h-1.5 w-1.5 rounded-full ${missionComplete ? 'bg-emerald-300' : 'animate-pulse bg-red-400'}`} />
+            {missionComplete ? 'FEED COMPLETE' : 'LIVE'}
           </span>
         </div>
       </div>
@@ -83,12 +84,12 @@ export default function DroneDispatchFeed({
 
         <div className="absolute left-2 top-2 rounded bg-black/55 px-2 py-1 font-mono text-[9px] leading-4 text-slate-200 backdrop-blur-sm">
           <p>{missionId} · CAM-01</p>
-          <p>ALT {Math.max(18, Math.round(84 - telemetry.routeProgress * 58))} M · {telemetry.batteryPct}% BAT</p>
+          <p>ALT {telemetry.altitudeM} M · {telemetry.batteryPct}% BAT</p>
         </div>
         <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 text-[9px] font-medium text-white">
           <div className="min-w-0 rounded bg-black/55 px-2 py-1 backdrop-blur-sm">
-            <p className="truncate">{destination}</p>
-            <p className="text-emerald-300">MODEL NEED · {predictedPeople} PEOPLE</p>
+            <p className="truncate">{returning || missionComplete ? 'Return to operations depot' : destination}</p>
+            <p className="text-emerald-300">{returning ? 'PAYLOAD RELEASED · RETURN LEG' : missionComplete ? 'ROUND TRIP COMPLETE' : `MODEL NEED · ${predictedPeople} PEOPLE`}</p>
           </div>
           <span className="flex shrink-0 items-center gap-1 rounded bg-black/55 px-2 py-1 text-emerald-300 backdrop-blur-sm">
             {vision.connected ? <ScanLine size={11} /> : <Wifi size={11} />}
