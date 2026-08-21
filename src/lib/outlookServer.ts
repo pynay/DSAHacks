@@ -63,6 +63,9 @@ export interface OutlookPayload {
   backtest: BacktestRow[];
   beatsNaiveThrough: number;
   beatsLastValueFrom: number;
+  // Per-neighborhood forecast rows (marts/outlook_forecast.csv, ungrouped) for
+  // the Forecast & Plan grid, keyed by the six downtown neighborhood ids.
+  byNeighborhood: Record<string, ForecastPoint[]>;
 }
 
 async function build(): Promise<OutlookPayload> {
@@ -111,6 +114,7 @@ async function build(): Promise<OutlookPayload> {
     ORDER BY 1, 2`);
   const fcRows = fcReader.getRowObjects().map((r) => ({
     month: String(r.month),
+    neighborhood: String(r.neighborhood),
     value: Number(r.value),
     lo: Number(r.lo),
     hi: Number(r.hi),
@@ -122,6 +126,14 @@ async function build(): Promise<OutlookPayload> {
     ...r,
     kind: kindByMonth.get(r.month) ?? "forecast",
   }));
+
+  // Same rows, grouped by neighborhood instead of summed — the Forecast &
+  // Plan grid's per-zone-week need is derived from these, never resummed.
+  const byNeighborhood: OutlookPayload["byNeighborhood"] = {};
+  for (const r of fcRows) {
+    (byNeighborhood[r.neighborhood] ??= []).push({ month: r.month, value: r.value, lo: r.lo, hi: r.hi, kind: r.kind });
+  }
+  for (const rows of Object.values(byNeighborhood)) rows.sort((a, b) => a.month.localeCompare(b.month));
 
   // ITS: downtown-scope post (immediate level change) and effect_12m
   // (vs. a counterfactual extending the pre-ban trend) per series.
@@ -176,6 +188,7 @@ async function build(): Promise<OutlookPayload> {
     backtest,
     beatsNaiveThrough: beatsNaiveThrough(backtest),
     beatsLastValueFrom: beatsLastValueFrom(backtest),
+    byNeighborhood,
   };
 }
 

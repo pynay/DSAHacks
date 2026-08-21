@@ -1,140 +1,117 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { InventoryItem, Donation, Distribution } from '@/lib/types';
 import { applyDonation, applyDistribution, newId } from '@/lib/inventory';
-import { seedInventory, seedDonations, seedDistributions } from '@/data/mock';
-import { stepDay, addDays, SIM_START, type WarehouseState, type SimEvent, type Reorder } from '@/lib/warehouse';
+import type { SimEvent, Reorder } from '@/lib/warehouse';
+import { loadSnapshot, saveSnapshot, clearSnapshot, emptySnapshot } from '@/lib/store/localStorageStore';
+import { buildDemoSnapshot } from '@/lib/store/demoData';
+import type { LedgerEvent, PlanParams, Override, DistributionDraft, StoreSnapshot } from '@/lib/store/types';
+
+export interface DistributionOutcome {
+  householdsServed?: number;
+  unitsDistributed?: number;
+  surplusReturned?: number;
+  notes?: string;
+}
 
 interface InventoryContextValue {
   inventory: InventoryItem[];
   donations: Donation[];
   distributions: Distribution[];
-  // Warehouse engine state:
+  ledger: LedgerEvent[];
+  params: PlanParams;
+  overrides: Override[];
+  drafts: DistributionDraft[];
+  selectedWeekStart?: string;
+  // Legacy warehouse-panel state. No sim clock drives these anymore — they
+  // only change through the manual actions below (approveReorder,
+  // togglePriority) — but the Inventory page still renders them.
   events: SimEvent[];
   reorders: Reorder[];
   prioritized: string[];
   simDate: string;
-  running: boolean;
-  speed: number;
   // Manual actions:
   addItem: (item: Omit<InventoryItem, 'id' | 'lastUpdated'>) => void;
   adjustQuantity: (id: string, delta: number) => void;
   logDonation: (input: Omit<Donation, 'id'>) => void;
   recordDistribution: (input: Omit<Distribution, 'id'>) => void;
-  // Engine controls:
-  toggleRunning: () => void;
-  setSpeed: (n: number) => void;
+  // Plan & ledger:
+  setParams: (params: PlanParams) => void;
+  setOverride: (override: Override) => void;
+  clearOverride: (zoneId: string) => void;
+  stageDrafts: (drafts: DistributionDraft[]) => void;
+  completeDraft: (id: string, outcome: DistributionOutcome) => void;
+  appendEvent: (event: Omit<LedgerEvent, 'id' | 'ts'>) => void;
+  setSelectedWeekStart: (weekStart: string) => void;
+  // Demo data:
+  loadDemo: () => void;
   resetDemo: () => void;
+  // Legacy warehouse-panel actions:
   approveReorder: (itemId: string, qty: number) => void;
   togglePriority: (itemId: string) => void;
 }
 
 const InventoryContext = createContext<InventoryContextValue | null>(null);
-const STORAGE_KEY = 'parsel-warehouse-v1';
-// Wall-clock milliseconds per simulated day at 1x. Kept calm so stock and
-// expiry countdowns are watchable rather than blurring past.
-const BASE_TICK_MS = 6000;
 
-function freshSeed(): WarehouseState {
-  return {
-    inventory: seedInventory.map((i) => ({ ...i })),
-    donations: seedDonations.map((d) => ({ ...d })),
-    distributions: seedDistributions.map((d) => ({ ...d })),
-    events: [],
-    reorders: [],
-    prioritized: [],
-    simDate: SIM_START,
-  };
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function makeLedgerEvent(input: Omit<LedgerEvent, 'id' | 'ts'>): LedgerEvent {
+  return { ...input, id: newId(), ts: new Date().toISOString() };
 }
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<WarehouseState>(freshSeed);
-  const [running, setRunning] = useState(true);
-  const [speed, setSpeed] = useState(1);
-  // `hydrated` is STATE, not a ref, so flipping it re-runs the persist and clock
-  // effects. It starts false so neither runs on the initial (seed) render. That
-  // prevents the persist effect from clobbering saved storage with the seeds, and
-  // the clock from stepping the seed, before hydration commits.
+  const [snapshot, setSnapshot] = useState<StoreSnapshot>(emptySnapshot);
+  const [events, setEvents] = useState<SimEvent[]>([]);
+  const [reorders, setReorders] = useState<Reorder[]>([]);
+  const [prioritized, setPrioritized] = useState<string[]>([]);
+  // `hydrated` starts false so the persist effect can't fire on the initial
+  // (empty) render and clobber saved storage before hydration reads it.
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage once on mount (client only).
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const saved = JSON.parse(raw);
-          if (saved.state?.inventory) setState(saved.state);
-          if (typeof saved.running === 'boolean') setRunning(saved.running);
-          if (typeof saved.speed === 'number') setSpeed(saved.speed);
-        }
-      } catch {
-        /* ignore corrupt storage */
-      }
+      const saved = loadSnapshot();
+      if (saved) setSnapshot(saved);
       setHydrated(true);
     }, 0);
     return () => window.clearTimeout(timeout);
   }, []);
 
-  // Persist whenever anything changes (only after hydration has committed).
+  // Persist whenever the snapshot changes (only after hydration has committed).
   useEffect(() => {
     if (!hydrated) return;
-    // Never write the pristine seed over saved progress. In dev, React
-    // StrictMode double-invokes effects, which can race a seed-state write
-    // against hydration; this guard makes that write a no-op. resetDemo removes
-    // the key instead, so a real reset still starts fresh.
-    const pristine = state.simDate === SIM_START && state.events.length === 0 && state.reorders.length === 0;
-    if (pristine) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, running, speed }));
-    } catch {
-      /* storage full / unavailable */
-    }
-  }, [hydrated, state, running, speed]);
-
-  // The engine clock: while running, advance one simulated day per tick. The
-  // ref guard guarantees a single live interval even if StrictMode double-invokes
-  // this effect, so the sim can't run at 2x.
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    if (tickRef.current) {
-      clearInterval(tickRef.current);
-      tickRef.current = null;
-    }
-    if (!hydrated || !running) return;
-    const ms = Math.max(1200, Math.round(BASE_TICK_MS / speed));
-    tickRef.current = setInterval(() => setState((s) => stepDay(s)), ms);
-    return () => {
-      if (tickRef.current) {
-        clearInterval(tickRef.current);
-        tickRef.current = null;
-      }
-    };
-  }, [hydrated, running, speed]);
+    saveSnapshot(snapshot);
+  }, [hydrated, snapshot]);
 
   const addItem: InventoryContextValue['addItem'] = (item) => {
-    setState((s) => ({ ...s, inventory: [{ ...item, id: newId(), lastUpdated: s.simDate }, ...s.inventory] }));
+    setSnapshot((s) => ({
+      ...s,
+      inventory: [{ ...item, id: newId(), lastUpdated: today() }, ...s.inventory],
+    }));
   };
 
   const adjustQuantity: InventoryContextValue['adjustQuantity'] = (id, delta) => {
-    setState((s) => ({
+    setSnapshot((s) => ({
       ...s,
       inventory: s.inventory.map((i) =>
-        i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta), lastUpdated: s.simDate } : i,
+        i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta), lastUpdated: today() } : i,
       ),
     }));
   };
 
   const logDonation: InventoryContextValue['logDonation'] = (input) => {
-    setState((s) => {
+    setSnapshot((s) => {
       const donation: Donation = { ...input, id: newId() };
       return { ...s, donations: [donation, ...s.donations], inventory: applyDonation(s.inventory, donation) };
     });
   };
 
   const recordDistribution: InventoryContextValue['recordDistribution'] = (input) => {
-    setState((s) => {
+    setSnapshot((s) => {
       const distribution: Distribution = { ...input, id: newId() };
       return {
         ...s,
@@ -144,69 +121,169 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const toggleRunning = () => setRunning((r) => !r);
-
-  const resetDemo = () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    setState(freshSeed());
-    setRunning(true);
-    setSpeed(1);
+  const setParams: InventoryContextValue['setParams'] = (params) => {
+    setSnapshot((s) => ({
+      ...s,
+      params,
+      ledger: [
+        makeLedgerEvent({ type: 'params_changed', actor: 'operator', payload: { ...params } }),
+        ...s.ledger,
+      ],
+    }));
   };
 
-  const approveReorder: InventoryContextValue['approveReorder'] = (itemId, qty) => {
-    setState((s) => {
-      const it = s.inventory.find((i) => i.id === itemId);
-      if (!it || qty <= 0) return s;
-      const reorder: Reorder = {
+  const setOverride: InventoryContextValue['setOverride'] = (override) => {
+    setSnapshot((s) => ({
+      ...s,
+      overrides: [override, ...s.overrides.filter((o) => o.zoneId !== override.zoneId)],
+      ledger: [
+        makeLedgerEvent({
+          type: 'override_set',
+          zoneId: override.zoneId,
+          actor: 'operator',
+          payload: { mode: override.mode, value: override.value, expiresAt: override.expiresAt },
+          note: override.reason,
+        }),
+        ...s.ledger,
+      ],
+    }));
+  };
+
+  const clearOverride: InventoryContextValue['clearOverride'] = (zoneId) => {
+    setSnapshot((s) => ({ ...s, overrides: s.overrides.filter((o) => o.zoneId !== zoneId) }));
+  };
+
+  const stageDrafts: InventoryContextValue['stageDrafts'] = (newDrafts) => {
+    setSnapshot((s) => ({
+      ...s,
+      drafts: [...newDrafts, ...s.drafts],
+      ledger: [
+        ...newDrafts.map((d) =>
+          makeLedgerEvent({
+            type: 'allocation_staged',
+            zoneId: d.zoneId,
+            refId: d.id,
+            actor: 'operator',
+            payload: { meals: d.meals, predictedNeed: d.predictedNeed, items: d.items, weekStart: d.weekStart },
+          }),
+        ),
+        ...s.ledger,
+      ],
+    }));
+  };
+
+  const completeDraft: InventoryContextValue['completeDraft'] = (id, outcome) => {
+    setSnapshot((s) => {
+      const draft = s.drafts.find((d) => d.id === id);
+      if (!draft) return s;
+      const distribution: Distribution = {
         id: newId(),
-        name: it.name,
-        category: it.category,
-        qty,
-        unit: it.unit,
-        placedDate: s.simDate,
-        arriveDate: addDays(s.simDate, 2),
+        date: today(),
+        recipient: draft.zoneLabel,
+        type: 'mobile-pantry',
+        items: draft.items,
+        householdsServed: outcome.householdsServed,
+        notes: outcome.notes,
       };
-      const event: SimEvent = {
-        id: newId(),
-        date: s.simDate,
-        kind: 'reorder',
-        text: `Reorder placed: ${qty} ${it.unit} ${it.name} (ETA 2 days)`,
+      const inventory = applyDistribution(s.inventory, distribution);
+      const drafts = s.drafts.map((d) => (d.id === id ? { ...d, status: 'completed' as const } : d));
+      const ledgerEvent = makeLedgerEvent({
+        type: 'distribution_completed',
+        zoneId: draft.zoneId,
+        refId: distribution.id,
+        actor: 'operator',
+        payload: {
+          predictedNeed: draft.predictedNeed,
+          householdsServed: outcome.householdsServed,
+          unitsDistributed: outcome.unitsDistributed,
+          surplusReturned: outcome.surplusReturned,
+        },
+      });
+      return {
+        ...s,
+        inventory,
+        distributions: [distribution, ...s.distributions],
+        drafts,
+        ledger: [ledgerEvent, ...s.ledger],
       };
-      return { ...s, reorders: [...s.reorders, reorder], events: [event, ...s.events].slice(0, 60) };
     });
   };
 
+  const appendEvent: InventoryContextValue['appendEvent'] = (event) => {
+    setSnapshot((s) => ({ ...s, ledger: [makeLedgerEvent(event), ...s.ledger] }));
+  };
+
+  const setSelectedWeekStart: InventoryContextValue['setSelectedWeekStart'] = (weekStart) => {
+    setSnapshot((s) => ({ ...s, selectedWeekStart: weekStart }));
+  };
+
+  const loadDemo: InventoryContextValue['loadDemo'] = () => {
+    setSnapshot(buildDemoSnapshot(today()));
+    setEvents([]);
+    setReorders([]);
+    setPrioritized([]);
+  };
+
+  const resetDemo: InventoryContextValue['resetDemo'] = () => {
+    clearSnapshot();
+    setSnapshot(emptySnapshot());
+    setEvents([]);
+    setReorders([]);
+    setPrioritized([]);
+  };
+
+  const approveReorder: InventoryContextValue['approveReorder'] = (itemId, qty) => {
+    const item = snapshot.inventory.find((i) => i.id === itemId);
+    if (!item || qty <= 0) return;
+    const reorder: Reorder = {
+      id: newId(),
+      name: item.name,
+      category: item.category,
+      qty,
+      unit: item.unit,
+      placedDate: today(),
+      arriveDate: today(),
+    };
+    setReorders((r) => [...r, reorder]);
+    setEvents((e) =>
+      [
+        { id: newId(), date: today(), kind: 'reorder' as const, text: `Reorder placed: ${qty} ${item.unit} ${item.name}` },
+        ...e,
+      ].slice(0, 60),
+    );
+  };
+
   const togglePriority: InventoryContextValue['togglePriority'] = (itemId) => {
-    setState((s) => ({
-      ...s,
-      prioritized: s.prioritized.includes(itemId)
-        ? s.prioritized.filter((x) => x !== itemId)
-        : [...s.prioritized, itemId],
-    }));
+    setPrioritized((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
   return (
     <InventoryContext.Provider
       value={{
-        inventory: state.inventory,
-        donations: state.donations,
-        distributions: state.distributions,
-        events: state.events,
-        reorders: state.reorders,
-        prioritized: state.prioritized,
-        simDate: state.simDate,
-        running,
-        speed,
+        inventory: snapshot.inventory,
+        donations: snapshot.donations,
+        distributions: snapshot.distributions,
+        ledger: snapshot.ledger,
+        params: snapshot.params,
+        overrides: snapshot.overrides,
+        drafts: snapshot.drafts,
+        selectedWeekStart: snapshot.selectedWeekStart,
+        events,
+        reorders,
+        prioritized,
+        simDate: today(),
         addItem,
         adjustQuantity,
         logDonation,
         recordDistribution,
-        toggleRunning,
-        setSpeed,
+        setParams,
+        setOverride,
+        clearOverride,
+        stageDrafts,
+        completeDraft,
+        appendEvent,
+        setSelectedWeekStart,
+        loadDemo,
         resetDemo,
         approveReorder,
         togglePriority,
