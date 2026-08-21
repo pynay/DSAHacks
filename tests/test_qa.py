@@ -20,6 +20,15 @@ def test_report_written_with_gaps(tmp_path):
     assert "network down" in txt and "Correlation" in txt
     assert "insufficient overlapping data" in txt  # honest when sources missing
 
+def test_report_written_with_empty_note(tmp_path):
+    # a step can complete with note="" (e.g. load_src_d_72hr); must not crash on ''.splitlines()[0]
+    con = duckdb.connect(); db.ensure_schema(con)
+    results = {"load_src_d_72hr": LoadResult("ok", 334073, "")}
+    out = tmp_path / "QA_REPORT.md"
+    res = qa.write_qa_report(con, results, out)
+    assert res.status == "ok"
+    assert "load_src_d_72hr" in out.read_text()
+
 def test_corr_h_blocks_shape():
     # structural: function exists and returns (r, n) or None without a populated db
     import duckdb

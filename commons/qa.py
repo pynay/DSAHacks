@@ -99,11 +99,11 @@ def write_qa_report(con, results, path=ROOT / "QA_REPORT.md") -> LoadResult:
     L = [f"# QA Report - generated {dt.datetime.now():%Y-%m-%d %H:%M}\n", "## Run summary\n",
          "| step | status | rows | note |", "|---|---|---|---|"]
     for name, r in results.items():
-        L.append(f"| {name} | {r.status} | {r.rows} | {(r.note or '').splitlines()[0][:120]} |")
+        L.append(f"| {name} | {r.status} | {r.rows} | {((r.note or '').splitlines() or [''])[0][:120]} |")
     gaps = [n for n, r in results.items() if r.status in ("failed", "stubbed", "partial")]
     L.append("\n## Source gaps\n")
     L.append("None - all steps ok.\n" if not gaps else
-             "\n".join(f"- `{n}`: {results[n].status} - {(results[n].note or '').splitlines()[0][:200]}" for n in gaps) + "\n")
+             "\n".join(f"- `{n}`: {results[n].status} - {((results[n].note or '').splitlines() or [''])[0][:200]}" for n in gaps) + "\n")
 
     L.append("## Table inventory\n\n| table | rows | min date | max date |\n|---|---|---|---|")
     for (t,) in con.execute("""SELECT table_name FROM information_schema.tables
