@@ -154,6 +154,7 @@ keeps its last load and marts/docs are rebuilt on top of the refreshed staging t
 | F | Annual Point-in-Time counts (RTFH) | observation | annual (manual seed) |
 | G | Weather (NOAA), rent (Zillow ZORI), policy events | context | daily/monthly/manual |
 | H | Hackathon mandatory bundle: DSDP downtown counts, curated by Data Science Alliance | observation | static bundle, committed |
+| I | USDA Food Access Research Atlas — La Jolla food access | food_access | periodic (manual seed) |
 
 Full per-table lineage (grain, URL, refresh cadence, `measures`, `known_bias`) is
 auto-generated into `DATA_DICTIONARY.md` on every run — that file, not this README, is
@@ -182,6 +183,38 @@ if it's ever filled in, consumers reading `dsdp_reported_total` must group/filte
 `source_id` to keep the two series apart. `mart_monthly_block` carries H's
 `dsdp_units_total` on census-block-mapped rows only.
 
+### Source I — La Jolla food access (USDA FARA)
+
+The only non-downtown source: food-insecurity context for the **La Jolla** area (ZIP
+92037), from the USDA ERS [Food Access Research Atlas](https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data),
+at census-tract grain, vintages **2010 / 2015 / 2019** (all on 2010 tract boundaries). It
+does not touch the downtown block grid — it lands in `mart_monthly_context` keyed by the
+free-text `geography` column (like weather/rents/PIT), at `obs_month = Jan 1` of the vintage.
+
+Metrics, per tract (`geography = 'tract_<GEOID>'`) and as a `la_jolla` rollup:
+
+| metric | meaning (FARA field) |
+|---|---|
+| `pop_total` | tract population (`POP2010`) |
+| `low_access_pop` | people >1mi (urban) from a supermarket (`lapop1`) |
+| `low_access_pop_share` | % with low access — **derived** `100*low_access_pop/pop_total` |
+| `low_income_low_access_pop` | low-income **and** low-access population (`lalowi1`) |
+| `lila_flag` | 1 = tract flagged low-income & low-access food desert (`LILATracts_1And10`) |
+| `snap_housing_units` | housing units receiving SNAP (`TractSNAP`) |
+
+At `geography = 'la_jolla'`, count metrics are summed across La Jolla tracts,
+`low_access_pop_share` is population-weighted over the tracts that reported low access, and
+`lila_flag` becomes the **share of La Jolla tracts flagged** (0–1). Real-data honesty notes:
+all 14 La Jolla tracts appear in every vintage; **none is flagged LILA in any vintage** (La
+Jolla is not a food desert), though low-access population is real and nonzero in several
+tracts. The share column is *derived*, not FARA's `lapop1share`, because that column is a
+fraction (0–1) in 2010/2015 but a percentage (0–100) in 2019 — not comparable across vintages.
+FARA 2010 has no SNAP field and 2019 marks 5 tracts `NULL` for low access; those cells are
+left blank (never 0), and a metric absent for a whole vintage is omitted from the rollup.
+
+**Rebuild the seed** from the real FARA files (auto-downloaded to `raw/fara/`):
+`python scripts/build_food_access_seed.py`.
+
 ## Outputs
 
 1. **`commons.duckdb`** — every staging table plus the four marts, queryable directly.
@@ -196,6 +229,9 @@ if it's ever filled in, consumers reading `dsdp_reported_total` must group/filte
    - `blocks.geojson` — census block polygons (from source A) used for the block grid;
      ships alongside the internal-tier files since it's what makes `geo_block` joinable
      to a map.
+   - **Public tier**: `food_access_la_jolla.csv` — La Jolla FARA food-access metrics
+     (Source I), per-tract + `la_jolla` rollup, annual snapshots. Aggregate census data,
+     no personal fields — the same rows also live in `mart_monthly_context` (`source_id='I'`).
 3. **`DATA_DICTIONARY.md`** — auto-generated every run: every table, column, grain,
    source URL, refresh cadence, `measures`, `known_bias`.
 4. **`QA_REPORT.md`** — auto-generated every run: row counts and load status per
@@ -245,8 +281,11 @@ is a small CSV with a `source_url` column per row so every number is traceable.
   into marts. Add a row with `event_date, event_type, title, description,
   date_certainty, source_url` when a new dated event is worth flagging; use
   `date_certainty=verify` if the date isn't nailed down yet.
-
-## Known limitations
+- **`food_access_la_jolla.csv`** — USDA FARA food-access rows for the 14 La Jolla tracts
+  (Source I), one row per `(vintage_year, census_tract)` with per-row `source_url` and a
+  `note` recording the vintage and any fields absent that year. Regenerate from the real
+  FARA files with `python scripts/build_food_access_seed.py` (it auto-downloads them to
+  `raw/fara/`); don't hand-edit.
 
 - **Citations are not geocoded.** Source D's parking-citation files carry no
   lat/lng (only a text `location` and `sector1`); `geo_block`/`h3_r8`/`neighborhood`
