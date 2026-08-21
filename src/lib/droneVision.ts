@@ -42,6 +42,7 @@ export interface VisionDetection {
   objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
   verdict: VisionVerdict | null; // drop-verdict pipeline (null on older bridges)
   brightness: number; // mean frame brightness feeding the visibility gate
+  bootId: string; // bridge process id; changes on restart -> UI reconnects the MJPEG stream
   videoFps: number; // measured camera capture rate
   inferFps: number; // measured EyePop round-trip rate
   ts: number;
@@ -52,7 +53,7 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
   const raw = d as {
     label?: string; confidence?: number; count?: number;
     persons?: VisionPerson[]; objects?: VisionObject[];
-    verdict?: VisionVerdict | null; brightness?: number;
+    verdict?: VisionVerdict | null; brightness?: number; boot_id?: string;
     video_fps?: number; infer_fps?: number; ts?: number;
   };
   return {
@@ -63,6 +64,7 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     objects: raw.objects ?? [],
     verdict: raw.verdict ?? null,
     brightness: raw.brightness ?? 0,
+    bootId: raw.boot_id ?? '',
     videoFps: raw.video_fps ?? 0,
     inferFps: raw.infer_fps ?? 0,
     ts: raw.ts ?? 0,

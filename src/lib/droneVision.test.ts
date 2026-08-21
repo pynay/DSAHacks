@@ -10,6 +10,7 @@ const fullPayload = {
   objects: [{ label: 'laptop', confidence: 0.8, x: 100, y: 900, width: 1700, height: 1000, in_zone: true }],
   video_fps: 30.6,
   infer_fps: 6.4,
+  boot_id: '13651-1787308200000',
   brightness: 132.1,
   verdict: {
     state: 'HOLD',
@@ -30,6 +31,7 @@ test('parses a full bridge payload including the verdict', () => {
   expect(det.brightness).toBe(132.1);
   expect(det.objects[0].label).toBe('laptop');
   expect(det.videoFps).toBe(30.6);
+  expect(det.bootId).toBe('13651-1787308200000');
 });
 
 test('older bridge without verdict still parses, verdict is null', () => {
@@ -46,6 +48,7 @@ test('older bridge without verdict still parses, verdict is null', () => {
 test('empty payload parses to safe defaults', () => {
   const det = parseDetection({});
   expect(det.verdict).toBeNull();
+  expect(det.bootId).toBe('');
   expect(det.count).toBe(0);
   expect(det.label).toBe('clear');
   expect(det.objects).toEqual([]);

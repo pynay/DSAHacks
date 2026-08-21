@@ -58,6 +58,7 @@ CLEAR_HOLD_S = float(os.environ.get("CLEAR_HOLD_S", "3.0"))
 MIN_BRIGHTNESS = float(os.environ.get("MIN_BRIGHTNESS", "8.0"))
 DROP_ZONE = tuple(float(v) for v in os.environ.get("DROP_ZONE", "0.25,0.25,0.75,0.75").split(","))
 ENGINE = VerdictEngine(clear_hold_s=CLEAR_HOLD_S, min_brightness=MIN_BRIGHTNESS, zone=DROP_ZONE)
+BOOT_ID = f"{os.getpid()}-{int(time.time() * 1000)}"  # changes per process; lets the UI detect restarts
 
 POP = Pop(components=[
     InferenceComponent(ability=EYEPOP_ABILITY, confidenceThreshold=CONFIDENCE)
@@ -267,6 +268,7 @@ async def get_detection(_req):
     body["infer_fps"] = round(state["infer_fps"], 1)
     body["verdict"] = state["verdict"]
     body["brightness"] = round(state["brightness"], 1)
+    body["boot_id"] = BOOT_ID
     return web.json_response(body)
 
 
@@ -295,6 +297,29 @@ async def get_stream(request):
     return resp
 
 
+async def watchdog():
+    """Exit (for the supervisor to restart us) if capture silently stalls.
+
+    A hung AVFoundation read blocks its executor thread forever: frames stop
+    but inference keeps re-processing the last frame, so /detection looks
+    alive while the feed is frozen. frame_seq not advancing is the tell.
+    """
+    seq = -1
+    stalled_since = None
+    while True:
+        await asyncio.sleep(2.0)
+        if state["frame_seq"] == 0:  # camera still warming up / scanning
+            continue
+        if state["frame_seq"] == seq:
+            stalled_since = stalled_since or time.monotonic()
+            if time.monotonic() - stalled_since > 15.0:
+                print("watchdog: capture stalled >15s, exiting for supervisor restart", flush=True)
+                os._exit(3)
+        else:
+            stalled_since = None
+            seq = state["frame_seq"]
+
+
 async def cors(_req, res):
     res.headers["Access-Control-Allow-Origin"] = "*"  # localhost demo bridge
 
@@ -320,7 +345,7 @@ async def main():
         await web.TCPSite(runner, "127.0.0.1", PORT).start()
         print(f"Bridge up: http://localhost:{PORT}/detection", flush=True)
         try:
-            await asyncio.gather(capture_loop(), inference_loop(endpoint))
+            await asyncio.gather(capture_loop(), inference_loop(endpoint), watchdog())
         finally:
             await runner.cleanup()
 

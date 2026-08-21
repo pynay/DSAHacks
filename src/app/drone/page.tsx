@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, MapPin, Video, XCircle } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
@@ -8,6 +9,17 @@ export default function DronePage() {
   const { zones } = useZones();
   const vision = useDroneVision();
   const det = vision.detection;
+  // MJPEG in an <img> dies silently if its connection drops (e.g. bridge restart
+  // while the tab is backgrounded and polls are throttled). Remount the img when
+  // the bridge process changes or the tab becomes visible again.
+  const [visEpoch, setVisEpoch] = useState(0);
+  useEffect(() => {
+    const onVis = () => {
+      if (!document.hidden) setVisEpoch((e) => e + 1);
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
   const clear = det?.label === 'clear';
   const verdict = det?.verdict ?? null;
   // Verdict pipeline drives the decision; older bridges fall back to the person heuristic.
@@ -57,7 +69,12 @@ export default function DronePage() {
           <div className="relative aspect-video overflow-hidden rounded-xl border border-stone-800 bg-stone-900">
             {vision.connected ? (
               // eslint-disable-next-line @next/next/no-img-element -- localhost MJPEG live stream
-              <img src={vision.frameUrl} alt="EyePop drone camera feed" className="h-full w-full object-cover" />
+              <img
+                key={`stream-${det?.bootId ?? 'na'}-${visEpoch}`}
+                src={vision.frameUrl}
+                alt="EyePop drone camera feed"
+                className="h-full w-full object-cover"
+              />
             ) : (
               <div className="grid h-full place-items-center text-center text-stone-400">
                 <div>
