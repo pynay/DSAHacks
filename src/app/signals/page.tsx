@@ -3,19 +3,29 @@
 import { useEffect, useState } from 'react';
 import { BedDouble } from 'lucide-react';
 import type { CommonsStats } from '@/lib/commonsStats';
+import type { OutlookPayload } from '@/lib/outlookServer';
 import PitChart from '@/components/charts/PitChart';
 import NeedHeatmap from '@/components/charts/NeedHeatmap';
 import IndexedSignals from '@/components/charts/IndexedSignals';
 import LaJollaSlope from '@/components/charts/LaJollaSlope';
+import OutlookChart from '@/components/charts/OutlookChart';
+import OutlookFindings from '@/components/OutlookFindings';
 
 export default function SignalsPage() {
   const [commons, setCommons] = useState<CommonsStats | null>(null);
+  const [outlook, setOutlook] = useState<OutlookPayload | null>(null);
 
   useEffect(() => {
     fetch('/api/commons')
       .then((r) => r.json())
       .then((d) => {
         if (d.pit) setCommons(d);
+      })
+      .catch(() => {});
+    fetch('/api/outlook')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.forecast) setOutlook(d);
       })
       .catch(() => {});
   }, []);
@@ -38,6 +48,25 @@ export default function SignalsPage() {
 
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
+          {outlook && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-3">
+              <h2 className="font-semibold text-slate-900">Where downtown is headed</h2>
+              <p className="mb-3 text-xs text-slate-500">
+                Downtown DSDP counted-unit total, nowcast for unpublished recent months, then a 12-month
+                forecast with an 80% band. The 2023-08 camping ban is marked for reference; the ITS effect
+                below is quasi-experimental, not causal.
+              </p>
+              <OutlookChart history={outlook.history} forecast={outlook.forecast} />
+              <div className="mt-4">
+                <OutlookFindings
+                  forecastLast={outlook.forecast[outlook.forecast.length - 1]}
+                  beatsNaiveThrough={outlook.beatsNaiveThrough}
+                  its={outlook.its}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Need heatmap showing where and when need concentrates */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
             <h2 className="font-semibold text-slate-900">Where need concentrates</h2>
