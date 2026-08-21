@@ -46,16 +46,29 @@ Rejected alternatives:
 |--------------------------------|----------------------|---------|
 | `pop_total`                    | `POP2010`            | Tract population (denominator/context) |
 | `low_access_pop`               | `lapop1`             | People > 1 mi (urban) from nearest supermarket |
-| `low_access_pop_share`         | `lapop1share`        | % of tract population with low access |
+| `low_access_pop_share`         | **derived** `100 * lapop1 / POP2010` | % of tract population with low access (see note) |
 | `low_income_low_access_pop`    | `lalowi1`            | Low-income **and** low-access population |
 | `lila_flag`                    | `LILATracts_1And10`  | 1 = tract flagged low-income & low-access ("food desert") |
 | `snap_housing_units`           | `TractSNAP`          | Housing units receiving SNAP (food-relief tie-in) |
 
-**Vintage field-harmonization caveat:** FARA column names shift slightly across releases
-(e.g. the `LILATracts_1And10` flag and some `lapop*`/`TractSNAP` fields were not present or
-were named differently in the 2010 release). The extraction step maps each vintage's columns
-to the 6 canonical metrics above. Where a field is genuinely absent for a vintage, the seed
-value is left blank (NULL) and the reason recorded in that row's `note` — never faked as 0.
+**Vintage field-harmonization caveat (verified against the real files 2026-08-20):** FARA
+column names and encodings shift across releases. The extraction step maps each vintage's
+columns to the canonical metrics and harmonizes them:
+- **`Pop2010` vs `POP2010`** — 2019/LRAM uses `Pop2010` casing; auto-detected.
+- **`TractSNAP` absent in 2010** — the 2010 vintage has no SNAP column, so `snap_housing_units`
+  is left blank for 2010 rows, with the reason recorded in `note` — never faked as 0.
+- **`'NULL'` literals** — 2019/LRAM stores the string `'NULL'` for `lapop1`/`lalowi1` in some
+  tracts (5 of 14 La Jolla tracts); these are coerced to blank, never 0.
+- **`low_access_pop_share` is derived, not read** — FARA's own `lapop1share` is a **fraction
+  (0–1) in 2010/2015 but a percentage (0–100) in 2019/LRAM**, so it is not comparable across
+  vintages. We compute the share ourselves as `100 * low_access_pop / pop_total` (percentage,
+  consistent across all vintages and consistent with the `la_jolla` rollup share), and blank it
+  wherever `low_access_pop` is blank.
+
+**Real-data note:** all 14 La Jolla tracts (ZIP 92037) are present in every vintage; none is
+flagged LILA in any vintage (La Jolla is not a food desert), while low-access population is
+real and nonzero in several tracts. This is the honest signal, extracted verbatim from the
+FARA files — not synthesized.
 
 ## Area definition (La Jolla)
 
