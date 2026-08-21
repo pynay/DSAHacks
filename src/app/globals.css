@@ -1,26 +1,9 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Food bank inventory: fixed light "pale yellow" theme.
+   Set the base canvas on <body> so overscroll and any area beyond
+   content stays on-palette. Inter is applied via next/font on <body>. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fefce8; /* yellow-50 canvas */
+  color: #1c1917; /* stone-900 text */
 }
