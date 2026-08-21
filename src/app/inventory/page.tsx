@@ -88,7 +88,7 @@ export default function InventoryPage() {
       </div>
 
       <p className="text-sm text-stone-500">{filtered.length} of {inventory.length} items</p>
-      <InventoryTable items={filtered} onAdjust={adjustQuantity} />
+      <InventoryTable items={filtered} onAdjust={adjustQuantity} now={now} />
 
       <Modal open={open} title="Add inventory item" onClose={() => setOpen(false)}>
         <form onSubmit={submit} className="space-y-3">

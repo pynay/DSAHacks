@@ -8,11 +8,12 @@ import { Minus, Plus } from 'lucide-react';
 export default function InventoryTable({
   items,
   onAdjust,
+  now,
 }: {
   items: InventoryItem[];
   onAdjust: (id: string, delta: number) => void;
+  now: Date;
 }) {
-  const now = new Date();
   return (
     <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
       <table className="min-w-full text-sm">
