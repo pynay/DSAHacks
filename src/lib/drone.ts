@@ -45,7 +45,9 @@ function bearing(a: { lng: number; lat: number }, b: { lng: number; lat: number 
 }
 
 const CRUISE_ALT = 60; // meters
-const SPEED = 12; // m/s cruise
+const SPEED = 12; // m/s cruise (shown in telemetry)
+const TICK_MS = 650;
+const DEMO_SPEEDUP = 7; // compress flight time so the map motion is visible in a demo
 
 // Simulate a delivery loop across the given zones (highest-need first).
 export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null {
@@ -62,7 +64,7 @@ export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null 
       const target = targets[s.idx % targets.length];
       const legKm = Math.max(0.05, haversineKm(DEPOT, target));
       const legMeters = legKm * 1000;
-      const step = SPEED / legMeters; // fraction of the leg per second
+      const step = (SPEED * DEMO_SPEEDUP * (TICK_MS / 1000)) / legMeters; // fraction of leg per tick
 
       let status: DroneStatus = 'en-route';
       let alt = CRUISE_ALT;
@@ -128,7 +130,7 @@ export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null 
         detection,
         updatedAt: Date.now(),
       });
-    }, 1000);
+    }, TICK_MS);
 
     return () => clearInterval(id);
   }, [zones]);

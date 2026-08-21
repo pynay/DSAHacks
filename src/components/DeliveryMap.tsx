@@ -33,13 +33,18 @@ function spokesFC(zones: DeliveryZone[]): FeatureCollection {
 export default function DeliveryMap({
   zones,
   onAddZone,
+  drone = null,
+  zoom,
 }: {
   zones: DeliveryZone[];
   onAddZone: (lngLat: { lng: number; lat: number }) => void;
+  drone?: { lng: number; lat: number; headingDeg: number } | null;
+  zoom?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const readyRef = useRef(false);
+  const droneMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Keep latest props reachable from stable map event handlers.
   const zonesRef = useRef(zones);
@@ -56,7 +61,7 @@ export default function DeliveryMap({
       container: containerRef.current,
       style: "mapbox://styles/mapbox/dark-v11",
       center: MAP_DEFAULTS.center,
-      zoom: MAP_DEFAULTS.zoom,
+      zoom: zoom ?? MAP_DEFAULTS.zoom,
       pitch: MAP_DEFAULTS.pitch,
       bearing: MAP_DEFAULTS.bearing,
       antialias: true,
@@ -86,7 +91,9 @@ export default function DeliveryMap({
         "source-layer": "building",
         filter: ["==", ["get", "extrude"], "true"],
         type: "fill-extrusion",
-        minzoom: 12,
+        // Keep buildings rendered when zoomed out a little (so the drone stays
+        // on a populated map as it flies the route).
+        minzoom: 10,
         paint: {
           // Taller buildings read lighter, so the 3D massing pops on the dark base.
           "fill-extrusion-color": [
@@ -209,6 +216,30 @@ export default function DeliveryMap({
     syncData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zones]);
+
+  // Live drone marker: created once, then glides to each new position.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!drone) {
+      droneMarkerRef.current?.remove();
+      droneMarkerRef.current = null;
+      return;
+    }
+    if (!droneMarkerRef.current) {
+      const el = document.createElement("div");
+      // Outer element gets the position transition so movement glides.
+      el.style.cssText = "transition:transform .65s linear";
+      el.innerHTML =
+        '<div style="width:30px;height:30px;border-radius:50%;background:#22d3ee;border:2px solid #fff;box-shadow:0 0 14px #22d3ee;display:grid;place-items:center;color:#083344;font-size:17px">✈</div>';
+      droneMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: "center", rotationAlignment: "map" })
+        .setLngLat([drone.lng, drone.lat])
+        .addTo(map);
+    }
+    droneMarkerRef.current.setLngLat([drone.lng, drone.lat]);
+    const inner = droneMarkerRef.current.getElement().firstElementChild as HTMLElement | null;
+    if (inner) inner.style.transform = `rotate(${drone.headingDeg}deg)`;
+  }, [drone]);
 
   if (!TOKEN) {
     return (
