@@ -1,0 +1,28 @@
+{
+  "generated_on": "2026-08-21",
+  "seed": 42,
+  "target": "visible individuals per census block per monthly DSDP count",
+  "panel": {
+    "months": 50,
+    "blocks": 287,
+    "actual_months": 47,
+    "imputed_months": 3,
+    "start": "2014-01-01",
+    "end": "2018-02-01"
+  },
+  "evaluation": {
+    "test_folds": 12,
+    "strategy": "expanding-window one-step-ahead over final observed months",
+    "top_fraction": 0.1
+  },
+  "winner": "stacked_hotspot_ensemble",
+  "hybrid_graph_weight": 0.75,
+  "stacked_hybrid_weight": 0.75,
+  "deep_model_gates": {
+    "dcrnn": "not scored as full model: only 50 whole-graph snapshots",
+    "tft": "not scored as full model: insufficient per-cell temporal history and covariates",
+    "deepstpp": "not trainable: no continuous individual event times/locations",
+    "adaptive_graph_transformers": "not scored: insufficient high-frequency whole-graph sequences",
+    "neural_cde": "not scored: current primary panel is short and regular; reserve for irregular drone events"
+  }
+}

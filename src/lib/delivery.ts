@@ -16,6 +16,32 @@ export interface DeliveryZone {
   vehicles?: number; // dsdp_vehicles (most recent digitized vehicle count)
   custom?: boolean; // true for zones the user dropped on the map
   elevation?: number | null; // meters, from terrain query
+  predicted?: boolean; // true when position/need came from the hotspot model
+  confidence?: "experimental" | "drone-updated";
+  model?: string;
+  sourceDate?: string;
+  targetMonth?: string;
+  lastObservedAt?: string;
+  feedbackObservations?: number;
+}
+
+export interface HotspotMeta {
+  model: string;
+  components?: Record<string, number>;
+  source: string;
+  source_date: string;
+  target_month: string;
+  generated_on: string;
+  stale_source_warning: boolean;
+  modern_panel_backtest?: {
+    folds: number;
+    model_mae: number;
+    naive_mae: number;
+    model_poisson_deviance: number;
+    naive_poisson_deviance: number;
+  };
+  observations?: number;
+  latest_observation?: string | null;
 }
 
 // Food-bank depot the drones launch from (downtown SD staging hub, Little Italy edge).

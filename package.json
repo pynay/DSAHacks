@@ -1,13 +1,24 @@
 {
-  "name": "dsahacks-scaffold",
-  "version": "0.1.0",
+  "name": "parsel-relief-platform",
+  "version": "0.2.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "start": "next start",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "data:build": "python3 run.py",
+    "data:refresh": "python3 refresh.py",
+    "model:forecast": "python3 ml/forecast.py",
+    "model:benchmark": "python3 ml/hotspot_benchmark.py",
+    "model:build": "python3 ml/hotspot_production.py"
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.5-r.4",

@@ -200,8 +200,9 @@ export default function DeliveryMap({
           .setHTML(
             `<div style="font:12px/1.4 Inter,sans-serif;color:#1c1917">
                <b>${p.label}</b><br/>
-               need ${z?.need ?? "?"} · ${z?.requests ?? "?"} 311 reqs<br/>
+               ${z?.predicted ? "predicted visible" : "need"} ${z?.need ?? "?"} · ${z?.requests ?? "?"} 311 reqs<br/>
                ${z?.tents ?? 0} tents · ${z?.vehicles ?? 0} vehicles<br/>
+               ${z?.confidence === "drone-updated" ? "drone-updated" : z?.predicted ? "model estimate" : "current data"}<br/>
                ${dist} km from depot · elev ${elev}
              </div>`,
           )
@@ -218,6 +219,8 @@ export default function DeliveryMap({
       map.remove();
       mapRef.current = null;
     };
+    // `zoom` is an initial-map option; changing it must not recreate the map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync zone/spoke data + query elevations whenever zones change.
@@ -231,7 +234,6 @@ export default function DeliveryMap({
 
   useEffect(() => {
     syncData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zones]);
 
   // Live drone marker: created once, then glides to each new position.

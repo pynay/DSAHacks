@@ -35,7 +35,7 @@ function categorySummary(items: { category: string; quantity: number }[]): strin
 
 export default function AllocationPage() {
   const { inventory, recordDistribution } = useInventory();
-  const { zones, error } = useZones();
+  const { zones, meta, error } = useZones();
   const [unitsPerPerson, setUnitsPerPerson] = useState(3);
   const [staged, setStaged] = useState(false);
   const [mode, setMode] = useState<'current' | 'predicted'>('current');
@@ -79,6 +79,7 @@ export default function AllocationPage() {
   }
 
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const modelDriven = zones.some((zone) => zone.predicted);
 
   return (
     <div className="space-y-4">
@@ -86,8 +87,8 @@ export default function AllocationPage() {
         <div>
           <h2 className="font-semibold text-stone-900">Need-based allocation</h2>
           <p className="text-sm text-stone-500">
-            Splits current stock across delivery zones proportionally to need (from the data
-            commons), shipping soonest-expiring items first.
+            Splits current stock across movable hotspot demand, shipping soonest-expiring items
+            first.
           </p>
         </div>
         <div className="flex items-end gap-3">
@@ -101,7 +102,7 @@ export default function AllocationPage() {
                 }}
                 className={`px-3 py-2 text-sm font-medium ${mode === 'current' ? 'bg-yellow-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50'}`}
               >
-                Current need
+                {modelDriven ? 'Hotspot model' : 'Current need'}
               </button>
               <button
                 onClick={() => {
@@ -111,7 +112,7 @@ export default function AllocationPage() {
                 disabled={!forecast}
                 className={`flex items-center gap-1 px-3 py-2 text-sm font-medium disabled:opacity-40 ${mode === 'predicted' ? 'bg-yellow-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50'}`}
               >
-                <TrendingUp size={14} /> Predicted
+                <TrendingUp size={14} /> {modelDriven ? '311-adjusted' : 'Predicted'}
               </button>
             </div>
           </div>
@@ -147,6 +148,12 @@ export default function AllocationPage() {
         </p>
       )}
       {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {meta?.stale_source_warning && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          The block model&apos;s newest source snapshot is {meta.source_date}. Treat quantities as
+          pre-positioning estimates and verify them with a drone or ground count before dispatch.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Target demand" value={result.totalDemand.toLocaleString()} icon={Target} />
@@ -162,9 +169,9 @@ export default function AllocationPage() {
 
       {mode === 'predicted' && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Predictive mode: total demand is unchanged, but its split across zones follows each
-          neighborhood&apos;s <b>predicted next-month 311 share</b> instead of the latest counted
-          need — pre-positioning food where pressure is heading.
+          311-adjusted mode: hotspot positions stay model-derived, while total demand is re-split
+          using each neighborhood&apos;s <b>predicted next-month 311 share</b>. The default hotspot
+          mode uses the block-level count ensemble without this proxy adjustment.
         </p>
       )}
 

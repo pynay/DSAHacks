@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "model": "stacked_hotspot_ensemble",
+    "components": {
+      "graph_diffusion_gbm": 0.5625,
+      "spatial_kde": 0.1875,
+      "xgboost_tweedie": 0.25
+    },
+    "source": "DSDP 261-block longitudinal panel",
+    "source_date": "2025-01-01",
+    "target_month": "2026-08-01",
+    "generated_on": "2026-08-21",
+    "stale_source_warning": true,
+    "modern_panel_backtest": {
+      "folds": 4,
+      "model_mae": 1.618,
+      "naive_mae": 1.69,
+      "model_poisson_deviance": 2.554,
+      "naive_poisson_deviance": 12.424
+    },
+    "selection_benchmark_winner": "stacked_hotspot_ensemble"
+  },
+  "zones": [
+    {
+      "id": "predicted-hotspot-6",
+      "neighborhood": "city_center",
+      "label": "City Center hotspot 6",
+      "lng": -117.1578305,
+      "lat": 32.7151389,
+      "blocks": 74,
+      "need": 148,
+      "predicted": true,
+      "confidence": "experimental",
+      "model": "stacked_hotspot_ensemble",
+      "sourceDate": "2025-01-01",
+      "elevation": null
+    },
+    {
+      "id": "predicted-hotspot-3",
+      "neighborhood": "east_village",
+      "label": "East Village hotspot 3",
+      "lng": -117.1544998,
+      "lat": 32.7097247,
+      "blocks": 64,
+      "need": 103,
+      "predicted": true,
+      "confidence": "experimental",
+      "model": "stacked_hotspot_ensemble",
+      "sourceDate": "2025-01-01",
+      "elevation": null
+    },
+    {
+      "id": "predicted-hotspot-1",
+      "neighborhood": "city_center",
+      "label": "City Center hotspot 1",
+      "lng": -117.1651331,
+      "lat": 32.7171488,
+      "blocks": 57,
+      "need": 99,
+      "predicted": true,
+      "confidence": "experimental",
+      "model": "stacked_hotspot_ensemble",
+      "sourceDate": "2025-01-01",
+      "elevation": null
+    },
+    {
+      "id": "predicted-hotspot-2",
+      "neighborhood": "east_village",
+      "label": "East Village hotspot 2",
+      "lng": -117.1492602,
+      "lat": 32.7089259,
+      "blocks": 24,
+      "need": 80,
+      "predicted": true,
+      "confidence": "experimental",
+      "model": "stacked_hotspot_ensemble",
+      "sourceDate": "2025-01-01",
+      "elevation": null
+    },
+    {
+      "id": "predicted-hotspot-5",
+      "neighborhood": "cortez",
+      "label": "Cortez hotspot 5",
+      "lng": -117.1605943,
+      "lat": 32.7213158,
+      "blocks": 35,
+      "need": 43,
+      "predicted": true,
+      "confidence": "experimental",
+      "model": "stacked_hotspot_ensemble",
+      "sourceDate": "2025-01-01",
+      "elevation": null
+    },
+    {
+      "id": "predicted-hotspot-4",
+      "neighborhood": "east_village",
+      "label": "East Village hotspot 4",
+      "lng": -117.1516649,
+      "lat": 32.7059067,
+      "blocks": 7,
+      "need": 42,
+      "predicted": true,
+      "confidence": "experimental",
+      "model": "stacked_hotspot_ensemble",
+      "sourceDate": "2025-01-01",
+      "elevation": null
+    }
+  ]
+}

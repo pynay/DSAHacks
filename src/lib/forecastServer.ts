@@ -15,7 +15,7 @@ export interface MonthPoint {
 }
 
 export interface HoodForecast {
-  id: string; // neighborhood key, matches zone ids
+  id: string; // neighborhood key, matches DeliveryZone.neighborhood
   label: string;
   lastActual: number; // most recent observed monthly 311 volume
   nextPredicted: number; // first forecast month
@@ -27,7 +27,7 @@ export interface ForecastPayload {
   total: { history: MonthPoint[]; forecast: MonthPoint[] }; // downtown-wide sums
   hoods: HoodForecast[];
   // Per-neighborhood forecast series for the map's predicted-need horizon:
-  // for each zone id, the latest actual 311 volume + the forecast for each
+  // for each neighborhood, the latest actual 311 volume + the forecast for each
   // horizon month. The client projects zone need forward by these ratios.
   series: { months: string[]; hoods: Record<string, { last: number; values: number[] }> };
 }
