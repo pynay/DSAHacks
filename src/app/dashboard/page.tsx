@@ -13,6 +13,7 @@ import ActivityFeed from '@/components/ActivityFeed';
 import CategoryChart from '@/components/charts/CategoryChart';
 import TrendChart from '@/components/charts/TrendChart';
 import PitChart from '@/components/charts/PitChart';
+import DsdpChart from '@/components/charts/DsdpChart';
 
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
@@ -66,12 +67,15 @@ export default function DashboardPage() {
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h2 className="font-semibold text-stone-900">San Diego homelessness (HUD PIT counts)</h2>
+            <h2 className="font-semibold text-stone-900">
+              Downtown unsheltered homelessness (DSDP monthly counts)
+            </h2>
             <p className="mb-1 text-xs text-stone-500">
-              Annual region-wide Point-in-Time counts — real data from the commons (no 2021 bar:
-              the unsheltered count was not conducted that year).
+              The challenge&apos;s core historical series, 2017–2025, multiplier-adjusted totals
+              across all six downtown neighborhoods. Line breaks are the provider&apos;s real
+              reporting gaps — never interpolated or zero-filled.
             </p>
-            <PitChart data={commons.pit} />
+            <DsdpChart data={commons.dsdp} />
           </div>
           <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
             <h2 className="flex items-center gap-2 font-semibold text-stone-900">
@@ -106,6 +110,31 @@ export default function DashboardPage() {
                 <li className="text-stone-400">+{commons.shelters.sites.length - 4} more sites</li>
               )}
             </ul>
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
+            <h2 className="font-semibold text-stone-900">San Diego homelessness (HUD PIT counts)</h2>
+            <p className="mb-1 text-xs text-stone-500">
+              Annual region-wide Point-in-Time counts (no 2021 bar: the unsheltered count was not
+              conducted that year).
+            </p>
+            <PitChart data={commons.pit} />
+          </div>
+
+          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+            <h2 className="font-semibold text-stone-900">Real data sources</h2>
+            <p className="text-xs text-stone-500">via the SD Homelessness Data Commons (DuckDB)</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-stone-600">
+              <li><b>DSDP downtown counts</b> — monthly unsheltered totals by neighborhood, 2017–2025 (hackathon bundle)</li>
+              <li><b>311 &quot;Get It Done&quot;</b> — homelessness-related requests, 2018–2026 (need forecast target)</li>
+              <li><b>72-hr enforcement reports</b> — per-neighborhood violation signals</li>
+              <li><b>HUD Point-in-Time</b> — annual regional counts, 2016–2025</li>
+              <li><b>SDHC shelter roster</b> — real sites, beds &amp; occupancy, 2026</li>
+              <li><b>USGS / Mapbox terrain</b> — drop-zone ground elevation</li>
+            </ul>
+            <p className="mt-2 text-[11px] text-stone-400">
+              Signals are proxies with known biases, not headcounts — see the repo data dictionary.
+            </p>
           </div>
         </div>
       )}

@@ -35,11 +35,16 @@ export interface CommonsStats {
     sites: ShelterSite[]; // sorted by beds desc
     occupancy: OccupancyRow[]; // latest month per category
   };
+  // Downtown-wide monthly DSDP adjusted totals (the challenge's core historical
+  // series, 2017-2025). value is null for the provider's true reporting gaps
+  // (4 months in 2025) -- never zero-filled.
+  dsdp: { month: string; value: number | null }[];
 }
 
 async function build(): Promise<CommonsStats> {
   const pitCsv = path.join(SEEDS, "pit_annual.csv").replace(/'/g, "''");
   const capCsv = path.join(SEEDS, "capacity_manual.csv").replace(/'/g, "''");
+  const martCsv = path.join(process.cwd(), "marts", "monthly_by_neighborhood.csv").replace(/'/g, "''");
 
   const instance = await DuckDBInstance.create(":memory:");
   const conn = await instance.connect();
@@ -83,6 +88,27 @@ async function build(): Promise<CommonsStats> {
     pct: Number(r.pct),
   }));
 
+  // Downtown DSDP monthly series: sum the adjusted totals across all six
+  // neighborhoods (every reported month carries all six), keep gaps as nulls.
+  const dsdpReader = await conn.runAndReadAll(`
+    SELECT strftime(obs_month, '%Y-%m') AS month, ROUND(SUM(value)) AS value
+    FROM read_csv_auto('${martCsv}')
+    WHERE metric = 'dsdp_adjusted_total'
+    GROUP BY 1 ORDER BY 1`);
+  const reported = new Map(
+    dsdpReader.getRowObjects().map((r) => [String(r.month), Number(r.value)]),
+  );
+  const months = [...reported.keys()].sort();
+  const dsdp: { month: string; value: number | null }[] = [];
+  if (months.length) {
+    const [firstY, firstM] = months[0].split("-").map(Number);
+    const [lastY, lastM] = months[months.length - 1].split("-").map(Number);
+    for (let y = firstY, m = firstM; y < lastY || (y === lastY && m <= lastM); m === 12 ? (y++, m = 1) : m++) {
+      const key = `${y}-${String(m).padStart(2, "0")}`;
+      dsdp.push({ month: key, value: reported.get(key) ?? null });
+    }
+  }
+
   return {
     pit,
     shelters: {
@@ -92,6 +118,7 @@ async function build(): Promise<CommonsStats> {
       sites,
       occupancy,
     },
+    dsdp,
   };
 }
 
