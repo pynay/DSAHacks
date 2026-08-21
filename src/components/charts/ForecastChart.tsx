@@ -23,9 +23,9 @@ export default function ForecastChart({
   return (
     <ResponsiveContainer width="100%" height={240}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" vertical={false} />
-        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#78716c' }} tickLine={false} axisLine={{ stroke: '#e7e5e4' }} minTickGap={24} />
-        <YAxis tick={{ fontSize: 11, fill: '#78716c' }} tickLine={false} axisLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} minTickGap={24} />
+        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
         <Tooltip />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Line type="monotone" dataKey="actual" name="311 requests (actual)" stroke="#ca8a04" strokeWidth={2} dot={false} />

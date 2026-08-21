@@ -8,21 +8,21 @@ export default function TrendChart({ data }: { data: { label: string; intake: nu
       <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
         <defs>
           <linearGradient id="intake" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#ca8a04" stopOpacity={0.5} />
-            <stop offset="95%" stopColor="#ca8a04" stopOpacity={0} />
+            <stop offset="5%" stopColor="#059669" stopOpacity={0.5} />
+            <stop offset="95%" stopColor="#059669" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="outflow" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#f97316" stopOpacity={0.4} />
-            <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+            <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+            <stop offset="95%" stopColor="#0284c7" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" vertical={false} />
-        <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#78716c' }} tickLine={false} axisLine={{ stroke: '#e7e5e4' }} />
-        <YAxis tick={{ fontSize: 12, fill: '#78716c' }} tickLine={false} axisLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} tickLine={false} axisLine={false} />
         <Tooltip />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Area type="monotone" dataKey="intake" name="Intake" stroke="#ca8a04" fill="url(#intake)" strokeWidth={2} />
-        <Area type="monotone" dataKey="outflow" name="Outflow" stroke="#f97316" fill="url(#outflow)" strokeWidth={2} />
+        <Area type="monotone" dataKey="intake" name="Intake" stroke="#059669" fill="url(#intake)" strokeWidth={2} />
+        <Area type="monotone" dataKey="outflow" name="Outflow" stroke="#0284c7" fill="url(#outflow)" strokeWidth={2} />
       </AreaChart>
     </ResponsiveContainer>
   );

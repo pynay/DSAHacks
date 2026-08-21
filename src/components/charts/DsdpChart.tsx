@@ -9,16 +9,16 @@ export default function DsdpChart({ data }: { data: { month: string; value: numb
   return (
     <ResponsiveContainer width="100%" height={220}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
         <XAxis
           dataKey="month"
-          tick={{ fontSize: 11, fill: '#78716c' }}
+          tick={{ fontSize: 11, fill: '#64748b' }}
           tickLine={false}
-          axisLine={{ stroke: '#e7e5e4' }}
+          axisLine={{ stroke: '#e2e8f0' }}
           ticks={data.filter((d) => d.month.endsWith('-01')).map((d) => d.month)}
           tickFormatter={(m: string) => m.slice(0, 4)}
         />
-        <YAxis tick={{ fontSize: 11, fill: '#78716c' }} tickLine={false} axisLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
         <Tooltip />
         <Line
           type="monotone"

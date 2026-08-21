@@ -59,7 +59,7 @@ export default function DonationsPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {d.items.map((it, idx) => (
-                <span key={idx} className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-800">
+                <span key={idx} className="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
                   {it.quantity} {it.unit} · {it.name}
                 </span>
               ))}

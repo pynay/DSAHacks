@@ -18,10 +18,10 @@ export default function LaJollaSlope({ data }: { data: { year: number; lowAccess
       {data.map((d, i) => (
         <g key={d.year}>
           <circle cx={xAt(i)} cy={yAt(d.lowAccessShare)} r={4} fill="#be185d" stroke="#fff" strokeWidth={1.5} />
-          <text x={xAt(i)} y={yAt(d.lowAccessShare) - 9} textAnchor="middle" fontSize="12" fontWeight={700} fill="#1c1917">
+          <text x={xAt(i)} y={yAt(d.lowAccessShare) - 9} textAnchor="middle" fontSize="12" fontWeight={700} fill="#0f172a">
             {Math.round(d.lowAccessShare)}%
           </text>
-          <text x={xAt(i)} y={h - 5} textAnchor="middle" fontSize="10" fill="#78716c">
+          <text x={xAt(i)} y={h - 5} textAnchor="middle" fontSize="10" fill="#64748b">
             {d.year}
           </text>
         </g>
