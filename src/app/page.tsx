@@ -157,7 +157,7 @@ const operatingLayers = [
     title: 'Allocate only after the location is reviewed.',
     body: 'A reviewed aggregate observation can update the outreach map. Deterministic FEFO then moves earlier-expiring food first while the operator remains responsible for approval and handoff.',
     links: [
-      { label: 'Drone Ops', href: '/drone' },
+      { label: 'Live Delivery', href: '/dispatch' },
       { label: 'Allocation', href: '/allocation' },
       { label: 'Dashboard', href: '/dashboard' },
     ],
@@ -428,7 +428,7 @@ export default function Home() {
             <ShieldCheck size={24} className="text-[#76d6a7]" />
             <p className="max-w-4xl">
               <strong className="text-white">One observation, one deliberate update.</strong>{' '}
-              Adjacent frames contain many of the same people. Drone Ops waits for an operator
+              Adjacent frames contain many of the same people. Live Delivery waits for an operator
               to apply one stabilized aggregate count instead of multiplying people across frames.
             </p>
           </div>

@@ -112,10 +112,10 @@ export default function AllocationPage() {
             </div>
           </div>
           <Link
-            href="/drone"
+            href="/dispatch"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-950"
           >
-            <Plane size={15} /> Open verification
+            <Plane size={15} /> Open live delivery
           </Link>
         </div>
       ) : (
@@ -133,10 +133,10 @@ export default function AllocationPage() {
             </div>
           </div>
           <Link
-            href="/drone"
+            href="/dispatch"
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-emerald-400 bg-white px-4 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100"
           >
-            <Plane size={15} /> Verify another zone
+            <Plane size={15} /> Verify another delivery zone
           </Link>
         </div>
       )}
@@ -211,7 +211,7 @@ export default function AllocationPage() {
                 <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
                   {error
                     ? 'Zones unavailable.'
-                    : 'No field-updated zones yet. Apply a reviewed count in Drone Ops to unlock allocation.'}
+                    : 'No field-updated zones yet. Complete a reviewed delivery observation to unlock allocation.'}
                 </td>
               </tr>
             )}
