@@ -5,7 +5,7 @@ import { DuckDBInstance } from "@duckdb/node-api";
 import fs from "node:fs";
 import path from "node:path";
 import type { DeliveryZone } from "./delivery";
-import { getHotspotMeta, getHotspotZones } from "./hotspotState";
+import { getHotspotMeta, getHotspotZones, getUcsdZone } from "./hotspotState";
 
 export type { DeliveryZone };
 export { getHotspotMeta };
@@ -157,6 +157,8 @@ export async function getZones(): Promise<DeliveryZone[]> {
     console.warn("[zones] hotspot seed unavailable; using neighborhood centroids", error);
     zones = fallbackZones();
   }
+  // Append the UCSD demo zone (a drone target away from downtown).
+  zones = [...zones, getUcsdZone()];
 
   await Promise.all(
     zones.map(async (zone) => {

@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DeliveryZone, HotspotMeta } from "./delivery";
 import { appendObservation, loadObservations } from "./observationStore";
+import { ucsdBlocks, UCSD_NEIGHBORHOOD } from "./ucsdDemo";
 
 interface HotspotBlock {
   id: string;
@@ -74,7 +75,10 @@ function currentState(): State {
   const seed = JSON.parse(fs.readFileSync(BLOCKS_FILE, "utf8")) as SeedFile;
   state = {
     meta: { ...seed.meta },
-    blocks: seed.blocks.map((block) => ({ ...block })),
+    // Downtown model blocks + the synthetic UCSD demo grid. UCSD blocks join the
+    // same Gamma-Poisson surface so a drone observation there updates them, but
+    // they are excluded from the six downtown zones below.
+    blocks: [...seed.blocks.map((block) => ({ ...block })), ...ucsdBlocks()],
     observations: [],
   };
   // Rehydrate the feedback loop: replay persisted observations through the
@@ -130,6 +134,41 @@ export function getHotspotBlocks(): {
   }));
 }
 
+// The appended UCSD zone — a drone target for the demo, computed live from the
+// UCSD block posteriors so a field observation there updates its need/confidence.
+export function getUcsdZone(): DeliveryZone {
+  const live = currentState();
+  const ucsd = live.blocks.filter((block) => block.neighborhood === UCSD_NEIGHBORHOOD);
+  const weights = ucsd.map((block) => Math.max(posterior(block), 0.001));
+  const total = weights.reduce((sum, w) => sum + w, 0) || 1;
+  const lng = ucsd.reduce((sum, block, i) => sum + block.lng * weights[i], 0) / total;
+  const lat = ucsd.reduce((sum, block, i) => sum + block.lat * weights[i], 0) / total;
+  const obsIds = new Set(ucsd.flatMap((block) => block.feedbackObservationIds ?? []));
+  const lastObservedAt = ucsd
+    .map((block) => block.lastObservedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
+  return {
+    id: "ucsd-campus",
+    neighborhood: UCSD_NEIGHBORHOOD,
+    label: "UCSD campus",
+    lng,
+    lat,
+    blocks: ucsd.length,
+    need: Math.round(total),
+    requests: 0,
+    observed: 0,
+    violations: 0,
+    tents: 0,
+    vehicles: 0,
+    predicted: true,
+    confidence: obsIds.size ? "drone-updated" : "historical-prior",
+    feedbackObservations: obsIds.size,
+    lastObservedAt,
+  };
+}
+
 export function getHotspotMeta(): HotspotMeta {
   const live = currentState();
   return {
@@ -145,6 +184,7 @@ export function getHotspotZones(): DeliveryZone[] {
   const groups = centers.map(() => [] as number[]);
 
   live.blocks.forEach((block, index) => {
+    if (block.neighborhood === UCSD_NEIGHBORHOOD) return; // UCSD is its own appended zone
     let nearest = 0;
     let nearestDistance = Number.POSITIVE_INFINITY;
     centers.forEach((center, centerIndex) => {

@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { FeatureCollection, Feature, Polygon } from "geojson";
 import { getHotspotBlocks } from "./hotspotState";
+import { ucsdPolygons } from "./ucsdDemo";
 
 interface GeomCache {
   features: Feature[]; // polygon + static props (no need yet)
@@ -35,9 +36,13 @@ function buildGeom(): GeomCache {
   const blocks = JSON.parse(fs.readFileSync(blocksPath, "utf8")) as FeatureCollection;
   const hb = getHotspotBlocks(); // positions are fixed; use for the nearest join
 
+  // Downtown census blocks + the synthetic UCSD grid (colocated with the UCSD
+  // hotspot blocks, so the nearest join tags them with UCSD posteriors).
+  const polygons = [...(blocks.features as Feature<Polygon>[]), ...(ucsdPolygons() as Feature<Polygon>[])];
+
   const features: Feature[] = [];
   const nearestIdx: number[] = [];
-  for (const f of blocks.features as Feature<Polygon>[]) {
+  for (const f of polygons) {
     const ring = (f.geometry.coordinates?.[0] ?? []) as number[][];
     const [clng, clat] = ringCentroid(ring);
     let idx = 0;

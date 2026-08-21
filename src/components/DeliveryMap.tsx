@@ -352,6 +352,22 @@ export default function DeliveryMap({
     centerMarkerRef.current.setLngLat(needCenter);
   }, [needCenter]);
 
+  function flyRegion(region: "downtown" | "ucsd") {
+    const map = mapRef.current;
+    if (!map) return;
+    if (region === "ucsd") {
+      map.flyTo({ center: [-117.2375, 32.8795], zoom: 13.6, pitch: 45, bearing: 0, duration: 1500 });
+    } else {
+      map.flyTo({
+        center: MAP_DEFAULTS.center,
+        zoom: MAP_DEFAULTS.zoom,
+        pitch: MAP_DEFAULTS.pitch,
+        bearing: MAP_DEFAULTS.bearing,
+        duration: 1500,
+      });
+    }
+  }
+
   if (!TOKEN) {
     return (
       <div className="grid h-full place-items-center bg-slate-100 text-sm text-slate-500">
@@ -359,5 +375,17 @@ export default function DeliveryMap({
       </div>
     );
   }
-  return <div ref={containerRef} className="h-full w-full" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={containerRef} className="h-full w-full" />
+      <div className="absolute left-3 top-3 flex overflow-hidden rounded-lg border border-white/15 bg-[#071a2b]/85 text-xs font-medium text-white shadow backdrop-blur">
+        <button onClick={() => flyRegion("downtown")} className="px-3 py-1.5 transition hover:bg-white/10">
+          Downtown
+        </button>
+        <button onClick={() => flyRegion("ucsd")} className="border-l border-white/15 px-3 py-1.5 transition hover:bg-white/10">
+          UCSD
+        </button>
+      </div>
+    </div>
+  );
 }
