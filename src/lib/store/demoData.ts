@@ -56,10 +56,10 @@ const DROP_ZONES = [
 // observation has been applied yet.
 const EAST_VILLAGE_ZONE_ID = 'predicted-hotspot-2';
 const CORTEZ_ZONE_ID = 'predicted-hotspot-5';
-// Gaslamp has no zone of its own in the current model output; City Center
-// hotspot 1 ("City Center hotspot 1") stands in for the "active override"
-// demo example.
-const OVERRIDE_ZONE_ID = 'predicted-hotspot-1';
+// Forecast & Plan grid rows are the six neighborhoods (not hotspots), so
+// overrides key off the neighborhood id directly — Gaslamp for the demo's
+// "active override" example, matching the design spec's walkthrough.
+const OVERRIDE_ZONE_ID = 'gaslamp';
 
 interface ItemSpec {
   name: string;

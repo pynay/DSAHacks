@@ -6,7 +6,7 @@ import { LayoutDashboard, Activity, Package, HandHeart, Truck, MapPin, Boxes, Pa
 
 export const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/signals', label: 'Signals', icon: Activity },
+  { href: '/signals', label: 'Forecast & Plan', icon: Activity },
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/donations', label: 'Donations', icon: HandHeart },
   { href: '/distributions', label: 'Distributions', icon: Truck },

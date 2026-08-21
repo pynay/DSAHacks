@@ -77,4 +77,7 @@ export interface StoreSnapshot {
   params: PlanParams;
   overrides: Override[];
   drafts: DistributionDraft[];
+  // The Forecast & Plan week last chosen via "Use for allocation" (Monday,
+  // ISO 'YYYY-MM-DD'); Allocate falls back to next week when unset.
+  selectedWeekStart?: string;
 }

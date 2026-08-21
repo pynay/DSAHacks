@@ -23,6 +23,7 @@ interface InventoryContextValue {
   params: PlanParams;
   overrides: Override[];
   drafts: DistributionDraft[];
+  selectedWeekStart?: string;
   // Legacy warehouse-panel state. No sim clock drives these anymore — they
   // only change through the manual actions below (approveReorder,
   // togglePriority) — but the Inventory page still renders them.
@@ -42,6 +43,7 @@ interface InventoryContextValue {
   stageDrafts: (drafts: DistributionDraft[]) => void;
   completeDraft: (id: string, outcome: DistributionOutcome) => void;
   appendEvent: (event: Omit<LedgerEvent, 'id' | 'ts'>) => void;
+  setSelectedWeekStart: (weekStart: string) => void;
   // Demo data:
   loadDemo: () => void;
   resetDemo: () => void;
@@ -211,6 +213,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setSnapshot((s) => ({ ...s, ledger: [makeLedgerEvent(event), ...s.ledger] }));
   };
 
+  const setSelectedWeekStart: InventoryContextValue['setSelectedWeekStart'] = (weekStart) => {
+    setSnapshot((s) => ({ ...s, selectedWeekStart: weekStart }));
+  };
+
   const loadDemo: InventoryContextValue['loadDemo'] = () => {
     setSnapshot(buildDemoSnapshot(today()));
     setEvents([]);
@@ -261,6 +267,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         params: snapshot.params,
         overrides: snapshot.overrides,
         drafts: snapshot.drafts,
+        selectedWeekStart: snapshot.selectedWeekStart,
         events,
         reorders,
         prioritized,
@@ -275,6 +282,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         stageDrafts,
         completeDraft,
         appendEvent,
+        setSelectedWeekStart,
         loadDemo,
         resetDemo,
         approveReorder,
