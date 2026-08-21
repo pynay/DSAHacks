@@ -2,6 +2,7 @@ import Link from 'next/link';
 import DroneMissionStory from '@/components/landing/DroneMissionStory';
 import {
   Activity,
+  ArrowDown,
   ArrowRight,
   BarChart3,
   Boxes,
@@ -10,6 +11,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Database,
+  ExternalLink,
   HandHeart,
   Map,
   PackageCheck,
@@ -20,34 +22,83 @@ import {
   Warehouse,
 } from 'lucide-react';
 
-const systemFacts = [
+const impactSlides = [
   {
-    label: 'Hotspot initializer',
-    value: 'Experimental spatial ensemble',
-    detail: 'Graph diffusion, spatial KDE, and Tweedie XGBoost',
+    number: '01',
+    stat: '9,803',
+    kicker: 'The need is still near five figures',
+    headline: 'people were experiencing homelessness across San Diego County in the 2026 count.',
+    detail: 'That is only 1% lower than 2025. Progress is real, but the scale remains urgent.',
+    source: 'Regional Task Force on Homelessness, 2026 PIT Count',
+    href: 'https://www.rtfhsd.org/unsheltered-homelessness-drops-11-across-san-diego-region-as-investments-show-results/',
+    tone: 'night',
   },
   {
-    label: 'Latest block observation',
-    value: 'January 2025',
-    detail: 'The application marks the committed forecast stale',
+    number: '02',
+    stat: '10 / 14',
+    kicker: 'The system remains under pressure',
+    headline: 'people found housing for every 14 who experienced homelessness for the first time.',
+    detail: 'That is the regional monthly average across the latest 12-month period published by RTFH.',
+    source: 'RTFH monthly homelessness data reports, accessed August 2026',
+    href: 'https://www.rtfhsd.org/reports-data/',
+    tone: 'signal',
   },
   {
-    label: 'Field feedback',
-    value: 'One reviewed aggregate count',
-    detail: 'Applied manually; repeated video frames are not accumulated',
+    number: '03',
+    stat: '400K+',
+    kicker: 'Food support operates at immense scale',
+    headline: 'people receive food assistance each month through the San Diego Food Bank.',
+    detail: 'The organization distributes about 53 million pounds of food each year through more than 450 nonprofit hunger-relief partners. At this scale, timing and placement matter.',
+    source: 'San Diego Food Bank, audited FY2025 financial statements',
+    href: 'https://www.sandiegofoodbank.org/wp-content/uploads/2026/01/JCSDFB-2025-FS.pdf',
+    tone: 'paper',
   },
   {
-    label: 'Mission control',
-    value: 'Operator decision support',
-    detail: 'Drone sensing only; no autonomous flight or food delivery',
+    number: '04',
+    stat: '1 night',
+    kicker: 'Our clearest location picture is a snapshot',
+    headline: 'is what the annual Point-in-Time Count is designed to capture.',
+    detail: 'The count is essential evidence and a minimum estimate. It cannot tell an operator where need has moved by tomorrow afternoon. Parsel starts with a January 2025 block prior, then uses reviewed field observations to narrow that gap.',
+    source: 'RTFH 2026 Point-in-Time Count methodology',
+    href: 'https://www.rtfhsd.org/unsheltered-homelessness-drops-11-across-san-diego-region-as-investments-show-results/',
+    tone: 'warm',
   },
-];
+] as const;
 
-const proofPoints = [
-  ['261', 'block priors', 'Seeded from the newer DSDP longitudinal panel'],
-  ['6', 'movable hotspots', 'Recomputed when reviewed field feedback is applied'],
-  ['Jan 2025', 'latest block source', 'Verification is required before operational use'],
-];
+const slideStyles = {
+  night: {
+    section: 'border-[#17384c] bg-[#071a2b] text-white',
+    kicker: 'text-[#76d6a7]',
+    stat: 'text-[#76d6a7]',
+    body: 'text-slate-300',
+    source: 'border-white/15 text-slate-400 hover:text-white',
+    index: 'border-white/20 text-slate-500',
+  },
+  signal: {
+    section: 'border-[#2d9867] bg-[#3ca875] text-[#071a2b]',
+    kicker: 'text-[#0b4b33]',
+    stat: 'text-[#071a2b]',
+    body: 'text-[#123f30]',
+    source: 'border-[#176b48]/30 text-[#0b4b33] hover:text-[#071a2b]',
+    index: 'border-[#071a2b]/25 text-[#0b4b33]',
+  },
+  paper: {
+    section: 'border-slate-200 bg-[#f4f1e8] text-[#071a2b]',
+    kicker: 'text-[#9b511b]',
+    stat: 'text-[#d66b22]',
+    body: 'text-slate-600',
+    source: 'border-slate-300 text-slate-500 hover:text-[#071a2b]',
+    index: 'border-slate-300 text-slate-500',
+  },
+  warm: {
+    section: 'border-[#d7b98c] bg-[#f2c46d] text-[#071a2b]',
+    kicker: 'text-[#72400f]',
+    stat: 'text-[#071a2b]',
+    body: 'text-[#5f3b16]',
+    source: 'border-[#72400f]/30 text-[#72400f] hover:text-[#071a2b]',
+    index: 'border-[#72400f]/30 text-[#72400f]',
+  },
+} as const;
 
 const workflow = [
   {
@@ -139,16 +190,16 @@ export default function Home() {
         Skip to main content
       </a>
 
-      <header className="border-b border-slate-200 bg-white">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" aria-label="Parsel home" className="flex items-center gap-2.5">
             <PackageOpen size={25} className="text-[#3ca875]" />
             <span className="text-xl font-semibold tracking-tight">Parsel</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex" aria-label="Landing page">
-            <a href="#drone-concept" className="hover:text-[#071a2b]">Drone concept</a>
-            <a href="#platform" className="hover:text-[#071a2b]">What works</a>
-            <a href="#feedback-loop" className="hover:text-[#071a2b]">Feedback loop</a>
+            <a href="#case-for-action" className="hover:text-[#071a2b]">Why now</a>
+            <a href="#drone-concept" className="hover:text-[#071a2b]">How it learns</a>
+            <a href="#platform" className="hover:text-[#071a2b]">Explore Parsel</a>
           </nav>
           <Link
             href="/login"
@@ -159,85 +210,85 @@ export default function Home() {
         </div>
       </header>
 
-      <section id="main-story" className="border-b border-slate-200">
-        <div className="mx-auto grid max-w-7xl gap-14 px-5 py-20 sm:px-8 sm:py-24 lg:grid-cols-[1.03fr_.97fr] lg:items-center lg:py-28">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
-              <ShieldCheck size={14} /> Research demo · operator reviewed
-            </div>
-            <h1 className="max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              Plan food relief with evidence.{' '}
-              <span className="text-[#27875b]">Verify before you act.</span>
-            </h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Parsel connects food inventory, documented San Diego signals, an experimental
-              block-level hotspot model, and reviewed field observations. It helps an operator
-              compare options; it does not make autonomous delivery decisions.
+      <section id="main-story" className="flex min-h-[calc(100svh-5rem)] items-center border-b border-slate-200 bg-white">
+        <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
+            <ShieldCheck size={14} /> San Diego research demo · operator reviewed
+          </div>
+          <h1 className="mt-7 max-w-6xl text-5xl font-semibold leading-[0.91] tracking-[-0.06em] sm:text-7xl lg:text-[7.25rem]">
+            Need moves.{' '}
+            <span className="text-[#27875b]">Our picture should too.</span>
+          </h1>
+          <div className="mt-9 grid gap-8 border-t border-slate-200 pt-7 md:grid-cols-[1.15fr_.85fr] md:items-end">
+            <p className="max-w-3xl text-xl leading-8 text-slate-600 sm:text-2xl sm:leading-9">
+              Parsel helps food-relief teams decide where to look, verify what is happening now,
+              and update how supplies are allocated. The model guides attention. People approve action.
             </p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 md:justify-end">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-full bg-[#3ca875] px-6 py-3.5 text-sm font-bold text-[#071a2b] hover:bg-[#54b889]"
+                className="inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]"
               >
-                Explore the demo <ArrowRight size={17} />
+                Open the demo <ArrowRight size={17} />
               </Link>
               <a
-                href="#feedback-loop"
+                href="#case-for-action"
                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
               >
-                See the feedback loop
+                See why it matters <ArrowDown size={17} />
               </a>
             </div>
-            <div className="mt-9 flex flex-wrap gap-x-7 gap-y-3 text-sm text-slate-600">
-              {['Aggregate observations only', 'Proxy labels preserved', 'Human approval required'].map((item) => (
-                <span key={item} className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-[#27875b]" />
-                  {item}
-                </span>
-              ))}
-            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="border border-[#071a2b] bg-[#071a2b] p-5 text-white shadow-[10px_10px_0_0_#54b889] sm:p-7">
-            <div className="flex items-start justify-between gap-5 border-b border-white/15 pb-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#76d6a7]">Current system state</p>
-                <h2 className="mt-2 text-2xl font-semibold">What the demo can claim today</h2>
-              </div>
-              <span className="rounded-full border border-amber-300/50 px-3 py-1 text-xs font-semibold text-amber-200">
-                Field check required
-              </span>
-            </div>
-            <dl className="divide-y divide-white/10">
-              {systemFacts.map((fact) => (
-                <div key={fact.label} className="grid gap-1 py-4 sm:grid-cols-[9rem_1fr] sm:gap-4">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{fact.label}</dt>
-                  <dd>
-                    <p className="font-semibold text-slate-100">{fact.value}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">{fact.detail}</p>
-                  </dd>
+      <div id="case-for-action" className="scroll-mt-20" aria-label="Why Parsel matters">
+        {impactSlides.map((slide) => {
+          const styles = slideStyles[slide.tone];
+
+          return (
+            <section
+              key={slide.number}
+              className={`flex min-h-[100svh] items-center border-b ${styles.section}`}
+              aria-labelledby={`impact-slide-${slide.number}`}
+            >
+              <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:gap-20">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <span className={`grid h-11 w-11 place-items-center rounded-full border font-mono text-xs font-bold ${styles.index}`}>
+                      {slide.number}
+                    </span>
+                    <p className={`text-xs font-bold uppercase tracking-[0.18em] ${styles.kicker}`}>
+                      {slide.kicker}
+                    </p>
+                  </div>
+                  <p className={`mt-12 whitespace-nowrap text-[clamp(5rem,16vw,13rem)] font-semibold leading-[0.76] tracking-[-0.08em] ${styles.stat}`}>
+                    {slide.stat}
+                  </p>
                 </div>
-              ))}
-            </dl>
-            <div className="mt-4 flex items-start gap-3 border border-amber-300/25 bg-amber-300/[0.07] p-4 text-sm leading-6 text-slate-300">
-              <TriangleAlert size={19} className="mt-0.5 shrink-0 text-amber-300" />
-              <p>The latest block-level source is stale. Parsel surfaces that warning instead of presenting the forecast as live truth.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="border-b border-slate-200 bg-[#f3f7f8]" aria-label="Model facts">
-        <div className="mx-auto grid max-w-7xl divide-y divide-slate-200 px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
-          {proofPoints.map(([value, label, note]) => (
-            <div key={label} className="px-2 py-8 sm:px-7">
-              <p className="text-3xl font-semibold tracking-tight">{value}</p>
-              <p className="mt-1 text-sm font-bold text-[#27875b]">{label}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{note}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+                <div className="lg:pb-1">
+                  <h2 id={`impact-slide-${slide.number}`} className="text-3xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">
+                    {slide.headline}
+                  </h2>
+                  <p className={`mt-6 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8 ${styles.body}`}>
+                    {slide.detail}
+                  </p>
+                  <a
+                    href={slide.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`mt-10 inline-flex max-w-full items-start gap-2 border-t pt-4 text-xs font-semibold uppercase leading-5 tracking-[0.12em] ${styles.source}`}
+                  >
+                    <span>Source: {slide.source}</span>
+                    <ExternalLink size={14} className="mt-0.5 shrink-0" />
+                  </a>
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
 
       <DroneMissionStory />
 
