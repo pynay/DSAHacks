@@ -31,7 +31,10 @@ const technologyGroups = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#fffdf5] text-stone-900">
+    <main id="main-content" className="min-h-screen overflow-hidden bg-[#fffdf5] text-stone-900">
+      <a href="#main-story" className="sr-only z-50 rounded-lg bg-stone-950 px-4 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+        Skip to main content
+      </a>
       <header className="absolute inset-x-0 top-0 z-20">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" aria-label="Parsel home" className="inline-flex items-center">
@@ -48,7 +51,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative isolate min-h-[760px] pt-32 sm:pt-40">
+      <section id="main-story" className="relative isolate min-h-[760px] scroll-mt-4 pt-32 sm:pt-40">
         <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_78%_30%,#fde68a_0,transparent_35%),radial-gradient(circle_at_15%_55%,#ecfccb_0,transparent_28%)]" />
         <div className="absolute -right-28 top-36 -z-10 h-96 w-96 rounded-full border border-amber-300/60" />
         <div className="absolute -right-10 top-52 -z-10 h-64 w-64 rounded-full border border-amber-400/50" />
