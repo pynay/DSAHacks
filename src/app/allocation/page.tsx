@@ -51,7 +51,7 @@ export default function AllocationPage() {
       if (zone.allocated === 0) continue;
       recordDistribution({
         date: today,
-        recipient: `${zone.label} drop zone`,
+        recipient: `${zone.label} distribution site`,
         type: 'mobile-pantry',
         items: zone.items.map(({ name, quantity, unit }) => ({ name, quantity, unit })),
         notes: `Operator-reviewed allocation: updated estimate ${zone.need}, ${Math.round(zone.coverage * 100)}% coverage`,

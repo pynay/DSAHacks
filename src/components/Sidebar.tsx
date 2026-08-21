@@ -10,7 +10,7 @@ export const NAV = [
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/donations', label: 'Donations', icon: HandHeart },
   { href: '/distributions', label: 'Distributions', icon: Truck },
-  { href: '/delivery', label: 'Delivery', icon: MapPin },
+  { href: '/delivery', label: 'Response Map', icon: MapPin },
   { href: '/allocation', label: 'Allocation', icon: Boxes },
   { href: '/drone', label: 'Drone Ops', icon: Plane },
 ];

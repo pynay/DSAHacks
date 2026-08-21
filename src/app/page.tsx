@@ -39,7 +39,7 @@ const systemFacts = [
   {
     label: 'Mission control',
     value: 'Operator decision support',
-    detail: 'No autonomous flight or payload release',
+    detail: 'Drone sensing only; no autonomous flight or food delivery',
   },
 ];
 
@@ -100,7 +100,7 @@ const capabilities = [
   },
   {
     icon: Map,
-    title: 'Delivery planning',
+    title: 'Response planning map',
     body: 'Inspect six model-derived hotspots on a 3D map and test a separate 311-pressure scenario without presenting requests as people.',
     note: 'Experimental model + contextual scenario',
     href: '/delivery',
@@ -114,9 +114,9 @@ const capabilities = [
   },
   {
     icon: Plane,
-    title: 'Drone-camera feedback',
-    body: 'Use a local video bridge to review people and objects, receive a clear/hold aid, and manually apply one aggregate person count.',
-    note: 'No autopilot or payload control',
+    title: 'Drone sensing feedback',
+    body: 'Use a local video bridge to gather aggregate people and object observations, then manually apply one reviewed count to the model.',
+    note: 'Information gathering · no drone delivery',
     href: '/drone',
   },
 ];
@@ -126,7 +126,7 @@ const boundaries = [
   'A visible-person estimate is not identity, eligibility, consent, or a complete census.',
   '311 requests, parking, enforcement, shelter capacity, and weather are context—not people.',
   'The hotspot state and inventory are not yet durable across restarts or multiple servers.',
-  'An operator approves field evidence, mission decisions, payload release, and handoff.',
+  'An operator approves field evidence, sensing missions, response recommendations, dispatch, and food handoff.',
 ];
 
 export default function Home() {

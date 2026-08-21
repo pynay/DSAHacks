@@ -1,7 +1,7 @@
 // Client hook for the EyePop.ai webcam vision bridge (scripts/eyepop_bridge.py).
 //
 // The bridge runs an EyePop scene detector on webcam/video frames and serves
-// the latest objects plus a person-only hazard count on localhost:8091. Video
+// the latest objects plus an aggregate visible-person count on localhost:8091. Video
 // arrives as an MJPEG push stream at full camera rate; detections are polled.
 // When the bridge is down this hook reports connected: false.
 'use client';
@@ -25,9 +25,9 @@ export interface VisionObject extends VisionPerson {
 }
 
 export interface VisionDetection {
-  label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
+  label: 'people-detected' | 'no-people-detected';
   confidence: number; // max person confidence (0 when none)
-  count: number; // people in frame (the drop-zone hazard)
+  count: number; // aggregate people visible in the current frame
   persons: VisionPerson[];
   objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
   videoFps: number; // measured camera capture rate

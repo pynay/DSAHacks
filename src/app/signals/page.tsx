@@ -102,7 +102,7 @@ export default function SignalsPage() {
               <li><b>SDHC shelter roster</b> — real sites, beds &amp; occupancy, 2026</li>
               <li><b>Paid parking sessions</b> — downtown activity proxy, 2021–2026 (Source J)</li>
               <li><b>USDA FARA</b> — La Jolla food access by tract, 2010/2015/2019 (Source I)</li>
-              <li><b>USGS / Mapbox terrain</b> — drop-zone ground elevation</li>
+              <li><b>USGS / Mapbox terrain</b> — target-site ground elevation</li>
             </ul>
             <p className="mt-2 text-[11px] text-slate-400">
               Signals are proxies with known biases, not headcounts — see the repo data dictionary.
@@ -146,7 +146,7 @@ export default function SignalsPage() {
                   <p className="mt-1 text-[11px] text-slate-400">
                     A food desert beyond downtown: {Math.round(v.lowAccessShare)}% of{' '}
                     {(v.pop / 1000).toFixed(0)}k residents live &gt;1 mi from a supermarket. A
-                    candidate expansion zone for drone delivery.
+                    candidate expansion zone for field sensing and food-access planning.
                   </p>
                 </>
               );

@@ -56,7 +56,7 @@ ALLOWED_ORIGINS = {
 VIDEO_SOURCE = os.environ.get("VIDEO_SOURCE")
 CAMERA_FPS_REQ = int(os.environ.get("CAMERA_FPS", "120"))  # hardware clamps to what it can do
 CONFIDENCE = 0.5
-# Detect the whole delivery scene (people, packages, objects). Override with
+# Detect the field scene (people, vehicles, supplies and other objects). Override with
 # EYEPOP_ABILITY (e.g. eyepop.person:latest for people only).
 EYEPOP_ABILITY = os.environ.get("EYEPOP_ABILITY", "eyepop.common-objects:latest")
 
@@ -65,7 +65,7 @@ POP = Pop(components=[
 ])
 
 # Latest state, shared between loops and the web app.
-state: dict = {"ready": False, "ts": 0, "count": 0, "label": "clear",
+state: dict = {"ready": False, "ts": 0, "count": 0, "label": "no-people-detected",
                "confidence": 0.0, "persons": [], "objects": [], "jpeg": b"", "frame_seq": 0,
                "video_fps": 0.0, "infer_fps": 0.0}
 latest_raw: dict = {"jpg": b""}  # newest un-annotated frame (jpeg bytes) for the inference loop
@@ -92,8 +92,8 @@ def grab_and_annotate(cap, objects, video_fps, infer_fps):
     for o in objects:
         x, y = int(o["x"]), int(o["y"])
         w, h = int(o["width"]), int(o["height"])
-        # People are the drop-zone hazard (red); everything else is cyan.
-        color = (60, 60, 235) if o.get("label") == "person" else (220, 200, 40)
+        # Keep people visually distinct from other observed objects.
+        color = (80, 190, 95) if o.get("label") == "person" else (220, 200, 40)
         cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
         tag = f"{o.get('label', 'object')} {o['confidence'] * 100:.0f}%"
         cv2.rectangle(frame, (x, y - 22), (x + 8 + 10 * len(tag), y), color, -1)
@@ -230,8 +230,8 @@ async def inference_loop(endpoint):
             state.update(
                 ready=True,
                 ts=int(time.time() * 1000),
-                count=len(persons),  # drop-zone hazard count = people in frame
-                label="obstructed" if persons else "clear",
+                count=len(persons),
+                label="people-detected" if persons else "no-people-detected",
                 confidence=max((p["confidence"] for p in persons), default=0.0),
                 persons=persons,
                 objects=objects,

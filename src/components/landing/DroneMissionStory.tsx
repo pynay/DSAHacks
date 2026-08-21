@@ -3,11 +3,11 @@
 import type { Material, Mesh as ThreeMesh } from 'three';
 import { useEffect, useRef, useState } from 'react';
 import {
+  BrainCircuit,
   Check,
   CirclePause,
   CirclePlay,
   Crosshair,
-  PackageCheck,
   Radar,
   Route,
   ScanLine,
@@ -36,11 +36,11 @@ const stages = [
     sceneLabel: 'Updating hotspot surface',
   },
   {
-    icon: PackageCheck,
-    eyebrow: '04 · Allocate',
-    title: 'Stage a safe handoff and return',
-    body: 'Available food is allocated with FEFO rules. A person approves the mission, handoff, and inventory record.',
-    sceneLabel: 'Allocation ready for approval',
+    icon: BrainCircuit,
+    eyebrow: '04 · Optimize',
+    title: 'Improve the response plan and return',
+    body: 'The reviewed signal helps rank locations and recommend food allocation. Distribution remains a separate, human-controlled operation.',
+    sceneLabel: 'Sending evidence to the planner',
   },
 ];
 
@@ -98,7 +98,7 @@ export default function DroneMissionStory() {
             renderer.domElement.setAttribute('role', 'img');
             renderer.domElement.setAttribute(
               'aria-label',
-              'Animated three-dimensional concept showing a drone route from a food depot to a field verification zone and back.',
+              'Animated three-dimensional concept showing a drone sensing route from an operations base to a field verification zone and back.',
             );
             renderer.domElement.className = 'block h-full w-full';
             mount.appendChild(renderer.domElement);
@@ -279,18 +279,29 @@ export default function DroneMissionStory() {
             scanCone.position.y = -1.1;
             drone.add(scanCone);
 
-            const packageGroup = new THREE.Group();
-            const packageBox = new THREE.Mesh(
-              new THREE.BoxGeometry(0.48, 0.36, 0.48),
-              new THREE.MeshStandardMaterial({ color: '#f4b860', emissive: '#9b551b', emissiveIntensity: 0.35 }),
+            const dataPacketGroup = new THREE.Group();
+            const dataCore = new THREE.Mesh(
+              new THREE.OctahedronGeometry(0.24),
+              new THREE.MeshStandardMaterial({
+                color: '#76d6a7',
+                emissive: '#54b889',
+                emissiveIntensity: 1.6,
+                roughness: 0.25,
+                metalness: 0.45,
+              }),
             );
-            packageBox.castShadow = true;
-            packageGroup.add(packageBox);
-            const packageBand = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.38, 0.5), droneMaterial);
-            packageGroup.add(packageBand);
-            packageGroup.position.set(verifiedHotspot.x, -0.9, verifiedHotspot.z);
-            packageGroup.visible = false;
-            scene.add(packageGroup);
+            dataPacketGroup.add(dataCore);
+            [0, Math.PI / 2].forEach((rotation) => {
+              const orbit = new THREE.Mesh(
+                new THREE.TorusGeometry(0.39, 0.018, 8, 40),
+                new THREE.MeshBasicMaterial({ color: '#b8f3d2', transparent: true, opacity: 0.72 }),
+              );
+              orbit.rotation.x = rotation;
+              dataPacketGroup.add(orbit);
+            });
+            dataPacketGroup.position.copy(targetPoint);
+            dataPacketGroup.visible = false;
+            scene.add(dataPacketGroup);
 
             const resize = () => {
               const { width, height } = mount.getBoundingClientRect();
@@ -315,6 +326,7 @@ export default function DroneMissionStory() {
             let previousStage = -1;
             const currentPosition = new THREE.Vector3();
             const hotspotPosition = new THREE.Vector3();
+            const dataPacketPosition = new THREE.Vector3();
 
             const animate = (time: number) => {
               const deltaSeconds = Math.min((time - previousTime) / 1000, 0.05);
@@ -363,10 +375,14 @@ export default function DroneMissionStory() {
               hotspotGroup.rotation.y = reducedMotion ? 0 : motionTime * 0.22;
               hotspotGroup.scale.setScalar(1 + (stage === 2 ? Math.sin(stageProgress * Math.PI) * 0.18 : 0));
 
-              packageGroup.visible = stage === 3 && stageProgress > 0.13;
-              if (packageGroup.visible) {
-                packageGroup.position.y = -0.9 + (reducedMotion ? 0 : Math.sin(motionTime * 3.2) * 0.045);
-                packageGroup.rotation.y = reducedMotion ? 0 : motionTime * 0.55;
+              dataPacketGroup.visible = stage === 3;
+              if (dataPacketGroup.visible) {
+                const relayProgress = easeInOut(Math.min(stageProgress / 0.42, 1));
+                route.getPoint(1 - relayProgress, dataPacketPosition);
+                dataPacketGroup.position.copy(dataPacketPosition);
+                dataPacketGroup.position.y += reducedMotion ? 0 : Math.sin(motionTime * 4) * 0.06;
+                dataPacketGroup.rotation.y = reducedMotion ? 0 : motionTime * 1.4;
+                dataPacketGroup.scale.setScalar(0.8 + Math.sin(Math.min(stageProgress * 5, 1) * Math.PI / 2) * 0.25);
               }
 
               if (!reducedMotion) {
@@ -433,8 +449,8 @@ export default function DroneMissionStory() {
             </h2>
           </div>
           <p className="max-w-2xl text-lg leading-8 text-slate-300">
-            This animation shows the intended operator workflow—from planning a verification
-            route to staging a food handoff. It is an explainer, not live flight telemetry.
+            The drone is a mobile sensor. It gathers aggregate field observations that an
+            operator can review before the model updates locations and optimizes a response.
           </p>
         </div>
 
@@ -459,7 +475,7 @@ export default function DroneMissionStory() {
             <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-4 bg-gradient-to-b from-[#071a2b]/90 to-transparent p-5 sm:p-6">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#76d6a7]">Illustrative sequence</p>
-                <p className="mt-1 text-sm font-semibold">Depot → field check → depot</p>
+                <p className="mt-1 text-sm font-semibold">Operations base → sensing pass → model update</p>
               </div>
               <span className="rounded-full border border-white/15 bg-[#071a2b]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.13em] text-slate-300 backdrop-blur">
                 No autopilot
@@ -526,7 +542,7 @@ export default function DroneMissionStory() {
 
             <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-3 text-xs leading-5 text-slate-400">
               <Check size={15} className="mt-0.5 shrink-0 text-amber-300" />
-              <p>Future hardware still requires site approval, aviation review, a safe handoff design, and human control.</p>
+              <p>Future sensing missions still require site approval, aviation review, calibrated coverage, privacy safeguards, and human control.</p>
             </div>
           </div>
         </div>

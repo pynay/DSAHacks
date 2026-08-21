@@ -3,14 +3,14 @@
 // The live drone/EyePop feed is meant to replace `useDroneTelemetry`'s
 // simulator: point it at a WebSocket/SSE endpoint that emits `DroneTelemetry`
 // frames (the drone's flight controller for position/battery, EyePop.ai's
-// ability result for `detection`). Until then it simulates a delivery run
-// from the depot out to the highest-need zone so the view is demo-live.
+// ability result for `detection`). Until then it simulates a sensing run
+// from the operations base out to the highest-priority zone.
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { DEPOT, haversineKm, type DeliveryZone } from './delivery';
 
-export type DroneStatus = 'en-route' | 'delivering' | 'returning' | 'idle';
+export type DroneStatus = 'en-route' | 'observing' | 'returning' | 'idle';
 
 export interface DroneTelemetry {
   live: boolean; // false = simulated (badge in UI)
@@ -25,10 +25,10 @@ export interface DroneTelemetry {
   headingDeg: number;
   batteryPct: number;
   signalPct: number;
-  payloadKg: number;
+  observationsCollected: number;
   distanceKm: number; // remaining to target
   etaMin: number;
-  detection: { label: 'clear' | 'obstructed'; confidence: number };
+  detection: { label: 'people-detected' | 'no-people-detected'; confidence: number };
   updatedAt: number;
 }
 
@@ -49,10 +49,10 @@ const SPEED = 12; // m/s cruise (shown in telemetry)
 const TICK_MS = 650;
 const DEMO_SPEEDUP = 7; // compress flight time so the map motion is visible in a demo
 
-// Simulate a delivery loop across the given zones (highest-need first).
+// Simulate an information-gathering loop across the given zones (highest-need first).
 export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null {
   const [tel, setTel] = useState<DroneTelemetry | null>(null);
-  const ref = useRef({ idx: 0, progress: 0, phase: 'out' as 'out' | 'drop' | 'back', battery: 92, dropTicks: 0 });
+  const ref = useRef({ idx: 0, progress: 0, phase: 'out' as 'out' | 'observe' | 'back', battery: 92, observeTicks: 0, observations: 0 });
 
   useEffect(() => {
     if (!zones.length) return;
@@ -69,29 +69,30 @@ export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null 
       let status: DroneStatus = 'en-route';
       let alt = CRUISE_ALT;
       let detection: DroneTelemetry['detection'] = {
-        label: 'clear',
-        confidence: 0.9 + (s.idx % 3) * 0.02,
+        label: 'no-people-detected',
+        confidence: 0,
       };
 
       if (s.phase === 'out') {
         s.progress = Math.min(1, s.progress + step);
         alt = CRUISE_ALT;
         if (s.progress >= 1) {
-          s.phase = 'drop';
-          s.dropTicks = 0;
+          s.phase = 'observe';
+          s.observeTicks = 0;
         }
-      } else if (s.phase === 'drop') {
-        status = 'delivering';
-        s.dropTicks += 1;
-        alt = Math.max(2, CRUISE_ALT - s.dropTicks * 12); // descend
-        // brief obstacle check during descent, then clear
+      } else if (s.phase === 'observe') {
+        status = 'observing';
+        s.observeTicks += 1;
+        alt = CRUISE_ALT;
+        // Illustrative sensor result while the drone holds position.
         detection =
-          s.dropTicks === 2
-            ? { label: 'obstructed', confidence: 0.71 }
-            : { label: 'clear', confidence: 0.95 };
-        if (s.dropTicks >= 5) {
+          s.observeTicks >= 2
+            ? { label: 'people-detected', confidence: 0.91 }
+            : { label: 'no-people-detected', confidence: 0 };
+        if (s.observeTicks >= 5) {
           s.phase = 'back';
           s.progress = 1;
+          s.observations += 1;
         }
       } else {
         status = 'returning';
@@ -109,7 +110,7 @@ export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null 
       const to = s.phase === 'back' ? DEPOT : target;
       const lng = lerp(DEPOT.lng, target.lng, s.progress);
       const lat = lerp(DEPOT.lat, target.lat, s.progress);
-      const remainingKm = legKm * (s.phase === 'drop' ? 0 : status === 'returning' ? s.progress : 1 - s.progress);
+      const remainingKm = legKm * (s.phase === 'observe' ? 0 : status === 'returning' ? s.progress : 1 - s.progress);
 
       setTel({
         live: false,
@@ -120,11 +121,11 @@ export function useDroneTelemetry(zones: DeliveryZone[]): DroneTelemetry | null 
         lat,
         progress: s.progress,
         altitudeM: Math.round(alt),
-        groundSpeedMps: status === 'delivering' ? 0 : SPEED,
+        groundSpeedMps: status === 'observing' ? 0 : SPEED,
         headingDeg: Math.round(bearing(from, to)),
         batteryPct: Math.round(s.battery),
         signalPct: 88 + ((s.idx * 3) % 10),
-        payloadKg: status === 'returning' ? 0 : 4.5,
+        observationsCollected: s.observations,
         distanceKm: Math.round(remainingKm * 100) / 100,
         etaMin: Math.max(0, Math.round((remainingKm * 1000) / SPEED / 60)),
         detection,

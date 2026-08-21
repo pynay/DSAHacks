@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, Loader2, MapPin, RefreshCw, Video, XCircle } from 'lucide-react';
+import { Loader2, MapPin, RefreshCw, ScanLine, Video } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
 
@@ -9,7 +9,6 @@ export default function DronePage() {
   const { zones, refresh } = useZones();
   const vision = useDroneVision();
   const det = vision.detection;
-  const clear = det?.label === 'clear';
   const targets = [...zones].filter((z) => z.need > 0).sort((a, b) => b.need - a.need).slice(0, 4);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -49,10 +48,10 @@ export default function DronePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold text-slate-900">Drone verification</h2>
+          <h2 className="font-semibold text-slate-900">Drone sensing</h2>
           <p className="text-sm text-slate-500">
-            Live camera vision detects people and objects, gives the operator a clear/hold signal,
-            and can apply one reviewed aggregate person count to a historical-prior target.
+            Live camera vision gathers aggregate people and object observations. An operator can
+            apply one reviewed count to update a historical-prior target and improve the next plan.
           </p>
         </div>
         {vision.connected ? (
@@ -84,10 +83,10 @@ export default function DronePage() {
 
             {det && (
               <div className="absolute left-3 top-3 rounded-lg bg-black/65 px-3 py-2 backdrop-blur">
-                <div className="text-[10px] uppercase tracking-wide text-slate-400">EyePop.ai · drop-zone check · LIVE</div>
-                <div className={`flex items-center gap-2 text-base font-bold ${clear ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {clear ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
-                  {clear ? 'CLEAR TO DROP' : 'OBSTRUCTED — HOLD'}
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">EyePop.ai · aggregate field observation · LIVE</div>
+                <div className="flex items-center gap-2 text-base font-bold text-emerald-400">
+                  <ScanLine size={18} />
+                  {det.count > 0 ? 'FIELD SIGNAL OBSERVED' : 'NO PEOPLE VISIBLE'}
                   <span className="text-xs font-normal text-slate-300">
                     {det.count} in frame{det.count > 0 ? ` · ${(det.confidence * 100).toFixed(0)}%` : ''}
                   </span>
@@ -102,16 +101,16 @@ export default function DronePage() {
           </div>
         </div>
 
-        {/* Side: decision + detections + delivery targets */}
+        {/* Side: observation summary + detections + verification targets */}
         <div className="space-y-3">
-          <div className={`rounded-xl border border-slate-200 p-4 shadow-sm ${det ? (clear ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800') : 'bg-white'}`}>
-            <div className="text-xs font-medium uppercase tracking-wide opacity-70">Drop decision</div>
+          <div className={`rounded-xl border border-slate-200 p-4 shadow-sm ${det ? 'bg-emerald-50 text-emerald-900' : 'bg-white'}`}>
+            <div className="text-xs font-medium uppercase tracking-wide opacity-70">Observation snapshot</div>
             <div className="mt-1 flex items-center gap-2 text-2xl font-bold">
-              {det ? (clear ? <CheckCircle2 size={22} /> : <XCircle size={22} />) : null}
-              {det ? (clear ? 'CLEAR' : 'HOLD') : '—'}
+              {det ? <ScanLine size={22} /> : null}
+              {det ? det.count : '—'}
             </div>
             <div className="mt-1 text-xs opacity-80">
-              {det ? `${det.count} person${det.count === 1 ? '' : 's'} detected in the drop area` : 'Awaiting vision feed'}
+              {det ? `${det.count} visible ${det.count === 1 ? 'person' : 'people'} in this frame · review required` : 'Awaiting vision feed'}
             </div>
           </div>
 
@@ -122,7 +121,7 @@ export default function DronePage() {
                 {classes.map(([label, n]) => (
                   <span
                     key={label}
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${label === 'person' ? 'bg-red-100 text-red-700' : 'bg-cyan-100 text-cyan-800'}`}
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${label === 'person' ? 'bg-emerald-100 text-emerald-800' : 'bg-cyan-100 text-cyan-800'}`}
                   >
                     {label}
                     {n > 1 ? ` ×${n}` : ''}
@@ -184,7 +183,8 @@ export default function DronePage() {
             any video file. Select a target and apply one stabilized frame count to move the
             hotspot surface; repeated frames are never counted automatically. Set{' '}
             <code className="rounded bg-slate-100 px-1">EYEPOP_ABILITY</code> to swap models.
-            Clear/hold is decision support only and does not autonomously release a payload.
+            The drone gathers information only; food dispatch and distribution remain separate,
+            human-controlled operations.
           </p>
         </div>
       </div>

@@ -82,7 +82,7 @@ export default function DeliveryPage() {
     const id = `custom-${Date.now()}`;
     setCustom((prev) => [
       ...prev,
-      { id, neighborhood: "custom", label: `Drop ${prev.length + 1}`, lng: lngLat.lng, lat: lngLat.lat, blocks: 0, need: 0, requests: 0, observed: 0, violations: 0, custom: true, elevation: null },
+      { id, neighborhood: "custom", label: `Site ${prev.length + 1}`, lng: lngLat.lng, lat: lngLat.lat, blocks: 0, need: 0, requests: 0, observed: 0, violations: 0, custom: true, elevation: null },
     ]);
     fetch(`/api/elevation?lng=${lngLat.lng}&lat=${lngLat.lat}`)
       .then((r) => r.json())
@@ -113,7 +113,7 @@ export default function DeliveryPage() {
             <span className="text-slate-400">low → high</span>
           </div>
           <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full bg-fuchsia-500" /> scenario center</div>
-          <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-[3px] bg-emerald-600" /> depot</div>
+          <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-[3px] bg-emerald-600" /> operations base</div>
           <div className="mt-1 text-slate-400">
             {step === 0
               ? verifiedCount
@@ -126,7 +126,7 @@ export default function DeliveryPage() {
 
       <aside className="flex w-80 shrink-0 flex-col rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 p-4">
-          <h2 className="font-semibold text-slate-900">Delivery zones</h2>
+          <h2 className="font-semibold text-slate-900">Planning zones</h2>
           <p className="text-xs text-slate-500">
             Historical model priors identify places to verify. Reviewed field observations can
             update individual zones and make them allocation-eligible.
