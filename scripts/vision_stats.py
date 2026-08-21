@@ -8,6 +8,7 @@ class VisionStats:
 
     def __init__(self, maxlen=120, stabilize_window=5):
         self.peak_people = 0
+        self.stable_people = 0  # current low-median of the stabilization window
         self.holds = 0
         self.samples = 0
         self._state = None
@@ -21,6 +22,7 @@ class VisionStats:
         # and series use the low-median of the last few per-inference counts.
         self._recent.append(people)
         stable = statistics.median_low(self._recent)
+        self.stable_people = stable
         self.peak_people = max(self.peak_people, stable)
         self._series.append([ts, stable])
         prev = self._state

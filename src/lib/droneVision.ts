@@ -44,6 +44,7 @@ export interface VisionDetection {
   label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
   confidence: number; // max person confidence (0 when none)
   count: number; // people in frame (the drop-zone hazard)
+  stablePeople: number; // median-low over the last 5 inference counts; the number assimilation uses
   persons: VisionPerson[];
   objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
   verdict: VisionVerdict | null; // drop-verdict pipeline (null on older bridges)
@@ -63,7 +64,7 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     label?: string; confidence?: number; count?: number;
     persons?: VisionPerson[]; objects?: VisionObject[];
     verdict?: VisionVerdict | null; brightness?: number; boot_id?: string;
-    face_mode?: string; blurred?: number;
+    face_mode?: string; blurred?: number; stable_people?: number;
     stats?: { peak_people?: number; holds?: number; samples?: number; series?: [number, number][] };
     video_fps?: number; infer_fps?: number; ts?: number;
   };
@@ -71,6 +72,7 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     label: raw.label === 'obstructed' ? 'obstructed' : 'clear',
     confidence: raw.confidence ?? 0,
     count: raw.count ?? 0,
+    stablePeople: raw.stable_people ?? raw.count ?? 0,
     persons: raw.persons ?? [],
     objects: raw.objects ?? [],
     verdict: raw.verdict ?? null,

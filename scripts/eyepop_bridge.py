@@ -344,6 +344,7 @@ async def inference_loop(endpoint):
                 for o in objects:
                     by_label[o["label"]] = by_label.get(o["label"], 0) + 1
                 log_line({"type": "sample", "ts": wall, "people": len(persons),
+                          "stable_people": STATS.stable_people,
                           "state": verdict.state, "score": verdict.score,
                           "brightness": round(state["brightness"], 1), "objects": by_label,
                           "faces_blurred": len(state["blur"])})
@@ -363,6 +364,7 @@ async def get_detection(_req):
     body["face_mode"] = state["face_mode"]
     body["blurred"] = len(state["blur"])
     body["stats"] = {**STATS.summary(), "series": STATS.series()[::10][-60:]}
+    body["stable_people"] = STATS.stable_people
     return web.json_response(body)
 
 

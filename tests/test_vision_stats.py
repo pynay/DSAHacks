@@ -48,3 +48,32 @@ def test_summary_shape():
     assert s["peak_people"] == 2
     assert s["holds"] == 1  # entering HOLD on the first sample counts
     assert s["samples"] == 1
+
+
+def test_stable_people_starts_at_zero():
+    assert VisionStats().stable_people == 0
+
+
+def test_stable_people_ignores_single_frame_spike():
+    st = VisionStats()
+    for i, n in enumerate((1, 1, 6, 1, 1)):
+        st.add_sample(people=n, verdict_state="GO", ts=float(i))
+    assert st.stable_people == 1
+
+
+def test_stable_people_tracks_sustained_rise():
+    st = VisionStats()
+    for i, n in enumerate((1, 2, 3, 3, 3)):
+        st.add_sample(people=n, verdict_state="GO", ts=float(i))
+    assert st.stable_people == 3
+
+
+def test_stable_people_decays_after_three_zero_samples():
+    st = VisionStats()
+    for i, n in enumerate((3, 3, 3)):
+        st.add_sample(people=n, verdict_state="HOLD", ts=float(i))
+    st.add_sample(people=0, verdict_state="GO", ts=3.0)
+    st.add_sample(people=0, verdict_state="GO", ts=4.0)
+    assert st.stable_people == 3  # window (0,0,3,3,3): median_low still 3
+    st.add_sample(people=0, verdict_state="GO", ts=5.0)
+    assert st.stable_people == 0  # third zero flips the median

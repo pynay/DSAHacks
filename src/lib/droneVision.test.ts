@@ -65,3 +65,19 @@ test('empty payload parses to safe defaults', () => {
   expect(det.objects).toEqual([]);
   expect(det.videoFps).toBe(0);
 });
+
+test('stablePeople diverges from raw count when the bridge sends it', () => {
+  const det = parseDetection({ ...fullPayload, count: 3, stable_people: 2 });
+  expect(det.stablePeople).toBe(2);
+  expect(det.count).toBe(3);
+});
+
+test('older bridge without stable_people falls back to the raw count', () => {
+  const older: Record<string, unknown> = { ...fullPayload };
+  delete older.stable_people;
+  expect(parseDetection(older).stablePeople).toBe(fullPayload.count);
+});
+
+test('empty payload has stablePeople 0', () => {
+  expect(parseDetection({}).stablePeople).toBe(0);
+});
