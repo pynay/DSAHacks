@@ -243,7 +243,7 @@ export default function DeliveryMap({
 
   if (!TOKEN) {
     return (
-      <div className="grid h-full place-items-center bg-stone-100 text-sm text-stone-500">
+      <div className="grid h-full place-items-center bg-slate-100 text-sm text-slate-500">
         Set NEXT_PUBLIC_MAPBOX_TOKEN in .env.local to load the map.
       </div>
     );

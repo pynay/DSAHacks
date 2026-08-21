@@ -81,13 +81,13 @@ export default function InventoryPage() {
         </select>
         <button
           onClick={() => setOpen(true)}
-          className="ml-auto flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
+          className="ml-auto flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           <Plus size={16} /> Add item
         </button>
       </div>
 
-      <p className="text-sm text-stone-500">{filtered.length} of {inventory.length} items</p>
+      <p className="text-sm text-slate-500">{filtered.length} of {inventory.length} items</p>
       <InventoryTable items={filtered} onAdjust={adjustQuantity} now={now} />
 
       <Modal open={open} title="Add inventory item" onClose={() => setOpen(false)}>
@@ -120,10 +120,10 @@ export default function InventoryPage() {
             </FormField>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm text-stone-600 hover:bg-stone-100">
+            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700">
+            <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
               Add item
             </button>
           </div>

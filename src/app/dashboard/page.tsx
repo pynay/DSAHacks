@@ -55,25 +55,25 @@ export default function DashboardPage() {
 
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h2 className="font-semibold text-stone-900">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
+            <h2 className="font-semibold text-slate-900">
               Downtown unsheltered homelessness (DSDP monthly counts)
             </h2>
-            <p className="mb-1 text-xs text-stone-500">
+            <p className="mb-1 text-xs text-slate-500">
               The challenge&apos;s core historical series, 2017–2025, multiplier-adjusted totals
               across all six downtown neighborhoods. Line breaks are the provider&apos;s real
               reporting gaps — never interpolated or zero-filled.
             </p>
             <DsdpChart data={commons.dsdp} />
           </div>
-          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-            <h2 className="flex items-center gap-2 font-semibold text-stone-900">
-              <BedDouble size={16} className="text-yellow-700" /> City shelter capacity
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="flex items-center gap-2 font-semibold text-slate-900">
+              <BedDouble size={16} className="text-emerald-700" /> City shelter capacity
             </h2>
-            <p className="text-xs text-stone-500">SDHC roster, as of {commons.shelters.asOf}</p>
-            <div className="mt-2 text-2xl font-semibold text-stone-900">
+            <p className="text-xs text-slate-500">SDHC roster, as of {commons.shelters.asOf}</p>
+            <div className="mt-2 text-2xl font-semibold text-slate-900">
               {commons.shelters.totalBeds.toLocaleString()}{' '}
-              <span className="text-sm font-normal text-stone-500">
+              <span className="text-sm font-normal text-slate-500">
                 beds · {commons.shelters.siteCount} sites
               </span>
             </div>
@@ -88,32 +88,32 @@ export default function DashboardPage() {
                 </span>
               ))}
             </div>
-            <ul className="mt-3 space-y-1 text-xs text-stone-600">
+            <ul className="mt-3 space-y-1 text-xs text-slate-600">
               {commons.shelters.sites.slice(0, 4).map((s) => (
                 <li key={`${s.program}-${s.site}`} className="flex justify-between gap-2">
                   <span className="truncate">{s.site}</span>
-                  <span className="shrink-0 font-medium text-stone-800">{s.beds}</span>
+                  <span className="shrink-0 font-medium text-slate-800">{s.beds}</span>
                 </li>
               ))}
               {commons.shelters.sites.length > 4 && (
-                <li className="text-stone-400">+{commons.shelters.sites.length - 4} more sites</li>
+                <li className="text-slate-400">+{commons.shelters.sites.length - 4} more sites</li>
               )}
             </ul>
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h2 className="font-semibold text-stone-900">San Diego homelessness (HUD PIT counts)</h2>
-            <p className="mb-1 text-xs text-stone-500">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
+            <h2 className="font-semibold text-slate-900">San Diego homelessness (HUD PIT counts)</h2>
+            <p className="mb-1 text-xs text-slate-500">
               Annual region-wide Point-in-Time counts (no 2021 bar: the unsheltered count was not
               conducted that year).
             </p>
             <PitChart data={commons.pit} />
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-            <h2 className="font-semibold text-stone-900">Real data sources</h2>
-            <p className="text-xs text-stone-500">via the SD Homelessness Data Commons (DuckDB)</p>
-            <ul className="mt-2 space-y-1.5 text-xs text-stone-600">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="font-semibold text-slate-900">Real data sources</h2>
+            <p className="text-xs text-slate-500">via the SD Homelessness Data Commons (DuckDB)</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
               <li><b>DSDP downtown counts</b> — monthly unsheltered totals by neighborhood, 2017–2025 (hackathon bundle)</li>
               <li><b>311 &quot;Get It Done&quot;</b> — homelessness-related requests, 2018–2026 (need forecast target)</li>
               <li><b>72-hr enforcement reports</b> — per-neighborhood violation signals</li>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
               <li><b>SDHC shelter roster</b> — real sites, beds &amp; occupancy, 2026</li>
               <li><b>USGS / Mapbox terrain</b> — drop-zone ground elevation</li>
             </ul>
-            <p className="mt-2 text-[11px] text-stone-400">
+            <p className="mt-2 text-[11px] text-slate-400">
               Signals are proxies with known biases, not headcounts — see the repo data dictionary.
             </p>
           </div>
@@ -129,30 +129,30 @@ export default function DashboardPage() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 font-semibold text-stone-900">Inventory by category</h2>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-2 font-semibold text-slate-900">Inventory by category</h2>
           <CategoryChart data={catData} />
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 font-semibold text-stone-900">Intake vs. outflow (6 wks)</h2>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-2 font-semibold text-slate-900">Intake vs. outflow (6 wks)</h2>
           <TrendChart data={trend} />
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 font-semibold text-stone-900">Stock status</h2>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-slate-900">Stock status</h2>
           <div className="space-y-2">
             {(Object.keys(counts) as Status[]).map((s) => (
               <div key={s} className="flex items-center justify-between">
                 <StatusPill status={s} />
-                <span className="text-sm font-medium text-stone-700">{counts[s]}</span>
+                <span className="text-sm font-medium text-slate-700">{counts[s]}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-          <h2 className="mb-1 font-semibold text-stone-900">Recent activity</h2>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
+          <h2 className="mb-1 font-semibold text-slate-900">Recent activity</h2>
           <ActivityFeed entries={activity} />
         </div>
       </div>
