@@ -47,14 +47,14 @@ The repository contains three integrated systems:
 | Surface | What it does | Data mode |
 |---|---|---|
 | Landing | Explains the food-relief workflow and platform | Product narrative |
-| Dashboard | Stock KPIs, activity, inventory health, PIT trends and shelter context | Demo operations + real aggregate data |
+| Dashboard | Stock KPIs, PIT/shelter context, parking activity and food-access signals | Demo operations + real aggregate data |
 | Inventory | Search, filter, add and adjust food inventory with derived status | In-memory demo state |
 | Donations | Record incoming items and update matching stock | In-memory demo state |
 | Distributions | Record outgoing items and decrement stock | In-memory demo state |
 | Delivery | Render six movable model hotspots on a Mapbox 3D downtown map | Real marts + model artifacts |
 | Allocation | Apply deterministic FEFO and proportional allocation to hotspot demand | Demo inventory + model zones |
 | Food Check | Run one-shot EyePop item detection and optional freshness review | Live camera + EyePop |
-| Drone Ops | View the local EyePop person feed and apply one stabilized aggregate count | Live bridge + adaptive hotspot state |
+| Drone Ops | View the EyePop scene feed and apply one stabilized aggregate person count | Live bridge + adaptive hotspot state |
 
 ### What makes the loop adaptive
 

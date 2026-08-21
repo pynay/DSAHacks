@@ -1,10 +1,9 @@
 // Client hook for the EyePop.ai webcam vision bridge (scripts/eyepop_bridge.py).
 //
-// The bridge runs eyepop.person:latest on laptop-webcam frames and serves the
-// latest result on localhost:8091. Video arrives as an MJPEG push stream at
-// full camera rate; detections are polled. When the bridge is down this hook
-// reports connected: false and the Drone Ops view falls back to the
-// simulator's scripted detection.
+// The bridge runs an EyePop scene detector on webcam/video frames and serves
+// the latest objects plus a person-only hazard count on localhost:8091. Video
+// arrives as an MJPEG push stream at full camera rate; detections are polled.
+// When the bridge is down this hook reports connected: false.
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -21,11 +20,16 @@ export interface VisionPerson {
   height: number;
 }
 
+export interface VisionObject extends VisionPerson {
+  label: string;
+}
+
 export interface VisionDetection {
   label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
   confidence: number; // max person confidence (0 when none)
-  count: number;
+  count: number; // people in frame (the drop-zone hazard)
   persons: VisionPerson[];
+  objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
   videoFps: number; // measured camera capture rate
   inferFps: number; // measured EyePop round-trip rate
   ts: number;
@@ -56,6 +60,7 @@ export function useDroneVision(): { connected: boolean; detection: VisionDetecti
             confidence: d.confidence ?? 0,
             count: d.count ?? 0,
             persons: d.persons ?? [],
+            objects: d.objects ?? [],
             videoFps: d.video_fps ?? 0,
             inferFps: d.infer_fps ?? 0,
             ts: d.ts ?? 0,

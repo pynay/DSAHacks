@@ -108,7 +108,7 @@ flowchart TB
 | Server services | DuckDB reads, model-artifact loading, hotspot assimilation, elevation and EyePop adapters | Server-only imports used by `src/app/api` |
 | Data platform | Source ingestion, provenance, normalization, marts, QA and exports | `commons`, `run.py`, `refresh.py` |
 | Model platform | Forecasting, leakage-safe benchmarking, production artifact generation | `ml` |
-| Edge adapter | Local webcam/video capture, MJPEG serving and EyePop person inference | `scripts/eyepop_bridge.py` |
+| Edge adapter | Local video capture, MJPEG serving, scene detection and aggregate person counts | `scripts/eyepop_bridge.py` |
 
 Client components never import DuckDB, filesystem, credentials, or model-training
 code. Route handlers form the browser-to-server boundary. The web runtime consumes

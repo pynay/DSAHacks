@@ -39,6 +39,11 @@ export default function DronePage() {
       setFeedback('error');
     }
   }
+  const classCounts = (det?.objects ?? []).reduce<Record<string, number>>((m, o) => {
+    m[o.label] = (m[o.label] ?? 0) + 1;
+    return m;
+  }, {});
+  const classes = Object.entries(classCounts).sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="space-y-4">
@@ -46,8 +51,8 @@ export default function DronePage() {
         <div>
           <h2 className="font-semibold text-stone-900">Drone delivery ops</h2>
           <p className="text-sm text-stone-500">
-            Live camera vision by EyePop.ai. It gives the operator a clear/hold signal and an
-            aggregate count that can update the selected hotspot after review.
+            Live camera vision detects people and objects, gives the operator a clear/hold signal,
+            and can apply a reviewed aggregate person count to the selected hotspot.
           </p>
         </div>
         {vision.connected ? (
@@ -91,7 +96,7 @@ export default function DronePage() {
             )}
             {det && (
               <div className="absolute bottom-3 right-3 rounded-lg bg-black/65 px-3 py-1.5 text-[11px] font-medium text-stone-200 backdrop-blur">
-                eyepop.person:latest · {det.videoFps.toFixed(0)} fps video · {det.inferFps.toFixed(1)} fps inference
+                eyepop.common-objects:latest · {det.videoFps.toFixed(0)} fps video · {det.inferFps.toFixed(1)} fps inference
               </div>
             )}
           </div>
@@ -111,17 +116,21 @@ export default function DronePage() {
           </div>
 
           <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
-            <div className="mb-1 text-xs font-medium text-stone-500">Detections</div>
-            {det && det.persons.length ? (
+            <div className="mb-1 text-xs font-medium text-stone-500">Detected in frame</div>
+            {classes.length ? (
               <div className="flex flex-wrap gap-1.5">
-                {det.persons.map((p, i) => (
-                  <span key={i} className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                    person {(p.confidence * 100).toFixed(0)}%
+                {classes.map(([label, n]) => (
+                  <span
+                    key={label}
+                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${label === 'person' ? 'bg-red-100 text-red-700' : 'bg-cyan-100 text-cyan-800'}`}
+                  >
+                    {label}
+                    {n > 1 ? ` ×${n}` : ''}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-stone-400">{vision.connected ? 'Zone clear.' : 'Offline.'}</p>
+              <p className="text-xs text-stone-400">{vision.connected ? 'Nothing in frame.' : 'Offline.'}</p>
             )}
           </div>
 
@@ -165,11 +174,12 @@ export default function DronePage() {
           </div>
 
           <p className="text-[11px] text-stone-400">
-            Feed runs <code className="rounded bg-stone-100 px-1">eyepop.person:latest</code> via
+            Feed runs <code className="rounded bg-stone-100 px-1">eyepop.common-objects:latest</code> via
             <code className="rounded bg-stone-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
             live webcam (run without <code className="rounded bg-stone-100 px-1">VIDEO_SOURCE</code>) or
             any video file. Select a target and apply one stabilized frame count to move the
-            hotspot surface; repeated video frames are never counted automatically.
+            hotspot surface; repeated frames are never counted automatically. Set{' '}
+            <code className="rounded bg-stone-100 px-1">EYEPOP_ABILITY</code> to swap models.
             Clear/hold is decision support only and does not autonomously release a payload.
           </p>
         </div>
