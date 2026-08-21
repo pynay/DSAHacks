@@ -1,4 +1,4 @@
-# QA Report - generated 2026-08-20 20:12
+# QA Report - generated 2026-08-20 20:21
 
 ## Run summary
 
@@ -9,7 +9,7 @@
 | refresh_citations | ok | 78158 | failed files=[] |
 | build_marts | ok | 54211 |  |
 | export_marts | ok | 287 | 4 files exported |
-| data_dictionary | ok | 7 | /Users/pynay/Documents/DSAHacks/DATA_DICTIONARY.md |
+| data_dictionary | ok | 22 | /Users/pynay/Documents/DSAHacks/DATA_DICTIONARY.md |
 
 ## Source gaps
 

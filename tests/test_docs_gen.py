@@ -2,6 +2,16 @@ import duckdb
 from commons import db, docs_gen
 from commons.staging import src_a
 
+
+def test_registry_populated_by_docs_gen_import_alone():
+    # regression: TABLE_DOCS is populated by register_table() side effects at each
+    # staging module's import time. refresh.py imports only src_c/src_d, so if docs_gen
+    # relied on its caller to have imported every source first, refresh.py would
+    # regenerate a truncated dictionary. docs_gen must import all sources itself.
+    from commons.registry import TABLE_DOCS
+    assert len(TABLE_DOCS) >= 20
+
+
 def test_dictionary_contents(tmp_path):
     con = duckdb.connect(); db.ensure_schema(con); src_a.load(con)
     out = tmp_path / "DATA_DICTIONARY.md"

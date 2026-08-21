@@ -5,10 +5,13 @@ DuckDB database, plus exported marts. Built for the 2026-08-20 DSA hackathon.
 
 **Core principle: this is a dataset of signals with known biases, not a census.**
 Nothing here counts people directly except source A (2014-2018 street counts) and
-source F (annual PIT). Everything else — 311 complaints, citations, shelter beds,
-weather, rent — is a *proxy* that correlates with homelessness pressure but must
-never be reported as a headcount. Every table carries `measures` and `known_bias`
-text in `DATA_DICTIONARY.md`; read it before citing a number.
+source F (annual PIT) — source H's digitized components (`dsdp_individuals`/
+`dsdp_tents`/`dsdp_vehicles`) are also counted units, but at secondary reliability
+(digitized from map images, not a primary field count like A or F). Everything else —
+311 complaints, citations, shelter beds, weather, rent — is a *proxy* that correlates
+with homelessness pressure but must never be reported as a headcount. Every table
+carries `measures` and `known_bias` text in `DATA_DICTIONARY.md`; read it before
+citing a number.
 
 ## Run
 
