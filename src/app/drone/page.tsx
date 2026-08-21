@@ -49,10 +49,10 @@ export default function DronePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold text-slate-900">Drone delivery ops</h2>
+          <h2 className="font-semibold text-slate-900">Drone verification</h2>
           <p className="text-sm text-slate-500">
             Live camera vision detects people and objects, gives the operator a clear/hold signal,
-            and can apply a reviewed aggregate person count to the selected hotspot.
+            and can apply one reviewed aggregate person count to a historical-prior target.
           </p>
         </div>
         {vision.connected ? (
@@ -135,7 +135,7 @@ export default function DronePage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="mb-2 text-xs font-medium text-slate-500">Delivery targets (by need)</div>
+            <div className="mb-2 text-xs font-medium text-slate-500">Targets to verify (by prior)</div>
             <ul className="space-y-1.5">
               {targets.map((z) => (
                 <li key={z.id}>
@@ -150,7 +150,9 @@ export default function DronePage() {
                     <span className="flex items-center gap-1.5 text-slate-800">
                       <MapPin size={12} className="text-red-500" /> {z.label}
                     </span>
-                    <span className="text-xs text-slate-500">pred {z.need}</span>
+                    <span className={`text-xs ${z.confidence === 'drone-updated' ? 'font-medium text-emerald-700' : 'text-slate-500'}`}>
+                      {z.confidence === 'drone-updated' ? 'updated' : 'prior'} {z.need}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -166,7 +168,9 @@ export default function DronePage() {
               {feedback === 'saving' ? 'Updating hotspot…' : `Apply live count${det ? ` (${det.count})` : ''}`}
             </button>
             {feedback === 'saved' && (
-              <p className="mt-1.5 text-[11px] text-emerald-700">Count assimilated; hotspot positions refreshed.</p>
+              <p className="mt-1.5 text-[11px] text-emerald-700">
+                Count assimilated; the affected zone is now allocation-eligible.
+              </p>
             )}
             {feedback === 'error' && (
               <p className="mt-1.5 text-[11px] text-red-700">Could not update the hotspot model.</p>

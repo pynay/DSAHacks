@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { MapPin, Plane, Plus, TrendingUp } from "lucide-react";
+import { MapPin, Plane, Plus, ShieldCheck, TrendingUp } from "lucide-react";
 import { DEPOT, haversineKm, type DeliveryZone } from "@/lib/delivery";
 import { useZones } from "@/lib/useZones";
 
@@ -26,7 +26,7 @@ export default function DeliveryPage() {
   const { zones: baseZones, meta, error } = useZones();
   const [custom, setCustom] = useState<DeliveryZone[]>([]);
   const [series, setSeries] = useState<Series | null>(null);
-  const [step, setStep] = useState(0); // 0 = now, 1..3 = forecast months
+  const [step, setStep] = useState(0); // 0 = historical prior, 1..3 = 311 scenario months
 
   useEffect(() => {
     fetch("/api/forecast")
@@ -94,14 +94,17 @@ export default function DeliveryPage() {
   const totalNeed = useMemo(() => zones.reduce((s, z) => s + z.need, 0), [zones]);
   const totalKm = useMemo(() => zones.reduce((s, z) => s + haversineKm(DEPOT, z), 0), [zones]);
   const maxNeed = Math.max(...zones.map((z) => z.need), 1);
-  const horizonLabels = ["Now", ...(series?.months ?? []).map(fmtMonth)];
+  const horizonLabels = ["Prior", ...(series?.months ?? []).map(fmtMonth)];
+  const verifiedCount = baseZones.filter((zone) => zone.confidence === "drone-updated").length;
 
   return (
     <div className="flex h-[calc(100vh-7rem)] gap-4">
       <div className="relative flex-1 overflow-hidden rounded-xl border border-slate-200 shadow-sm">
         <DeliveryMap zones={zones} onAddZone={addZone} needCenter={needCenter} centerTrail={trail} />
         <div className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-white/90 px-3 py-2 text-xs text-slate-600 shadow">
-          <div className="mb-1 font-medium text-slate-800">Need density</div>
+          <div className="mb-1 font-medium text-slate-800">
+            {verifiedCount ? "Updated planning surface" : "Historical prior density"}
+          </div>
           <div className="mb-1 flex items-center gap-2">
             <span
               className="inline-block h-2.5 w-20 rounded-full"
@@ -112,7 +115,11 @@ export default function DeliveryPage() {
           <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full bg-fuchsia-500" /> scenario center</div>
           <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-[3px] bg-emerald-600" /> depot</div>
           <div className="mt-1 text-slate-400">
-            {step === 0 ? "current estimate · zoom in for zone pins · click to add a drop" : `311 scenario: ${horizonLabels[step]}`}
+            {step === 0
+              ? verifiedCount
+                ? "reviewed feedback applied locally · unverified areas remain historical"
+                : "not current headcounts · zoom in for zone pins"
+              : `context-only 311 scenario: ${horizonLabels[step]}`}
           </div>
         </div>
       </div>
@@ -121,16 +128,25 @@ export default function DeliveryPage() {
         <div className="border-b border-slate-200 p-4">
           <h2 className="font-semibold text-slate-900">Delivery zones</h2>
           <p className="text-xs text-slate-500">
-            Movable block hotspots from the selected ensemble, with a 311-pressure scenario and
-            live drone feedback.
+            Historical model priors identify places to verify. Reviewed field observations can
+            update individual zones and make them allocation-eligible.
           </p>
           {meta && (
             <p className={`mt-2 rounded-md px-2 py-1.5 text-[11px] ${meta.stale_source_warning ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
-              {meta.model.replaceAll("_", " ")} · source {meta.source_date}
+              historical prior · {meta.model.replaceAll("_", " ")} · source {meta.source_date}
               {meta.observations ? ` · ${meta.observations} live observation${meta.observations === 1 ? "" : "s"}` : ""}
-              {meta.stale_source_warning ? " · stale source: verify by drone before dispatch" : ""}
+              {meta.stale_source_warning ? " · field verification required" : ""}
             </p>
           )}
+
+          <div className={`mt-2 flex gap-2 rounded-lg border p-2.5 text-[11px] leading-5 ${verifiedCount ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+            <ShieldCheck size={15} className="mt-0.5 shrink-0" />
+            <p>
+              {verifiedCount
+                ? `${verifiedCount} zone${verifiedCount === 1 ? " contains" : "s contain"} reviewed field evidence. Only those zones can be staged in Allocation.`
+                : "Planning only: no zone has current field evidence, so Allocation staging is locked."}
+            </p>
+          </div>
 
           {/* Forecast horizon */}
           <div className="mt-3">
@@ -161,7 +177,9 @@ export default function DeliveryPage() {
             </div>
             <div className="rounded-lg bg-slate-50 py-2">
               <div className="text-lg font-semibold text-slate-900">{totalNeed}</div>
-              <div className="text-[11px] text-slate-500">{step === 0 ? "total need" : "scenario need"}</div>
+              <div className="text-[11px] text-slate-500">
+                {step === 0 ? (verifiedCount ? "surface total" : "prior total") : "scenario total"}
+              </div>
             </div>
             <div className="rounded-lg bg-slate-50 py-2">
               <div className="text-lg font-semibold text-slate-900">{totalKm.toFixed(1)}</div>
@@ -182,7 +200,7 @@ export default function DeliveryPage() {
                 href="/drone"
                 className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
               >
-                <Plane size={13} /> Dispatch drone to check
+                <Plane size={13} /> Open drone verification
               </Link>
             </div>
           )}
@@ -212,7 +230,7 @@ export default function DeliveryPage() {
                 )}
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
                   <span>
-                    {z.predicted ? "visible estimate" : "need"} {z.need}
+                    {z.confidence === "drone-updated" ? "updated estimate" : z.predicted ? "historical prior" : "need"} {z.need}
                     {delta !== 0 && (
                       <span className={delta > 0 ? "text-orange-600" : "text-emerald-600"}>
                         {" "}
@@ -224,6 +242,7 @@ export default function DeliveryPage() {
                   <span>{z.requests} reqs</span>
                   {!z.custom && <span>{z.tents ?? 0} tents</span>}
                   <span>elev {z.elevation != null ? `${Math.round(z.elevation)} m` : "—"}</span>
+                  {z.confidence === "drone-updated" && <span className="font-medium text-emerald-700">reviewed evidence</span>}
                   {z.lastObservedAt && <span>updated {new Date(z.lastObservedAt).toLocaleString()}</span>}
                 </div>
               </li>

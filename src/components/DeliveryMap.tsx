@@ -14,7 +14,13 @@ function zonesFC(zones: DeliveryZone[]): FeatureCollection {
     features: zones.map((z) => ({
       type: "Feature",
       geometry: { type: "Point", coordinates: [z.lng, z.lat] },
-      properties: { id: z.id, label: z.label, need: z.need, custom: !!z.custom },
+      properties: {
+        id: z.id,
+        label: z.label,
+        need: z.need,
+        custom: !!z.custom,
+        verified: z.confidence === "drone-updated",
+      },
     })),
   };
 }
@@ -189,7 +195,7 @@ export default function DeliveryMap({
             16, ["case", ["get", "custom"], 0.9, 0.85],
           ],
           "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#ffffff",
+          "circle-stroke-color": ["case", ["get", "verified"], "#34d399", "#ffffff"],
           "circle-stroke-opacity": [
             "interpolate",
             ["linear"],
@@ -249,9 +255,9 @@ export default function DeliveryMap({
           .setHTML(
             `<div style="font:12px/1.4 Inter,sans-serif;color:#1c1917">
                <b>${p.label}</b><br/>
-               ${z?.predicted ? "predicted visible" : "need"} ${z?.need ?? "?"} · ${z?.requests ?? "?"} 311 reqs<br/>
+               ${z?.confidence === "drone-updated" ? "updated estimate" : z?.predicted ? "historical prior" : "need"} ${z?.need ?? "?"} · ${z?.requests ?? "?"} 311 reqs<br/>
                ${z?.tents ?? 0} tents · ${z?.vehicles ?? 0} vehicles<br/>
-               ${z?.confidence === "drone-updated" ? "drone-updated" : z?.predicted ? "model estimate" : "current data"}<br/>
+               ${z?.confidence === "drone-updated" ? "reviewed field evidence · allocation eligible" : z?.predicted ? "planning only · verification required" : "current data"}<br/>
                ${dist} km from depot · elev ${elev}
              </div>`,
           )

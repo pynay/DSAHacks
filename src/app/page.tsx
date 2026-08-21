@@ -71,7 +71,7 @@ const workflow = [
     number: '04',
     icon: PackageCheck,
     title: 'Recalculate the plan',
-    body: 'A Gamma-Poisson update can move the hotspots, then deterministic FEFO allocation matches available demo inventory to demand.',
+    body: 'A Gamma-Poisson update can move the hotspots. Only field-updated zones become eligible for deterministic FEFO allocation.',
   },
 ];
 
@@ -107,8 +107,8 @@ const capabilities = [
   {
     icon: ClipboardCheck,
     title: 'Explainable allocation',
-    body: 'Split available stock proportionally and move earlier-expiring items first. Quantities are generic demo units, not a packing manifest.',
-    note: 'Deterministic FEFO logic',
+    body: 'Split available stock proportionally and move earlier-expiring items first—but only for zones with reviewed field evidence.',
+    note: 'Field-gated deterministic FEFO',
     href: '/allocation',
   },
   {
@@ -121,6 +121,7 @@ const capabilities = [
 ];
 
 const boundaries = [
+  'The historical block prior is not a current or exact date-and-time population forecast.',
   'A visible-person estimate is not identity, eligibility, consent, or a complete census.',
   '311 requests, parking, enforcement, shelter capacity, and weather are context—not people.',
   'The hotspot state and inventory are not yet durable across restarts or multiple servers.',
@@ -146,7 +147,7 @@ export default function Home() {
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex" aria-label="Landing page">
             <a href="#platform" className="hover:text-[#071a2b]">What works</a>
             <a href="#feedback-loop" className="hover:text-[#071a2b]">Feedback loop</a>
-            <a href="#evidence" className="hover:text-[#071a2b]">Evidence &amp; limits</a>
+            <a href="#evidence" className="hover:text-[#071a2b]">Decision gate</a>
           </nav>
           <Link
             href="/login"
@@ -310,26 +311,38 @@ export default function Home() {
       <section id="evidence" className="scroll-mt-8 bg-white py-20 sm:py-28">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">Model evidence</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Better than persistence in backtesting. Still experimental.</h2>
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">Decision gate</p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The model can suggest. Field evidence unlocks action.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              The selected stacked ensemble was tested on forward time folds rather than random
-              train/test splits. These results describe historical evaluation, not guaranteed field accuracy.
+              Parsel does not turn a stale prediction directly into a food distribution. The
+              starting surface is useful for deciding where to verify; only the locally updated
+              zone is allowed into the allocation workflow.
             </p>
-            <div className="mt-8 grid grid-cols-2 border border-slate-200">
-              <div className="border-r border-slate-200 p-5">
-                <p className="text-3xl font-semibold">1.789</p>
-                <p className="mt-1 text-sm font-bold text-[#27875b]">ensemble MAE</p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">Per block, historical benchmark</p>
+            <div className="mt-8 divide-y divide-slate-200 border-y border-slate-200">
+              <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">01 · Prior</p>
+                <div>
+                  <p className="font-semibold text-slate-900">Choose where to verify</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">Historical model output stays visible but is marked planning-only.</p>
+                </div>
               </div>
-              <div className="p-5">
-                <p className="text-3xl font-semibold">1.911</p>
-                <p className="mt-1 text-sm font-bold text-slate-600">persistence MAE</p>
-                <p className="mt-2 text-xs leading-5 text-slate-500">Last-observation baseline</p>
+              <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">02 · Review</p>
+                <div>
+                  <p className="font-semibold text-slate-900">Apply one aggregate observation</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">A person accepts the count before it updates nearby blocks.</p>
+                </div>
+              </div>
+              <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">03 · Allocate</p>
+                <div>
+                  <p className="font-semibold text-slate-900">Unlock only the updated zone</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">Unverified priors cannot stage distributions or decrement inventory.</p>
+                </div>
               </div>
             </div>
-            <Link href="/delivery" className="mt-7 inline-flex items-center gap-2 text-sm font-bold underline decoration-[#3ca875] decoration-2 underline-offset-4">
-              Inspect the hotspot map <ArrowRight size={15} />
+            <Link href="/allocation" className="mt-7 inline-flex items-center gap-2 text-sm font-bold underline decoration-[#3ca875] decoration-2 underline-offset-4">
+              Inspect the allocation gate <ArrowRight size={15} />
             </Link>
           </div>
 

@@ -244,7 +244,11 @@ def choose_centers(prediction: np.ndarray, distances: np.ndarray) -> list[int]:
 def export() -> None:
     np.random.seed(SEED)
     months, grid, values, adjacency, distances = load_panel()
-    target = pd.Timestamp(date.today()).to_period("M").to_timestamp()
+    # This model is evaluated as a one-step-ahead forecaster. Export the next
+    # observation-period prior instead of pretending stale lag features can
+    # support an arbitrary jump to the current month.
+    target = months[-1] + pd.DateOffset(months=1)
+    current_month = pd.Timestamp(date.today()).to_period("M").to_timestamp()
     prediction = predict_at(months, grid, values, adjacency, distances, len(months), target)
     prediction = np.maximum(prediction, 0)
     backtest = modern_backtest(months, grid, values, adjacency, distances)
@@ -260,8 +264,10 @@ def export() -> None:
         "source": "DSDP 261-block longitudinal panel",
         "source_date": months[-1].strftime("%Y-%m-%d"),
         "target_month": target.strftime("%Y-%m-%d"),
+        "forecast_role": "historical_next_observation_prior",
+        "operational_gate": "field_verification_required",
         "generated_on": date.today().isoformat(),
-        "stale_source_warning": bool(target > months[-1] + pd.DateOffset(months=3)),
+        "stale_source_warning": bool(current_month > months[-1] + pd.DateOffset(months=3)),
         "modern_panel_backtest": backtest,
         "selection_benchmark_winner": benchmark.get("winner"),
     }
@@ -308,7 +314,7 @@ def export() -> None:
                 "blocks": int(len(members)),
                 "need": int(round(float(prediction[members].sum()))),
                 "predicted": True,
-                "confidence": "experimental",
+                "confidence": "historical-prior",
                 "model": meta["model"],
                 "sourceDate": meta["source_date"],
                 "elevation": None,
