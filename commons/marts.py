@@ -152,6 +152,11 @@ def build(con) -> LoadResult:
           SELECT obs_month AS obs_month, 'zip_' || zip AS geography, 'context' AS signal_type,
                  'zori' AS metric, zori AS value, 'G_zori' AS source_id
           FROM stg_zori_monthly""")
+    if _has(con, "stg_i_food_access"):
+        parts_c.append("""
+          SELECT make_date(vintage_year, 1, 1) AS obs_month, geography AS geography,
+                 'food_access' AS signal_type, metric AS metric, value::DOUBLE AS value, 'I' AS source_id
+          FROM stg_i_food_access""")
 
     def _make(table, cols, parts):
         if parts:

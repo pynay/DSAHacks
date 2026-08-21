@@ -49,3 +49,19 @@ def test_rollup_pop_is_sum_of_tracts():
         "SELECT sum(value) FROM stg_i_food_access WHERE geography LIKE 'tract_%' AND metric='pop_total' AND vintage_year=?",
         [yr]).fetchone()[0]
     assert abs(roll - tract_sum) < 1e-6
+
+
+def test_surfaces_in_context_mart():
+    from commons import marts
+    con = _con()
+    src_i.load(con)
+    marts.build(con)
+    n = con.execute("SELECT count(*) FROM mart_monthly_context WHERE source_id='I'").fetchone()[0]
+    assert n > 0
+    # obs_month is Jan 1 of the vintage year
+    months = {str(r[0]) for r in con.execute(
+        "SELECT DISTINCT obs_month FROM mart_monthly_context WHERE source_id='I'").fetchall()}
+    assert all(mth.endswith("-01-01") for mth in months)
+    la = con.execute(
+        "SELECT count(*) FROM mart_monthly_context WHERE source_id='I' AND geography='la_jolla'").fetchone()[0]
+    assert la > 0
