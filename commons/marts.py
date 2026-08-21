@@ -157,6 +157,38 @@ def build(con) -> LoadResult:
           SELECT make_date(vintage_year, 1, 1) AS obs_month, geography AS geography,
                  'food_access' AS signal_type, metric AS metric, value::DOUBLE AS value, 'I' AS source_id
           FROM stg_i_food_access""")
+    if _has(con, "stg_parking_activity"):
+        parts_n.append("""
+          SELECT obs_month AS obs_month, neighborhood AS neighborhood,
+                 'activity_proxy' AS signal_type, metric AS metric, value::DOUBLE AS value,
+                 false AS is_imputed, 'J' AS source_id
+          FROM (
+            SELECT obs_month, neighborhood, sum(paid_sessions)::DOUBLE AS paid_sessions,
+                   sum(revenue_usd)::DOUBLE AS parking_revenue_usd,
+                   count(DISTINCT pole_id)::DOUBLE AS parking_meters_reporting
+            FROM stg_parking_activity GROUP BY 1,2
+          ) p UNPIVOT (value FOR metric IN (paid_sessions, parking_revenue_usd, parking_meters_reporting))""")
+        parts_b.append("""
+          SELECT obs_month AS obs_month, geo_block AS geo_block,
+                 neighborhood AS neighborhood, 'activity_proxy' AS signal_type,
+                 metric AS metric, value::DOUBLE AS value, false AS is_imputed, 'J' AS source_id
+          FROM (
+            SELECT obs_month, geo_block, any_value(neighborhood) AS neighborhood,
+                   sum(paid_sessions)::DOUBLE AS paid_sessions,
+                   sum(revenue_usd)::DOUBLE AS parking_revenue_usd,
+                   count(DISTINCT pole_id)::DOUBLE AS parking_meters_reporting
+            FROM stg_parking_activity WHERE geo_block IS NOT NULL GROUP BY 1,2
+          ) p UNPIVOT (value FOR metric IN (paid_sessions, parking_revenue_usd, parking_meters_reporting))""")
+        parts_d.append("""
+          SELECT obs_date AS obs_date, neighborhood AS neighborhood,
+                 'activity_proxy' AS signal_type, metric AS metric, value::DOUBLE AS value,
+                 'J' AS source_id
+          FROM (
+            SELECT obs_date, neighborhood, sum(paid_sessions)::DOUBLE AS paid_sessions,
+                   sum(revenue_usd)::DOUBLE AS parking_revenue_usd,
+                   count(DISTINCT pole_id)::DOUBLE AS parking_meters_reporting
+            FROM stg_parking_activity GROUP BY 1,2
+          ) p UNPIVOT (value FOR metric IN (paid_sessions, parking_revenue_usd, parking_meters_reporting))""")
 
     def _make(table, cols, parts):
         if parts:
@@ -188,10 +220,12 @@ def export(con) -> LoadResult:
     con.execute(f"COPY (SELECT * FROM mart_monthly_block ORDER BY obs_month, geo_block, metric) TO '{MARTS_DIR}/monthly_by_block.csv' (HEADER)")
     con.execute(f"COPY (SELECT * FROM mart_daily_downtown ORDER BY obs_date, neighborhood, metric) TO '{MARTS_DIR}/daily_downtown.csv' (HEADER)")
     con.execute(f"COPY (SELECT * FROM mart_monthly_context WHERE source_id='I' ORDER BY obs_month, geography, metric) TO '{MARTS_DIR}/food_access_la_jolla.csv' (HEADER)")
+    con.execute(f"COPY (SELECT * FROM mart_monthly_neighborhood WHERE source_id='J' ORDER BY obs_month, neighborhood, metric) TO '{MARTS_DIR}/parking_activity_monthly.csv' (HEADER)")
+    con.execute(f"COPY (SELECT * FROM mart_daily_downtown WHERE source_id='J' ORDER BY obs_date, neighborhood, metric) TO '{MARTS_DIR}/parking_activity_daily.csv' (HEADER)")
     blocks = con.execute("SELECT geo_block, block_name, neighborhood, zip, geometry_wkt FROM dim_blocks").fetch_df()
     features = [{"type": "Feature",
                  "properties": {k: (None if pd.isna(v) else v) for k, v in row.items() if k != "geometry_wkt"},
                  "geometry": mapping(from_wkt(row["geometry_wkt"]))}
                 for row in blocks.to_dict("records")]
     (MARTS_DIR / "blocks.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": features}))
-    return LoadResult("ok", len(features), "5 files exported")
+    return LoadResult("ok", len(features), "7 files exported")

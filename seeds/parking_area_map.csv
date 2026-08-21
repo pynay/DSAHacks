@@ -1,0 +1,10 @@
+source_area,neighborhood,spatial_confidence,note
+East Village,east_village,coarse_fallback,Used only when a meter is absent from the current coordinate file.
+Gaslamp,gaslamp,coarse_fallback,Used only when a meter is absent from the current coordinate file.
+Marina,marina,coarse_fallback,Used only when a meter is absent from the current coordinate file.
+Columbia,columbia,coarse_fallback,Used only when a meter is absent from the current coordinate file.
+Cortez,cortez,coarse_fallback,Used only when a meter is absent from the current coordinate file.
+Cortez Hill,cortez,coarse_fallback,City parking area alias for Cortez.
+Core,city_center,coarse_fallback,City parking area alias for DSDP City Center.
+Core-Columbia,city_center,mixed_fallback,Mixed City parking district cannot be split without coordinates; assigned to City Center.
+Core - Columbia,city_center,mixed_fallback,Mixed City parking district cannot be split without coordinates; assigned to City Center.

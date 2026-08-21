@@ -156,6 +156,15 @@ def write_qa_report(con, results, path=ROOT / "QA_REPORT.md") -> LoadResult:
         ).fetchone()[0]
         L.append(f"- Source H: {nr} not_reported rows (incl. {nr_2025} unpublished 2025 months); "
                  f"individual/tent/vehicle components are digitized from map images (secondary reliability vs the published total).")
+    if _has(con, "stg_parking_activity"):
+        q = con.execute("""SELECT count(*) n,
+              round(100.0*avg(location_matched::INT),1) pct_current_location,
+              round(100.0*avg((geo_block IS NOT NULL)::INT),1) pct_downtown_block,
+              round(100.0*avg((spatial_method='city_area_fallback')::INT),1) pct_area_fallback
+              FROM stg_parking_activity""").fetch_df().iloc[0]
+        L.append(f"- Source J: {int(q.n)} meter-day rows; {q.pct_current_location}% match the current meter-location file, "
+                 f"{q.pct_downtown_block}% map to a downtown block, and {q.pct_area_fallback}% use the coarser City-area fallback. "
+                 "Paid sessions are an activity proxy, NOT foot traffic or people.")
 
     L.append("\n## Validation Correlations: do independent signals agree?\n")
     L.append(_fmt("(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)", _corr_311_vs_dsdp(con),

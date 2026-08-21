@@ -7,7 +7,7 @@ Complaint (311) and enforcement tables measure reporting and enforcement activit
 they are NOT counts of people experiencing homelessness and must never be presented
 as such. Each table's **Known bias** section is part of the data.
 
-_Generated 2026-08-20 20:37_
+_Generated 2026-08-21 01:13_
 
 ## Sources
 
@@ -70,6 +70,18 @@ _Generated 2026-08-20 20:37_
 - **Signal type:** observation  |  **Cadence:** static bundle (2017-2025), committed in data/hackathon/  |  **Last load:** ok
 - **Measures:** Verified published DSDP monthly unsheltered totals by area (2017-2025), digitized block-level counts (2018-2025, 12 count dates), block-grid polygons, area crosswalk, and the multiplier schedule.
 - **Known bias:** Published totals ARE occupancy-multiplier-adjusted (tents x1.75-2.00, vehicles x1.66-2.03) - not comparable to raw counted units (source A) nor to post-2020 RTFH/PIT raw counts. Components digitized from map images (secondary reliability, 2018+). Block footprint grew 261->382 in Jan 2022. Counting effort varied (fellowship months 2017-2020). Four 2025 months unreported.
+
+### `I` - [USDA Food Access Research Atlas - La Jolla](https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data)
+
+- **Signal type:** food_access  |  **Cadence:** periodic (USDA FARA release; manual seed)  |  **Last load:** ok
+- **Measures:** USDA FARA census-tract food-access indicators for La Jolla (ZIP 92037): population, low-access population and share (>1mi urban to nearest supermarket), low-income-and-low-access population, the LILA food-desert flag, and housing units receiving SNAP. Vintages 2010/2015/2019 on 2010 tract boundaries.
+- **Known bias:** Low access is defined purely by distance to a supermarket, not affordability or actual need. Periodic snapshots, not a continuous series. SNAP figure counts housing units, not people. Field availability varies by vintage (see each row's note). Not comparable to the downtown homelessness signals; provided as area food-insecurity context only.
+
+### `J` - [Downtown paid-parking activity proxy (City of San Diego)](https://data.sandiego.gov/datasets/parking-meters-transactions-daily/)
+
+- **Signal type:** activity_proxy  |  **Cadence:** daily files, annual partitions (auto)  |  **Last load:** ok
+- **Measures:** Daily paid parking transactions and payment revenue per meter, mapped to the six DSDP downtown neighborhoods. This is a repeatable activity/visitation signal, not a pedestrian counter.
+- **Known bias:** Paid parking sessions are NOT foot traffic or people counts. The signal excludes walking, biking, transit, ride-hail, free parking, pass holders, unpaid/failed sessions, and people who do not park. It changes with meter inventory, rates, operating hours, enforcement, holidays, events, construction, remote work, payment behavior, and modal shift. One transaction may cover several occupants or no completed visit. Historic meters absent from the current location file use a coarser City parking-area crosswalk; mixed Core-Columbia rows fall back to city_center and should be treated as lower spatial confidence.
 
 
 ## Tables
@@ -418,6 +430,48 @@ _Generated 2026-08-20 20:37_
 | fellowship_month | BOOLEAN |
 | flag | VARCHAR |
 | neighborhood | VARCHAR |
+
+### `stg_i_food_access`
+
+- **Grain:** census tract x vintage (+ la_jolla rollup)
+- **Signal type:** food_access  |  **Source:** I (https://www.ers.usda.gov/data-products/food-access-research-atlas/download-the-data)
+- **Refresh:** periodic (USDA FARA release; edit seed)
+- **Measures:** Long-format USDA FARA food-access metrics for La Jolla tracts, plus a population-weighted la_jolla rollup.
+- **Known bias:** Distance-based low-access definition; periodic snapshots on 2010 tract boundaries; SNAP counts housing units. A metric absent for a whole vintage (e.g. no SNAP in 2010) is omitted, never 0. At geography='la_jolla', lila_flag is the SHARE of La Jolla tracts flagged (0-1) and low_access_pop_share is population-weighted over only the tracts that reported low access.
+
+| column | type |
+|---|---|
+| geography | VARCHAR |
+| vintage_year | BIGINT |
+| metric | VARCHAR |
+| value | DOUBLE |
+| source_url | VARCHAR |
+
+### `stg_parking_activity`
+
+- **Grain:** day x paid parking meter (six DSDP downtown neighborhoods only)
+- **Signal type:** activity_proxy  |  **Source:** J (https://data.sandiego.gov/datasets/parking-meters-transactions-daily/)
+- **Refresh:** annual files via refresh.py; current year changes daily
+- **Measures:** Paid parking transaction count (paid_sessions) and total payment amount (revenue_usd), plus meter/location coverage fields. One transaction is one paid parking session, not one person.
+- **Known bias:** NOT foot traffic or a people count. Excludes all non-meter travel and activity, and changes with meter inventory, prices, hours, enforcement, events, construction, payment behavior, remote work, and mode choice. spatial_method distinguishes current coordinate/block matches from coarse historic City-area fallbacks; Core-Columbia fallbacks are assigned to city_center at lower confidence.
+
+| column | type |
+|---|---|
+| pole_id | VARCHAR |
+| obs_date | DATE |
+| obs_month | DATE |
+| paid_sessions | BIGINT |
+| revenue_usd | DOUBLE |
+| source_area | VARCHAR |
+| source_sub_area | VARCHAR |
+| lat | DOUBLE |
+| lng | DOUBLE |
+| geo_block | VARCHAR |
+| h3_r8 | VARCHAR |
+| neighborhood | VARCHAR |
+| location_matched | BOOLEAN |
+| spatial_method | VARCHAR |
+| source_file | VARCHAR |
 
 ### `stg_pit_annual`
 

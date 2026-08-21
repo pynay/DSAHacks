@@ -144,7 +144,7 @@ mapbox-gl 3 · @duckdb/node-api 1.5 · lucide-react · Vitest 4 · scikit-learn 
 
 # SD Homelessness Data Commons
 
-Reproducible pipeline fusing eight San Diego homelessness signal sources into one
+Reproducible pipeline fusing ten San Diego homelessness, food-access, and activity signal sources into one
 DuckDB database, plus exported marts. Built for the 2026-08-20 DSA hackathon.
 
 **Core principle: this is a dataset of signals with known biases, not a census.**
@@ -162,16 +162,16 @@ citing a number.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python run.py        # full build: fetch all 8 sources, build marts, write docs/QA
-python refresh.py    # incremental: re-pull 311 (C) + enforcement (D) only, rebuild marts/docs
+python run.py        # full build: fetch all 10 sources, build marts, write docs/QA
+python refresh.py    # incremental: re-pull 311 (C), enforcement (D), and parking activity (J)
 python -m pytest -q  # test suite
 ```
 
 `run.py` is idempotent — rerunning it re-fetches everything (cheap after the first run,
 since `raw/` downloads are conditional-GET cached) and rebuilds the database from
 scratch each time via `CREATE OR REPLACE TABLE`. `refresh.py` is the cheap daily-driver:
-it only re-scans sources C (311) and D (72-hour violations + citations), since those are
-the only auto-updating feeds; everything else (manual seeds, static bundles, annual data)
+it re-scans sources C (311), D (72-hour violations + citations), and J (daily parking
+activity); everything else (manual seeds, static bundles, annual data)
 keeps its last load and marts/docs are rebuilt on top of the refreshed staging tables.
 
 ## Sources
@@ -187,10 +187,17 @@ keeps its last load and marts/docs are rebuilt on top of the refreshed staging t
 | G | Weather (NOAA), rent (Zillow ZORI), policy events | context | daily/monthly/manual |
 | H | Hackathon mandatory bundle: DSDP downtown counts, curated by Data Science Alliance | observation | static bundle, committed |
 | I | USDA Food Access Research Atlas — La Jolla food access | food_access | periodic (manual seed) |
+| J | City daily paid-parking transactions — six downtown neighborhoods | activity_proxy | daily/annual files (auto) |
 
 Full per-table lineage (grain, URL, refresh cadence, `measures`, `known_bias`) is
 auto-generated into `DATA_DICTIONARY.md` on every run — that file, not this README, is
 the source of truth for column-level detail.
+
+The implementation backlog in [`docs/DATA_SOURCE_CATALOG.md`](docs/DATA_SOURCE_CATALOG.md)
+and its machine-readable [`docs/data_source_catalog.csv`](docs/data_source_catalog.csv)
+ranks 58 researched San Diego sources and expansion candidates across mobility,
+homelessness, street conditions, housing affordability, food access, public health,
+economics, and climate.
 
 ### Source H — the hackathon mandatory dataset
 
@@ -251,6 +258,24 @@ recompute it by dividing the two rollup counts.
 **Rebuild the seed** from the real FARA files (auto-downloaded to `raw/fara/`):
 `python scripts/build_food_access_seed.py`.
 
+### Source J — paid parking as a downtown activity proxy
+
+Source J downloads the City's daily per-meter transaction files (2021-present), joins
+current meter coordinates, and maps observations into the same six DSDP downtown
+neighborhoods. Historic meters missing from the current location inventory use the
+coarser City parking-area crosswalk in `seeds/parking_area_map.csv`; each row exposes
+`spatial_method` so coordinate/block matches can be separated from fallbacks.
+The committed exports currently summarize **2,784,211 meter-day rows** from
+**2021-01-01 through 2026-08-19**; 91.7% mapped through meter coordinates to a downtown
+block and 8.3% use the disclosed City-area fallback.
+
+The marts carry `paid_sessions`, `parking_revenue_usd`, and
+`parking_meters_reporting`. **Paid sessions are not pedestrians, unique visitors, or
+people counts.** They exclude walking, biking, transit, ride-hail, free parking, and
+unpaid sessions, and move with meter inventory, rates/hours, enforcement, events,
+construction, remote work, payment behavior, and travel-mode choice. Use the series
+alongside bike counters, transit ridership, special events, and weather—not alone.
+
 ## Outputs
 
 1. **`commons.duckdb`** — every staging table plus the four marts, queryable directly.
@@ -268,6 +293,10 @@ recompute it by dividing the two rollup counts.
    - **Public tier**: `food_access_la_jolla.csv` — La Jolla FARA food-access metrics
      (Source I), per-tract + `la_jolla` rollup, annual snapshots. Aggregate census data,
      no personal fields — the same rows also live in `mart_monthly_context` (`source_id='I'`).
+   - **Public tier**: `parking_activity_daily.csv` and `parking_activity_monthly.csv` —
+     Source J aggregate paid-parking activity by DSDP neighborhood. Meter IDs and exact
+     coordinates are excluded; reporting-meter counts travel with sessions/revenue as a
+     coverage denominator.
 3. **`DATA_DICTIONARY.md`** — auto-generated every run: every table, column, grain,
    source URL, refresh cadence, `measures`, `known_bias`.
 4. **`QA_REPORT.md`** — auto-generated every run: row counts and load status per
@@ -322,6 +351,10 @@ is a small CSV with a `source_url` column per row so every number is traceable.
   `note` recording the vintage and any fields absent that year. Regenerate from the real
   FARA files with `python scripts/build_food_access_seed.py` (it auto-downloads them to
   `raw/fara/`); don't hand-edit.
+- **`parking_area_map.csv`** — coarse fallback from City parking-area labels to canonical
+  DSDP neighborhoods when a historic meter cannot join the current coordinate inventory.
+  Coordinate/block assignment always wins; keep the mixed Core-Columbia warning when
+  changing this crosswalk.
 
 - **Citations are not geocoded.** Source D's parking-citation files carry no
   lat/lng (only a text `location` and `sector1`); `geo_block`/`h3_r8`/`neighborhood`

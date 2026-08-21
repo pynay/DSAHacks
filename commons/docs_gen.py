@@ -10,7 +10,7 @@ from commons.registry import LoadResult, TABLE_DOCS, SOURCES
 # side effect. Do not use these names directly.
 from commons import marts  # noqa: F401 - register_table side effects
 from commons.staging import (  # noqa: F401 - register_table side effects
-    src_a, src_b, src_c, src_d, src_e, src_f, src_g, src_h, src_i,
+    src_a, src_b, src_c, src_d, src_e, src_f, src_g, src_h, src_i, src_j,
 )
 
 PREAMBLE = """# Data Dictionary - SD Homelessness Data Commons

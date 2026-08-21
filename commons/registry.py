@@ -59,6 +59,11 @@ SOURCES = {
         signal_type="food_access", refresh_cadence="periodic (USDA FARA release; manual seed)",
         measures="USDA FARA census-tract food-access indicators for La Jolla (ZIP 92037): population, low-access population and share (>1mi urban to nearest supermarket), low-income-and-low-access population, the LILA food-desert flag, and housing units receiving SNAP. Vintages 2010/2015/2019 on 2010 tract boundaries.",
         known_bias="Low access is defined purely by distance to a supermarket, not affordability or actual need. Periodic snapshots, not a continuous series. SNAP figure counts housing units, not people. Field availability varies by vintage (see each row's note). Not comparable to the downtown homelessness signals; provided as area food-insecurity context only."),
+    "J": dict(name="Downtown paid-parking activity proxy (City of San Diego)",
+        url="https://data.sandiego.gov/datasets/parking-meters-transactions-daily/",
+        signal_type="activity_proxy", refresh_cadence="daily files, annual partitions (auto)",
+        measures="Daily paid parking transactions and payment revenue per meter, mapped to the six DSDP downtown neighborhoods. This is a repeatable activity/visitation signal, not a pedestrian counter.",
+        known_bias="Paid parking sessions are NOT foot traffic or people counts. The signal excludes walking, biking, transit, ride-hail, free parking, pass holders, unpaid/failed sessions, and people who do not park. It changes with meter inventory, rates, operating hours, enforcement, holidays, events, construction, remote work, payment behavior, and modal shift. One transaction may cover several occupants or no completed visit. Historic meters absent from the current location file use a coarser City parking-area crosswalk; mixed Core-Columbia rows fall back to city_center and should be treated as lower spatial confidence."),
 }
 
 TABLE_DOCS: dict[str, dict] = {}  # table_name -> doc dict; loaders register at import
