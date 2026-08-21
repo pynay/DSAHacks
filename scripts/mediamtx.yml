@@ -1,0 +1,19 @@
+# MediaMTX config for the drone → EyePop bridge.
+# Run:  mediamtx scripts/mediamtx.yml
+# The DJI Fly app publishes to rtmp://<laptop-LAN-IP>:1935/drone (custom RTMP livestream);
+# the bridge reads it with VIDEO_SOURCE=rtmp://localhost:1935/drone.
+logLevel: info
+rtmp: yes
+rtmpAddress: :1935
+rtsp: yes
+rtspAddress: :8554
+hls: no
+webrtc: no
+srt: no
+api: yes
+apiAddress: 127.0.0.1:9997
+
+paths:
+  drone:
+    source: publisher
+  all_others:

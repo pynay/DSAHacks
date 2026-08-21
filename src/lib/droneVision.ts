@@ -56,6 +56,15 @@ export interface VisionDetection {
   videoFps: number; // measured camera capture rate
   inferFps: number; // measured EyePop round-trip rate
   ts: number;
+  vehicles: VisionObject[]; // DSDP's second count component (car/truck/bus/...)
+  vehicleCount: number;
+  source: VisionSource; // what the bridge is watching (drone RTMP stream, webcam, recorded file)
+}
+
+export interface VisionSource {
+  kind: 'live-stream' | 'webcam' | 'file';
+  label: string; // e.g. "DJI Mini 4K via RTMP"
+  live: boolean; // false only for recorded files
 }
 
 // Pure JSON -> typed mapping for a /detection payload (unit-tested).
@@ -67,6 +76,14 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     face_mode?: string; blurred?: number; stable_people?: number;
     stats?: { peak_people?: number; holds?: number; samples?: number; series?: [number, number][] };
     video_fps?: number; infer_fps?: number; ts?: number;
+    vehicles?: VisionObject[]; vehicle_count?: number;
+    source?: { kind?: string; label?: string; live?: boolean };
+  };
+  const kind = raw.source?.kind;
+  const source: VisionSource = {
+    kind: kind === 'live-stream' || kind === 'file' ? kind : 'webcam',
+    label: raw.source?.label ?? 'webcam',
+    live: raw.source?.live ?? true,
   };
   return {
     label: raw.label === 'obstructed' ? 'people-detected' : 'no-people-detected',
@@ -91,6 +108,9 @@ export function parseDetection(d: Record<string, unknown> & { verdict?: unknown 
     videoFps: raw.video_fps ?? 0,
     inferFps: raw.infer_fps ?? 0,
     ts: raw.ts ?? 0,
+    vehicles: raw.vehicles ?? [],
+    vehicleCount: raw.vehicle_count ?? raw.vehicles?.length ?? 0,
+    source,
   };
 }
 

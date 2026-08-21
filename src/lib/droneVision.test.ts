@@ -25,6 +25,25 @@ const fullPayload = {
   },
 };
 
+test('parses vehicles and the video source from a drone-stream payload', () => {
+  const det = parseDetection({
+    ...fullPayload,
+    vehicles: [{ label: 'truck', confidence: 0.7, x: 1, y: 2, width: 3, height: 4 }],
+    vehicle_count: 1,
+    source: { kind: 'live-stream', label: 'DJI Mini 4K via RTMP', live: true },
+  });
+  expect(det.vehicleCount).toBe(1);
+  expect(det.vehicles[0].label).toBe('truck');
+  expect(det.source).toEqual({ kind: 'live-stream', label: 'DJI Mini 4K via RTMP', live: true });
+});
+
+test('defaults to webcam source and zero vehicles on an older bridge payload', () => {
+  const det = parseDetection(fullPayload);
+  expect(det.vehicleCount).toBe(0);
+  expect(det.source.kind).toBe('webcam');
+  expect(det.source.live).toBe(true);
+});
+
 test('parses a full bridge payload including the verdict', () => {
   const det = parseDetection(fullPayload);
   expect(det.verdict?.state).toBe('HOLD');

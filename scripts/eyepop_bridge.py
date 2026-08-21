@@ -61,6 +61,14 @@ ALLOWED_ORIGINS = {
 # Optional: run EyePop on a video file/URL instead of the live webcam (loops).
 # Handy for demos where camera permission isn't available.
 VIDEO_SOURCE = os.environ.get("VIDEO_SOURCE")
+# A network URL (e.g. the DJI Fly app's RTMP livestream relayed by MediaMTX) is a LIVE
+# stream: never loop/seek it, never pace it, and reconnect when it drops.
+LIVE_STREAM = bool(VIDEO_SOURCE) and VIDEO_SOURCE.startswith(
+    ("rtmp://", "rtsp://", "srt://", "udp://", "http://", "https://"))
+SOURCE_KIND = "live-stream" if LIVE_STREAM else ("file" if VIDEO_SOURCE else "webcam")
+SOURCE_LABEL = os.environ.get(
+    "SOURCE_LABEL", "DJI Mini 4K via RTMP" if LIVE_STREAM else ("recorded video" if VIDEO_SOURCE else "webcam"))
+VEHICLE_LABELS = {"car", "truck", "bus", "motorcycle", "van", "vehicle"}
 CAMERA_FPS_REQ = int(os.environ.get("CAMERA_FPS", "120"))  # hardware clamps to what it can do
 CONFIDENCE = 0.5
 # Detect the whole delivery scene (people, packages, objects). Override with
@@ -186,8 +194,15 @@ def open_best_camera():
     if VIDEO_SOURCE:
         vcap = cv2.VideoCapture(VIDEO_SOURCE)
         if vcap.isOpened():
-            print(f"Using VIDEO_SOURCE {VIDEO_SOURCE} (looped) instead of the webcam", flush=True)
+            if LIVE_STREAM:
+                vcap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # always read the newest frame, not a backlog
+                print(f"Using LIVE stream {VIDEO_SOURCE} ({SOURCE_LABEL})", flush=True)
+            else:
+                print(f"Using VIDEO_SOURCE {VIDEO_SOURCE} (looped) instead of the webcam", flush=True)
             return vcap
+        if LIVE_STREAM:
+            print(f"Live stream {VIDEO_SOURCE} not available yet; will retry", flush=True)
+            return vcap  # caller reconnects; never silently fall back to the webcam for a live source
         print(f"VIDEO_SOURCE {VIDEO_SOURCE} could not be opened; falling back to camera", flush=True)
     cap = open_camera(CAMERA_INDEX)
     if cap is not None and _warmup_mean(cap) >= 4.0:
@@ -228,6 +243,14 @@ async def capture_loop():
                 None, grab_and_annotate, cap, state["objects"], state["video_fps"],
                 state["infer_fps"], state["verdict"], DROP_ZONE, state["blur"])
             if got_frame is None:
+                if LIVE_STREAM:  # stream dropped (drone paused, Wi-Fi hiccup) -> reconnect, keep serving
+                    misses += 1
+                    if misses % 4 == 1:
+                        print("  live stream not delivering frames, reconnecting...", flush=True)
+                    await loop.run_in_executor(None, cap.release)
+                    await asyncio.sleep(1.0)
+                    cap = await loop.run_in_executor(None, open_best_camera)
+                    continue
                 if VIDEO_SOURCE:  # end of file -> loop it
                     await loop.run_in_executor(None, cap.set, cv2.CAP_PROP_POS_FRAMES, 0)
                     await asyncio.sleep(0.01)
@@ -251,7 +274,7 @@ async def capture_loop():
             state["brightness"] = got_frame[2]
             state["frame_wh"] = got_frame[3]
             state["frame_seq"] += 1
-            if VIDEO_SOURCE:  # pace file playback to ~25 fps (a live camera self-paces)
+            if VIDEO_SOURCE and not LIVE_STREAM:  # pace file playback to ~25 fps (cameras/streams self-pace)
                 await asyncio.sleep(1 / 25)
     finally:
         cap.release()
@@ -321,9 +344,12 @@ async def inference_loop(endpoint):
                 state["blur"] = []
             verdict = ENGINE.update(objects, fw, fh, state["brightness"], time.monotonic())
             persons = [o for o in objects if o["label"] == "person"]
+            # Vehicles are DSDP's second count component (people / tents / vehicles).
+            vehicles = [o for o in objects if o["label"].lower() in VEHICLE_LABELS]
             now = time.monotonic()
             state["infer_fps"] = ema(state["infer_fps"], now - last)
             last = now
+            state["vehicles"] = vehicles
             state.update(
                 ready=True,
                 ts=int(time.time() * 1000),
@@ -367,6 +393,9 @@ async def get_detection(_req):
     body["blurred"] = len(state["blur"])
     body["stats"] = {**STATS.summary(), "series": STATS.series()[::10][-60:]}
     body["stable_people"] = STATS.stable_people
+    body["vehicles"] = state.get("vehicles", [])
+    body["vehicle_count"] = len(body["vehicles"])
+    body["source"] = {"kind": SOURCE_KIND, "label": SOURCE_LABEL, "live": SOURCE_KIND != "file"}
     return web.json_response(body)
 
 
