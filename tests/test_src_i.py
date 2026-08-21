@@ -51,6 +51,17 @@ def test_rollup_pop_is_sum_of_tracts():
     assert abs(roll - tract_sum) < 1e-6
 
 
+def test_rollup_drops_fully_missing_metric():
+    # FARA 2010 has no SNAP field, so every 2010 tract is blank for snap_housing_units.
+    # The la_jolla rollup must OMIT that metric-vintage, never report it as 0.
+    con = _con()
+    src_i.load(con)
+    n = con.execute(
+        "SELECT count(*) FROM stg_i_food_access WHERE geography='la_jolla' "
+        "AND vintage_year=2010 AND metric='snap_housing_units'").fetchone()[0]
+    assert n == 0
+
+
 def test_surfaces_in_context_mart():
     from commons import marts
     con = _con()
