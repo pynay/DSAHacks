@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { FeatureCollection } from "geojson";
@@ -46,6 +46,7 @@ export default function DeliveryMap({
   blocks = null,
   onRunDemo,
   demoRunning = false,
+  focusRoute = null,
 }: {
   zones: DeliveryZone[];
   onAddZone: (lngLat: { lng: number; lat: number }) => void;
@@ -56,6 +57,7 @@ export default function DeliveryMap({
   blocks?: FeatureCollection | null; // census-block polygons tagged with need (the area heat)
   onRunDemo?: () => void; // one-click drone demo (fly to UCSD + log a field observation)
   demoRunning?: boolean;
+  focusRoute?: { from: [number, number]; to: [number, number] } | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -70,6 +72,15 @@ export default function DeliveryMap({
   zonesRef.current = zones;
   const addRef = useRef(onAddZone);
   addRef.current = onAddZone;
+  const focusRouteRef = useRef(focusRoute);
+  focusRouteRef.current = focusRoute;
+
+  const fitMissionRoute = useCallback((route: { from: [number, number]; to: [number, number] } | null) => {
+    const map = mapRef.current;
+    if (!map || !route) return;
+    const bounds = new mapboxgl.LngLatBounds(route.from, route.from).extend(route.to);
+    map.fitBounds(bounds, { padding: 90, maxZoom: 14.2, pitch: 48, duration: 1200 });
+  }, []);
 
   // Create the map once.
   useEffect(() => {
@@ -237,6 +248,7 @@ export default function DeliveryMap({
 
       readyRef.current = true;
       syncData();
+      fitMissionRoute(focusRouteRef.current);
     });
 
     // Click: custom-drop popup, else block-need popup, else drop a new zone.
@@ -328,6 +340,12 @@ export default function DeliveryMap({
     const inner = droneMarkerRef.current.getElement().firstElementChild as HTMLElement | null;
     if (inner) inner.style.transform = `rotate(${drone.headingDeg}deg)`;
   }, [drone]);
+
+  // A dispatch page can pin the camera to the full depot-to-destination route.
+  useEffect(() => {
+    if (!readyRef.current) return;
+    fitMissionRoute(focusRoute);
+  }, [focusRoute, fitMissionRoute]);
 
   // Predicted need-center trail line.
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Activity, Package, HandHeart, Truck, MapPin, Boxes, Plane, PackageOpen } from 'lucide-react';
+import { LayoutDashboard, Activity, Package, HandHeart, Truck, MapPin, Boxes, Plane, PackageOpen, Send } from 'lucide-react';
 
 export const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,6 +12,7 @@ export const NAV = [
   { href: '/distributions', label: 'Distributions', icon: Truck },
   { href: '/delivery', label: 'Response Map', icon: MapPin },
   { href: '/allocation', label: 'Allocation', icon: Boxes },
+  { href: '/dispatch', label: 'Live Delivery', icon: Send },
   { href: '/drone', label: 'Drone Ops', icon: Plane },
 ];
 
