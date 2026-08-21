@@ -1,0 +1,185 @@
+{
+  "model": "Pooled Ridge (alpha=1.0), direct multi-horizon 1-12, log1p target, lags 0/1/2/3/12 + roll3 + month Fourier + neighborhood one-hots",
+  "target": "dsdp_adjusted_total (DSDP published, multiplier-adjusted counted units)",
+  "origin": "2025-12",
+  "run_month": "2026-08",
+  "horizons": 12,
+  "t0": "2023-08",
+  "placebo_t0": "2022-08",
+  "its_window_start": "2021-01",
+  "its_window_end_requests": "2026-07",
+  "its_window_end_dsdp": "2025-12",
+  "interpolated_months": [
+    "2025-07",
+    "2025-08",
+    "2025-10",
+    "2025-11"
+  ],
+  "backtest": {
+    "origins": [
+      "2023-01",
+      "2023-02",
+      "2023-03",
+      "2023-04",
+      "2023-05",
+      "2023-06",
+      "2023-07",
+      "2023-08",
+      "2023-09",
+      "2023-10",
+      "2023-11",
+      "2023-12",
+      "2024-01",
+      "2024-02",
+      "2024-03",
+      "2024-04",
+      "2024-05",
+      "2024-06",
+      "2024-07",
+      "2024-08",
+      "2024-09",
+      "2024-10",
+      "2024-11",
+      "2024-12"
+    ],
+    "beats_seasonal_naive_at_horizons": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "beats_last_value_at_horizons": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  "robustness": {
+    "post_by_window_start": {
+      "2020-01": {
+        "estimate": -346.68132683391036,
+        "p": 0.000530723063991069
+      },
+      "2021-01": {
+        "estimate": -420.7560966302167,
+        "p": 8.3218218272263e-06
+      },
+      "2021-07": {
+        "estimate": -421.1269688723886,
+        "p": 2.230720204997677e-05
+      },
+      "2022-01": {
+        "estimate": -357.1397010197668,
+        "p": 2.3617404111103312e-05
+      },
+      "2022-07": {
+        "estimate": -404.12729072442426,
+        "p": 2.1539489380407693e-05
+      }
+    }
+  },
+  "headline": {
+    "downtown_forecast_last_month": "2026-12",
+    "downtown_point": 886,
+    "downtown_lo80_sum": 525,
+    "downtown_hi80_sum": 1174,
+    "ban_level_change_dsdp": {
+      "estimate": -420.7560966302167,
+      "ci_lo": -605.7945162479413,
+      "ci_hi": -235.71767701249215,
+      "p": 8.3218218272263e-06
+    },
+    "ban_level_change_requests": {
+      "estimate": 302.60632413169515,
+      "ci_lo": 52.04083388614461,
+      "ci_hi": 553.1718143772457,
+      "p": 0.017931196070990103
+    },
+    "ban_slope_change_dsdp": {
+      "estimate": -41.59552005344824,
+      "ci_lo": -52.69671430925886,
+      "ci_hi": -30.49432579763762,
+      "p": 2.0750555150856983e-13
+    },
+    "ban_slope_change_requests": {
+      "estimate": -29.781102069037953,
+      "ci_lo": -41.47341535857121,
+      "ci_hi": -18.088788779504696,
+      "p": 5.970805712223921e-07
+    },
+    "ban_effect_12m_dsdp": {
+      "estimate": -919.9023372715956,
+      "ci_lo": -1036.3013772805177,
+      "ci_hi": -803.5032972626734,
+      "pct_of_pre": -87.71214460943487
+    },
+    "ban_effect_12m_requests": {
+      "estimate": -54.766900696760274,
+      "ci_lo": -274.77506251385034,
+      "ci_hi": 165.24126112032982,
+      "pct_of_pre": -9.93489333255058
+    },
+    "placebo_level_change_dsdp": {
+      "estimate": 83.20178180681431,
+      "ci_lo": -52.19460122175387,
+      "ci_hi": 218.59816483538248,
+      "p": 0.2284318960874948
+    },
+    "placebo_level_change_requests": {
+      "estimate": -203.10464207564877,
+      "ci_lo": -470.7242280960119,
+      "ci_hi": 64.51494394471439,
+      "p": 0.13688906611651155
+    },
+    "placebo_slope_change_dsdp": {
+      "estimate": -29.11050328227262,
+      "ci_lo": -43.903674874634,
+      "ci_hi": -14.317331689911242,
+      "p": 0.00011484190705369192
+    },
+    "placebo_slope_change_requests": {
+      "estimate": -8.777899343542874,
+      "ci_lo": -39.75972260967542,
+      "ci_hi": 22.203923922589677,
+      "p": 0.5786859445770898
+    },
+    "placebo_effect_12m_dsdp": {
+      "estimate": -266.12425758045714,
+      "ci_lo": -449.2681853488847,
+      "ci_hi": -82.98032981202957,
+      "pct_of_pre": -29.659554751458735
+    },
+    "placebo_effect_12m_requests": {
+      "estimate": -308.43943419816327,
+      "ci_lo": -757.7927570941376,
+      "ci_hi": 140.9138886978111,
+      "pct_of_pre": -62.18536979801679
+    },
+    "pre_mean_dsdp": 1048.774193548387,
+    "pre_mean_requests": 551.258064516129
+  },
+  "notes": [
+    "Forecast unit = DSDP published totals (occupancy multipliers applied) - not raw counted people and not comparable to RTFH/PIT raw counts.",
+    "Missing 2025 months interpolated for lag features only; never targets, never plotted.",
+    "80% bands = empirical 10th/90th percentiles of log-space backtest residuals per horizon; band sums across neighborhoods are approximations.",
+    "ITS is quasi-experimental: the ban coincided with shelter openings and sweeps; read effects as 'associated with'.",
+    "311 is complaint volume, never a headcount.",
+    "post is the gap between the post-ban segment and the pre-ban trend extrapolated to T0 (a counterfactual-relative estimate), not an observed month-over-month change; treat it as the least trend-dependent estimate, since effect_12m compounds 12 more months of an assumed trend.",
+    "80% bands are summed across neighborhoods and are therefore wider than a true 80% interval for the downtown total.",
+    "HAC 95% CIs read as roughly 85\u201390% in samples of ~60 months."
+  ]
+}

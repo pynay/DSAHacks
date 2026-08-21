@@ -5,19 +5,29 @@ import Link from 'next/link';
 import type { CommonsStats } from '@/lib/commonsStats';
 import { buildScaleupSeries } from '@/lib/scaleupSeries';
 import ScaleupChart from '@/components/charts/ScaleupChart';
+import type { OutlookPayload } from '@/lib/outlookServer';
 import PitChart from '@/components/charts/PitChart';
 import IndexedSignals from '@/components/charts/IndexedSignals';
 import LaJollaSlope from '@/components/charts/LaJollaSlope';
+import OutlookChart from '@/components/charts/OutlookChart';
+import OutlookFindings from '@/components/OutlookFindings';
 
 export default function SignalsPage() {
   const [commons, setCommons] = useState<CommonsStats | null>(null);
   const scaleup = commons?.scaleup?.length ? buildScaleupSeries(commons.scaleup) : null;
+  const [outlook, setOutlook] = useState<OutlookPayload | null>(null);
 
   useEffect(() => {
     fetch('/api/commons')
       .then((r) => r.json())
       .then((d) => {
         if (d.pit) setCommons(d);
+      })
+      .catch(() => {});
+    fetch('/api/outlook')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.forecast) setOutlook(d);
       })
       .catch(() => {});
   }, []);
@@ -32,9 +42,37 @@ export default function SignalsPage() {
         </p>
       </div>
 
-      {!commons && (
+      {!commons && !outlook && (
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-400 shadow-sm">
           Loading signals…
+        </div>
+      )}
+
+      {outlook && (
+        // Rendered independent of the commons fetch (M1): the outlook card should still show
+        // up if /api/outlook succeeds even when /api/commons fails.
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="font-semibold text-slate-900">Where downtown is headed</h2>
+          <p className="mb-3 text-xs text-slate-500">
+            Downtown DSDP counted-unit total, nowcast for unpublished recent months, then a 12-month
+            forecast with an 80% band. The 2023-08 camping ban is marked for reference; the ITS effect
+            below is quasi-experimental, not causal.
+          </p>
+          <OutlookChart
+            history={outlook.history}
+            forecast={outlook.forecast}
+            requests={outlook.requests}
+            interpolatedMonths={outlook.meta.interpolated_months}
+          />
+          <div className="mt-4">
+            <OutlookFindings
+              forecastLast={outlook.forecast[outlook.forecast.length - 1]}
+              beatsNaiveThrough={outlook.beatsNaiveThrough}
+              beatsLastValueFrom={outlook.beatsLastValueFrom}
+              its={outlook.its}
+              t0={outlook.meta.t0}
+            />
+          </div>
         </div>
       )}
 
