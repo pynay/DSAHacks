@@ -25,15 +25,48 @@ export interface VisionObject extends VisionPerson {
   label: string;
 }
 
+export interface VisionVerdict {
+  state: 'GO' | 'HOLD' | 'NO_GO';
+  reason: string; // human-readable, e.g. "person in zone (90%)" / "clearing 1.2s / 3s"
+  score: number; // 0-100 drop-safety score
+  inZone: number; // detections intersecting the landing zone
+  nearby: number; // detections elsewhere in frame
+  zone: number[]; // landing zone as frame fractions [x0, y0, x1, y1]
+}
+
 export interface VisionDetection {
   label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
   confidence: number; // max person confidence (0 when none)
   count: number; // people in frame (the drop-zone hazard)
   persons: VisionPerson[];
   objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
+  verdict: VisionVerdict | null; // drop-verdict pipeline (null on older bridges)
+  brightness: number; // mean frame brightness feeding the visibility gate
   videoFps: number; // measured camera capture rate
   inferFps: number; // measured EyePop round-trip rate
   ts: number;
+}
+
+// Pure JSON -> typed mapping for a /detection payload (unit-tested).
+export function parseDetection(d: Record<string, unknown> & { verdict?: unknown }): VisionDetection {
+  const raw = d as {
+    label?: string; confidence?: number; count?: number;
+    persons?: VisionPerson[]; objects?: VisionObject[];
+    verdict?: VisionVerdict | null; brightness?: number;
+    video_fps?: number; infer_fps?: number; ts?: number;
+  };
+  return {
+    label: raw.label === 'obstructed' ? 'obstructed' : 'clear',
+    confidence: raw.confidence ?? 0,
+    count: raw.count ?? 0,
+    persons: raw.persons ?? [],
+    objects: raw.objects ?? [],
+    verdict: raw.verdict ?? null,
+    brightness: raw.brightness ?? 0,
+    videoFps: raw.video_fps ?? 0,
+    inferFps: raw.infer_fps ?? 0,
+    ts: raw.ts ?? 0,
+  };
 }
 
 interface VisionState {
@@ -54,19 +87,7 @@ export function useDroneVision(): { connected: boolean; detection: VisionDetecti
         if (!alive) return;
         if (!res.ok) throw new Error(String(res.status)); // 503 while warming
         const d = await res.json();
-        setState({
-          connected: true,
-          detection: {
-            label: d.label,
-            confidence: d.confidence ?? 0,
-            count: d.count ?? 0,
-            persons: d.persons ?? [],
-            objects: d.objects ?? [],
-            videoFps: d.video_fps ?? 0,
-            inferFps: d.infer_fps ?? 0,
-            ts: d.ts ?? 0,
-          },
-        });
+        setState({ connected: true, detection: parseDetection(d) });
       } catch {
         // Bridge down/unreachable: report disconnected once, avoid re-render spam.
         if (alive) setState((s) => (s.connected || s.detection ? { connected: false, detection: null } : s));
