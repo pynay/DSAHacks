@@ -8,6 +8,32 @@ import { ChevronDown, ChevronUp, Minus, Plus, Star } from 'lucide-react';
 
 type SortKey = 'name' | 'quantity' | 'days';
 
+function SortHeader({
+  label,
+  sortKey,
+  activeSort,
+  ascending,
+  onSort,
+  className = '',
+}: {
+  label: string;
+  sortKey?: SortKey;
+  activeSort: SortKey;
+  ascending: boolean;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  if (!sortKey) return <th className={`px-4 py-3 font-medium ${className}`}>{label}</th>;
+  return (
+    <th className={`px-4 py-3 font-medium ${className}`}>
+      <button onClick={() => onSort(sortKey)} className="inline-flex items-center gap-1 hover:text-slate-800">
+        {label}
+        {activeSort === sortKey && (ascending ? <ChevronUp size={13} /> : <ChevronDown size={13} />)}
+      </button>
+    </th>
+  );
+}
+
 export default function InventoryTable({
   items,
   onAdjust,
@@ -39,29 +65,17 @@ export default function InventoryTable({
     }
   }
 
-  function Header({ label, k, className = '' }: { label: string; k?: SortKey; className?: string }) {
-    if (!k) return <th className={`px-4 py-3 font-medium ${className}`}>{label}</th>;
-    return (
-      <th className={`px-4 py-3 font-medium ${className}`}>
-        <button onClick={() => toggle(k)} className="inline-flex items-center gap-1 hover:text-slate-800">
-          {label}
-          {sortKey === k && (asc ? <ChevronUp size={13} /> : <ChevronDown size={13} />)}
-        </button>
-      </th>
-    );
-  }
-
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b border-slate-200 text-left text-slate-500">
-            <Header label="Item" k="name" />
-            <Header label="Category" />
-            <Header label="Quantity" k="quantity" />
-            <Header label="Days left" k="days" />
-            <Header label="Location" />
-            <Header label="Status" />
+            <SortHeader label="Item" sortKey="name" activeSort={sortKey} ascending={asc} onSort={toggle} />
+            <SortHeader label="Category" activeSort={sortKey} ascending={asc} onSort={toggle} />
+            <SortHeader label="Quantity" sortKey="quantity" activeSort={sortKey} ascending={asc} onSort={toggle} />
+            <SortHeader label="Days left" sortKey="days" activeSort={sortKey} ascending={asc} onSort={toggle} />
+            <SortHeader label="Location" activeSort={sortKey} ascending={asc} onSort={toggle} />
+            <SortHeader label="Status" activeSort={sortKey} ascending={asc} onSort={toggle} />
           </tr>
         </thead>
         <tbody>

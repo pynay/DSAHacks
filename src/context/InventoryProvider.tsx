@@ -57,18 +57,21 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
 
   // Hydrate from localStorage once on mount (client only).
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved.state?.inventory) setState(saved.state);
-        if (typeof saved.running === 'boolean') setRunning(saved.running);
-        if (typeof saved.speed === 'number') setSpeed(saved.speed);
+    const timeout = window.setTimeout(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved.state?.inventory) setState(saved.state);
+          if (typeof saved.running === 'boolean') setRunning(saved.running);
+          if (typeof saved.speed === 'number') setSpeed(saved.speed);
+        }
+      } catch {
+        /* ignore corrupt storage */
       }
-    } catch {
-      /* ignore corrupt storage */
-    }
-    setHydrated(true);
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
   // Persist whenever anything changes (only after hydration has committed).
