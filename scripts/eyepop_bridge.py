@@ -127,24 +127,26 @@ def open_best_camera():
             return vcap
         print(f"VIDEO_SOURCE {VIDEO_SOURCE} could not be opened; falling back to camera", flush=True)
     cap = open_camera(CAMERA_INDEX)
-    if cap is not None:
-        mean = _warmup_mean(cap)
-        if mean >= 4.0:
-            return cap
-        print(f"  camera {CAMERA_INDEX} delivers black frames (mean {mean:.1f}), scanning...", flush=True)
-        for i in range(4):
-            if i == CAMERA_INDEX:
-                continue
-            alt = open_camera(i)
-            if alt is None:
-                continue
-            alt_mean = _warmup_mean(alt)
-            if alt_mean >= 4.0:
-                print(f"  switched to live camera {i} (mean {alt_mean:.1f})", flush=True)
+    if cap is not None and _warmup_mean(cap) >= 4.0:
+        return cap
+    # Configured index missing entirely OR only black frames: a Continuity
+    # iPhone coming/going reshuffles AVFoundation indices, so scan for any
+    # live device rather than exiting.
+    print(f"  camera {CAMERA_INDEX} unavailable or black, scanning...", flush=True)
+    for i in range(4):
+        if i == CAMERA_INDEX:
+            continue
+        alt = open_camera(i)
+        if alt is None:
+            continue
+        alt_mean = _warmup_mean(alt)
+        if alt_mean >= 4.0:
+            print(f"  switched to live camera {i} (mean {alt_mean:.1f})", flush=True)
+            if cap is not None:
                 cap.release()
-                return alt
-            alt.release()
-        print("  no live camera found; staying on configured index", flush=True)
+            return alt
+        alt.release()
+    print("  no live camera found; staying on configured index", flush=True)
     return cap
 
 
