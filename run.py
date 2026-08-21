@@ -1,4 +1,4 @@
-from commons import db
+from commons import db, marts
 from commons.staging import src_a, src_b, src_c, src_d, src_e, src_f, src_g, src_h
 
 STEPS = []  # (name, source_id, fn) appended as loaders land
@@ -16,6 +16,8 @@ STEPS.append(("load_src_e_capacity", "E", src_e.load))
 STEPS.append(("load_src_g_weather", "G_weather", src_g.load_weather))
 STEPS.append(("load_src_g_zori", "G_zori", src_g.load_zori))
 STEPS.append(("load_src_g_events", "G_events", src_g.load_events))
+STEPS.append(("build_marts", None, marts.build))
+STEPS.append(("export_marts", None, marts.export))
 
 def main():
     con = db.connect()
