@@ -19,8 +19,9 @@ export default function DroneDispatchFeed({
 }: DroneDispatchFeedProps) {
   const vision = useDroneVision();
   const missionComplete = telemetry.phase === 'delivered';
+  const observing = telemetry.phase === 'observing';
   const returning = telemetry.phase === 'returning';
-  const nearingSite = telemetry.phase === 'arriving';
+  const nearingSite = telemetry.phase === 'arriving' || observing;
   const terrainTransform = `translate3d(${-5 - telemetry.routeProgress * 13}%, ${-4 - telemetry.routeProgress * 9}%, 0) rotate(${-7 + telemetry.routeProgress * 3}deg) scale(1.24)`;
 
   return (
@@ -89,7 +90,7 @@ export default function DroneDispatchFeed({
         <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2 text-[9px] font-medium text-white">
           <div className="min-w-0 rounded bg-black/55 px-2 py-1 backdrop-blur-sm">
             <p className="truncate">{returning || missionComplete ? 'Return to operations depot' : destination}</p>
-            <p className="text-emerald-300">{returning ? 'PAYLOAD RELEASED · RETURN LEG' : missionComplete ? 'ROUND TRIP COMPLETE' : `MODEL NEED · ${predictedPeople} PEOPLE`}</p>
+            <p className="text-emerald-300">{observing ? 'FIELD OBSERVATION HOLD · PHOTO REQUIRED' : returning ? 'PAYLOAD RELEASED · RETURN LEG' : missionComplete ? 'ROUND TRIP COMPLETE' : `MODEL NEED · ${predictedPeople} PEOPLE`}</p>
           </div>
           <span className="flex shrink-0 items-center gap-1 rounded bg-black/55 px-2 py-1 text-emerald-300 backdrop-blur-sm">
             {vision.connected ? <ScanLine size={11} /> : <Wifi size={11} />}
