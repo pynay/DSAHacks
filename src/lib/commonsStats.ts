@@ -8,6 +8,13 @@ import path from "node:path";
 
 const SEEDS = path.join(process.cwd(), "seeds");
 
+function pretty(key: string): string {
+  return key
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export interface PitYear {
   year: number;
   sheltered: number;
@@ -51,6 +58,10 @@ export interface CommonsStats {
     lowIncomeLowAccess: number;
     snapHousing: number;
   }[];
+  // Downtown-wide monthly 311 homelessness requests (for the indexed comparison).
+  requests311: { month: string; value: number }[];
+  // Per-neighborhood 311 over the recent window, for the need heatmap.
+  heatmap: { months: string[]; rows: { neighborhood: string; label: string; values: number[] }[] };
 }
 
 async function build(): Promise<CommonsStats> {
@@ -153,6 +164,43 @@ async function build(): Promise<CommonsStats> {
     snapHousing: Number(r.snap),
   }));
 
+  // Downtown-wide monthly 311 (for the indexed multi-signal comparison).
+  const req311Reader = await conn.runAndReadAll(`
+    SELECT strftime(obs_month, '%Y-%m') AS month, ROUND(SUM(value)) AS value
+    FROM read_csv_auto('${martCsv}')
+    WHERE metric = 'gid_requests'
+    GROUP BY 1 ORDER BY 1`);
+  const requests311 = req311Reader
+    .getRowObjects()
+    .map((r) => ({ month: String(r.month), value: Number(r.value) }));
+
+  // Per-neighborhood 311 over the last 18 months (need heatmap).
+  const hmReader = await conn.runAndReadAll(`
+    WITH recent AS (
+      SELECT DISTINCT strftime(obs_month, '%Y-%m') AS month
+      FROM read_csv_auto('${martCsv}') WHERE metric = 'gid_requests'
+      ORDER BY 1 DESC LIMIT 18
+    )
+    SELECT strftime(obs_month, '%Y-%m') AS month, neighborhood, value
+    FROM read_csv_auto('${martCsv}')
+    WHERE metric = 'gid_requests' AND strftime(obs_month, '%Y-%m') IN (SELECT month FROM recent)`);
+  const hmRows = hmReader
+    .getRowObjects()
+    .map((r) => ({ month: String(r.month), nb: String(r.neighborhood), v: Number(r.value) }));
+  const hmMonths = [...new Set(hmRows.map((r) => r.month))].sort();
+  const hmByNb = new Map<string, Map<string, number>>();
+  for (const r of hmRows) {
+    if (!hmByNb.has(r.nb)) hmByNb.set(r.nb, new Map());
+    hmByNb.get(r.nb)!.set(r.month, r.v);
+  }
+  const heatmapRows = [...hmByNb.keys()]
+    .map((nb) => ({
+      neighborhood: nb,
+      label: pretty(nb),
+      values: hmMonths.map((m) => hmByNb.get(nb)?.get(m) ?? 0),
+    }))
+    .sort((a, b) => b.values.reduce((s, x) => s + x, 0) - a.values.reduce((s, x) => s + x, 0));
+
   return {
     pit,
     shelters: {
@@ -165,6 +213,8 @@ async function build(): Promise<CommonsStats> {
     dsdp,
     parking,
     laJolla,
+    requests311,
+    heatmap: { months: hmMonths, rows: heatmapRows },
   };
 }
 
