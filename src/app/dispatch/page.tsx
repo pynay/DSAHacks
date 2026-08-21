@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useInventory } from '@/context/InventoryProvider';
 import DroneDispatchFeed from '@/components/DroneDispatchFeed';
+import DeliveryObservationPanel, { type SavedDeliveryObservation } from '@/components/DeliveryObservationPanel';
 import { useZones } from '@/lib/useZones';
 import { DEPOT, haversineKm, type DeliveryZone } from '@/lib/delivery';
 import {
@@ -39,6 +40,8 @@ interface ActiveMission {
   plan: DeliveryPlan;
   startedAt: number;
   telemetry: MissionTelemetry;
+  observationCompletedAt: number | null;
+  observation?: SavedDeliveryObservation;
 }
 
 interface DeliveryRecord {
@@ -48,6 +51,9 @@ interface DeliveryRecord {
   requestedUnits: number;
   completedAt: string;
   status: 'Drone returning' | 'Delivered';
+  peopleObserved?: number;
+  modelNeedBefore?: number;
+  modelNeedAfter?: number;
 }
 
 const LEDGER_KEY = 'parsel-drone-delivery-ledger-v1';
@@ -60,14 +66,15 @@ function itemSummary(items: DeliveryPlan['items']): string {
 function phaseLabel(phase: MissionTelemetry['phase']): string {
   if (phase === 'preparing') return 'Loading payload';
   if (phase === 'en-route') return 'Flying to site';
-  if (phase === 'arriving') return 'Landing and releasing food';
+  if (phase === 'arriving') return 'Positioning over delivery line';
+  if (phase === 'observing') return 'Waiting for volunteer camera capture';
   if (phase === 'returning') return 'Food delivered · returning to depot';
   return 'Mission complete · back at depot';
 }
 
 export default function DispatchPage() {
   const { inventory, recordDistribution, simDate } = useInventory();
-  const { zones, error } = useZones();
+  const { zones, error, refresh } = useZones();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mission, setMission] = useState<ActiveMission | null>(null);
   const [records, setRecords] = useState<DeliveryRecord[]>([]);
@@ -109,7 +116,12 @@ export default function DispatchPage() {
     const timer = window.setInterval(() => {
       setMission((current) => {
         if (!current || current.id !== missionId) return current;
-        const telemetry = missionTelemetry(Date.now() - current.startedAt);
+        const telemetry = missionTelemetry(
+          Date.now() - current.startedAt,
+          current.observationCompletedAt === null
+            ? null
+            : current.observationCompletedAt - current.startedAt,
+        );
         return { ...current, telemetry };
       });
     }, 200);
@@ -126,7 +138,7 @@ export default function DispatchPage() {
         recipient: `${mission.target.label} drone delivery site`,
         type: 'mobile-pantry',
         items: mission.plan.items.map(({ name, quantity, unit }) => ({ name, quantity, unit })),
-        notes: `[Automated drone delivery] mission ${mission.id} · model predicted ${mission.plan.predictedPeople} people · ${mission.plan.allocatedUnits} units delivered`,
+        notes: `[Automated drone delivery] mission ${mission.id} · model predicted ${mission.plan.predictedPeople} people · EyePop observed ${mission.observation?.count ?? 0} people · ${mission.plan.allocatedUnits} units delivered`,
       });
       const delivered: DeliveryRecord = {
         id: mission.id,
@@ -135,6 +147,9 @@ export default function DispatchPage() {
         requestedUnits: mission.plan.requestedUnits,
         completedAt: new Date().toISOString(),
         status: mission.telemetry.phase === 'returning' ? 'Drone returning' : 'Delivered',
+        peopleObserved: mission.observation?.count,
+        modelNeedBefore: mission.observation?.modelNeedBefore,
+        modelNeedAfter: mission.observation?.modelNeedAfter,
       };
       setRecords((existing) => {
         const next = [delivered, ...existing].slice(0, 20);
@@ -160,7 +175,63 @@ export default function DispatchPage() {
     droppedIds.current.delete(id);
     returnedIds.current.delete(id);
     setSelectedId(target.id);
-    setMission({ id, target, plan, startedAt: Date.now(), telemetry: missionTelemetry(0) });
+    setMission({
+      id,
+      target,
+      plan,
+      startedAt: Date.now(),
+      telemetry: missionTelemetry(0, null),
+      observationCompletedAt: null,
+    });
+  }
+
+  async function saveMissionObservation(input: { count: number; confidence: number; observedAt: string }) {
+    if (!mission || mission.telemetry.phase !== 'observing') throw new Error('Mission is not ready for an observation');
+    const missionId = mission.id;
+    const response = await fetch('/api/hotspots/observe', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        lat: mission.target.lat,
+        lng: mission.target.lng,
+        count: input.count,
+        confidence: Math.max(0.1, input.confidence),
+        coverage: 0.25,
+        radiusKm: 0.35,
+        observedAt: input.observedAt,
+      }),
+    });
+    const data = await response.json() as {
+      error?: string;
+      observation?: { affectedBlocks: number };
+      zones?: DeliveryZone[];
+    };
+    if (!response.ok || !data.observation || !data.zones) {
+      throw new Error(data.error || 'Could not update the hotspot model');
+    }
+    const updatedZone = [...data.zones].sort(
+      (a, b) => haversineKm(mission.target, a) - haversineKm(mission.target, b),
+    )[0];
+    const modelNeedAfter = updatedZone?.need ?? mission.target.need;
+    const completedAt = Date.now();
+    const savedObservation: SavedDeliveryObservation = {
+      count: input.count,
+      confidence: input.confidence,
+      observedAt: input.observedAt,
+      affectedBlocks: data.observation.affectedBlocks,
+      modelNeedBefore: mission.target.need,
+      modelNeedAfter,
+    };
+    setMission((current) => current?.id === missionId
+      ? {
+          ...current,
+          observationCompletedAt: completedAt,
+          observation: savedObservation,
+          telemetry: missionTelemetry(completedAt - current.startedAt, completedAt - current.startedAt),
+        }
+      : current);
+    await refresh();
+    return { affectedBlocks: data.observation.affectedBlocks, modelNeedAfter };
   }
 
   const telemetry = mission?.telemetry;
@@ -248,16 +319,27 @@ export default function DispatchPage() {
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Navigation size={13} /> Destination</div><p className="mt-1 truncate font-semibold text-slate-900">{liveDestination}</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Route size={13} /> Route</div><p className="mt-1 font-semibold text-slate-900">{distance.toFixed(1)} km</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Battery size={13} /> Battery</div><p className="mt-1 font-semibold text-slate-900">{telemetry ? `${telemetry.batteryPct}%` : '100%'}</p></div>
-              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> {telemetry?.phase === 'returning' ? 'Return ETA' : 'ETA'}</div><p className="mt-1 font-semibold text-slate-900">{telemetry ? `${telemetry.etaSeconds}s` : '—'}</p></div>
+              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> {telemetry?.phase === 'returning' ? 'Return ETA' : telemetry?.phase === 'observing' ? 'Observation' : 'ETA'}</div><p className="mt-1 font-semibold text-slate-900">{telemetry?.etaSeconds === null ? 'Photo required' : telemetry ? `${telemetry.etaSeconds}s` : '—'}</p></div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected payload</p>
-            {selected && displayedPlan ? <><div className="mt-3 flex items-end justify-between"><div><p className="text-3xl font-semibold text-slate-950">{displayedPlan.allocatedUnits}</p><p className="text-xs text-slate-500">{missionBusy ? payloadDelivered ? 'food units delivered' : 'food units aboard' : 'food units available to deliver'}</p></div><PackageCheck size={24} className="text-emerald-600" /></div><p className="mt-3 text-xs leading-5 text-slate-600">{itemSummary(displayedPlan.items) || 'No inventory available'}</p><button type="button" onClick={() => dispatch(selected.target, selected.plan)} disabled={missionBusy || selected.plan.allocatedUnits <= 0} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"><Send size={16} />{missionBusy ? telemetry?.phase === 'returning' ? 'Drone returning' : 'Delivery in progress' : mission?.telemetry.phase === 'delivered' ? 'Deliver next payload' : 'Deliver food'}</button></> : <p className="mt-3 text-sm text-slate-500">Loading model recommendations…</p>}
+            {selected && displayedPlan ? <><div className="mt-3 flex items-end justify-between"><div><p className="text-3xl font-semibold text-slate-950">{displayedPlan.allocatedUnits}</p><p className="text-xs text-slate-500">{missionBusy ? payloadDelivered ? 'food units delivered' : 'food units aboard' : 'food units available to deliver'}</p></div><PackageCheck size={24} className="text-emerald-600" /></div><p className="mt-3 text-xs leading-5 text-slate-600">{itemSummary(displayedPlan.items) || 'No inventory available'}</p><button type="button" onClick={() => dispatch(selected.target, selected.plan)} disabled={missionBusy || selected.plan.allocatedUnits <= 0} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"><Send size={16} />{missionBusy ? telemetry?.phase === 'observing' ? 'Take photo to continue' : telemetry?.phase === 'returning' ? 'Drone returning' : 'Delivery in progress' : mission?.telemetry.phase === 'delivered' ? 'Deliver next payload' : 'Deliver food'}</button></> : <p className="mt-3 text-sm text-slate-500">Loading model recommendations…</p>}
           </div>
         </div>
       </div>
+
+      {mission && telemetry && ['observing', 'returning', 'delivered'].includes(telemetry.phase) && (
+        <DeliveryObservationPanel
+          key={mission.id}
+          active={telemetry.phase === 'observing' && !mission.observation}
+          missionId={mission.id}
+          destination={mission.target.label}
+          modelNeedBefore={mission.target.need}
+          onSave={saveMissionObservation}
+        />
+      )}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-4 py-3"><h3 className="font-semibold text-slate-900">Model-ranked delivery queue</h3><p className="text-xs text-slate-500">Recommended quantity = predicted people × {UNITS_PER_PERSON} units, capped by available FEFO inventory.</p></div>
@@ -266,7 +348,7 @@ export default function DispatchPage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-4 py-3"><h3 className="font-semibold text-slate-900">Delivery status log</h3><p className="text-xs text-slate-500">Food drops appear immediately in Distributions; the mission closes when the drone returns to depot.</p></div>
-        <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><th className="px-4 py-3 font-medium">Mission</th><th className="px-4 py-3 font-medium">Destination</th><th className="px-4 py-3 font-medium">Food delivered</th><th className="px-4 py-3 font-medium">Updated</th><th className="px-4 py-3 font-medium">Status</th></tr></thead><tbody>{records.map((record) => <tr key={record.id} className="border-b border-slate-100 last:border-0"><td className="px-4 py-3 font-mono text-xs text-slate-500">{record.id}</td><td className="px-4 py-3 font-medium text-slate-900">{record.destination}</td><td className="px-4 py-3 text-slate-600">{record.units} units</td><td className="px-4 py-3 text-slate-600">{new Date(record.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td><td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${record.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-cyan-100 text-cyan-800'}`}>{record.status === 'Delivered' ? <CheckCircle2 size={12} /> : <Plane size={12} />}{record.status}</span></td></tr>)}{records.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No completed drone deliveries yet.</td></tr>}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><th className="px-4 py-3 font-medium">Mission</th><th className="px-4 py-3 font-medium">Destination</th><th className="px-4 py-3 font-medium">Food delivered</th><th className="px-4 py-3 font-medium">Field observation</th><th className="px-4 py-3 font-medium">Updated</th><th className="px-4 py-3 font-medium">Status</th></tr></thead><tbody>{records.map((record) => <tr key={record.id} className="border-b border-slate-100 last:border-0"><td className="px-4 py-3 font-mono text-xs text-slate-500">{record.id}</td><td className="px-4 py-3 font-medium text-slate-900">{record.destination}</td><td className="px-4 py-3 text-slate-600">{record.units} units</td><td className="px-4 py-3 text-slate-600">{record.peopleObserved === undefined ? '—' : <><span className="font-semibold text-slate-900">{record.peopleObserved} people</span><br /><span className="text-xs">need {record.modelNeedBefore} → {record.modelNeedAfter}</span></>}</td><td className="px-4 py-3 text-slate-600">{new Date(record.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td><td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${record.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-cyan-100 text-cyan-800'}`}>{record.status === 'Delivered' ? <CheckCircle2 size={12} /> : <Plane size={12} />}{record.status}</span></td></tr>)}{records.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No completed drone deliveries yet.</td></tr>}</tbody></table></div>
       </section>
     </div>
   );
