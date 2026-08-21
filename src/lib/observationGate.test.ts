@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { DEFAULT_GATE, gateStatus, initialGateState, nextGate, type GateState } from './observationGate';
+import { gateStatus, initialGateState, nextGate, type GateState } from './observationGate';
 
 const CFG = { armSamples: 4, clearSamples: 3, cooldownMs: 120_000 };
 

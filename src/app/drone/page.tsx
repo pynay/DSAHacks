@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, Loader2, MapPin, RefreshCw, ScanFace, Video, XCircle } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
+import { DEFAULT_GATE, gateStatus, initialGateState, nextGate } from '@/lib/observationGate';
 
 export default function DronePage() {
   const { zones, refresh } = useZones();
@@ -37,9 +38,11 @@ export default function DronePage() {
   const targets = [...zones].filter((z) => z.need > 0).sort((a, b) => b.need - a.need).slice(0, 4);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const selected = targets.find((target) => target.id === selectedId) ?? targets[0];
+  // Resolve from the full zone list: an assimilation-driven re-rank of the
+  // top-4 targets must not silently retarget the operator's selection.
+  const selected = zones.find((zone) => zone.id === selectedId) ?? targets[0];
 
-  async function captureHotspotCount() {
+  async function applyCount(count: number, observedAtMs: number) {
     if (!det || !selected) return;
     setFeedback('saving');
     try {
@@ -49,11 +52,11 @@ export default function DronePage() {
         body: JSON.stringify({
           lat: selected.lat,
           lng: selected.lng,
-          count: det.count,
-          confidence: det.count > 0 ? Math.max(det.confidence, 0.1) : 0.8,
+          count,
+          confidence: count > 0 ? Math.max(det.confidence, 0.1) : 0.8,
           coverage: 1,
           radiusKm: 0.18,
-          observedAt: new Date(det.ts).toISOString(),
+          observedAt: new Date(observedAtMs).toISOString(),
         }),
       });
       if (!response.ok) throw new Error('Hotspot update failed');
@@ -63,6 +66,24 @@ export default function DronePage() {
       setFeedback('error');
     }
   }
+
+  // Auto-feed: the tested episode gate decides when one stabilized count may
+  // flow into the need model — at most once per occupancy episode.
+  const [autoFeed, setAutoFeed] = useState(false);
+  const gate = useRef(initialGateState());
+  const [autoLog, setAutoLog] = useState<{ count: number; zoneLabel: string; at: number } | null>(null);
+  const [gatePhase, setGatePhase] = useState<'watching' | 'arming' | 'holding' | 'cooldown'>('watching');
+  useEffect(() => {
+    if (!autoFeed || !det || !selected) return;
+    const out = nextGate(gate.current, { stablePeople: det.stablePeople, ts: det.ts, zoneId: selected.id }, DEFAULT_GATE);
+    gate.current = out.state; // sync before any await: StrictMode-safe with ts dedupe
+    setGatePhase(gateStatus(out.state, DEFAULT_GATE, det.ts));
+    if (out.fire) {
+      void applyCount(out.fire.count, out.fire.ts);
+      setAutoLog({ count: out.fire.count, zoneLabel: selected.label, at: out.fire.ts });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- gate consumes each det tick once
+  }, [det, autoFeed, selected?.id]);
   const classCounts = (det?.objects ?? []).reduce<Record<string, number>>((m, o) => {
     m[o.label] = (m[o.label] ?? 0) + 1;
     return m;
@@ -181,8 +202,8 @@ export default function DronePage() {
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <div className="text-lg font-semibold text-slate-900">{det.count}</div>
-                  <div className="text-[11px] text-slate-500">people now</div>
+                  <div className="text-lg font-semibold text-slate-900">{det.stablePeople}</div>
+                  <div className="text-[11px] text-slate-500">people (stable)</div>
                 </div>
                 <div>
                   <div className="text-lg font-semibold text-slate-900">{det.stats.peakPeople}</div>
@@ -241,12 +262,12 @@ export default function DronePage() {
             </ul>
             <button
               type="button"
-              onClick={captureHotspotCount}
+              onClick={() => det && applyCount(det.stablePeople, det.ts)}
               disabled={!det || !selected || feedback === 'saving'}
               className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {feedback === 'saving' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-              {feedback === 'saving' ? 'Updating hotspot…' : `Apply live count${det ? ` (${det.count})` : ''}`}
+              {feedback === 'saving' ? 'Updating hotspot…' : `Apply stabilized count${det ? ` (${det.stablePeople})` : ''}`}
             </button>
             {feedback === 'saved' && (
               <p className="mt-1.5 text-[11px] text-emerald-700">
@@ -256,14 +277,33 @@ export default function DronePage() {
             {feedback === 'error' && (
               <p className="mt-1.5 text-[11px] text-red-700">Could not update the hotspot model.</p>
             )}
+            <label className="mt-2 flex cursor-pointer items-center justify-between rounded-md bg-slate-50 px-2 py-1.5">
+              <span className="text-xs font-medium text-slate-700">Auto-feed need model</span>
+              <input
+                type="checkbox"
+                checked={autoFeed}
+                onChange={(e) => setAutoFeed(e.target.checked)}
+                className="h-3.5 w-3.5 accent-emerald-600"
+              />
+            </label>
+            {autoFeed && (
+              <p className="mt-1 text-[11px] text-slate-500">
+                {gatePhase === 'watching' && 'watching — zone empty'}
+                {gatePhase === 'arming' && 'arming — stabilizing count…'}
+                {gatePhase === 'holding' && 'applied — waiting for the zone to clear'}
+                {gatePhase === 'cooldown' && 'cooldown — no recount for 2 min'}
+                {autoLog && ` · last auto-applied ${autoLog.count} to ${autoLog.zoneLabel} at ${new Date(autoLog.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+              </p>
+            )}
           </div>
 
           <p className="text-[11px] text-slate-400">
             Feed runs <code className="rounded bg-slate-100 px-1">eyepop.common-objects:latest</code> via
             <code className="rounded bg-slate-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
             live webcam (run without <code className="rounded bg-slate-100 px-1">VIDEO_SOURCE</code>) or
-            any video file. Select a target and apply one stabilized frame count to move the
-            hotspot surface; repeated frames are never counted automatically. Set{' '}
+            any video file. Manual apply submits the median-stabilized count for the selected
+            target; auto-feed submits at most one stabilized count per occupancy episode (the
+            zone must clear, plus a 2-minute cooldown), so the same people are never recounted. Set{' '}
             <code className="rounded bg-slate-100 px-1">EYEPOP_ABILITY</code> to swap models.
             Drop verdict = visibility gate + landing-zone filter + hazard severity + sustained-clear
             hysteresis (tune <code className="rounded bg-slate-100 px-1">CLEAR_HOLD_S</code>,{' '}
