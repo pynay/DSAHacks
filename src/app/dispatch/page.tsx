@@ -61,7 +61,8 @@ function phaseLabel(phase: MissionTelemetry['phase']): string {
   if (phase === 'preparing') return 'Loading payload';
   if (phase === 'en-route') return 'Flying to site';
   if (phase === 'arriving') return 'Landing and releasing food';
-  return 'Delivery complete';
+  if (phase === 'returning') return 'Food delivered · returning to depot';
+  return 'Mission complete · back at depot';
 }
 
 export default function DispatchPage() {
@@ -167,10 +168,19 @@ export default function DispatchPage() {
     ? interpolatePosition(DEPOT, mission.target, telemetry.routeProgress)
     : null;
   const drone = dronePosition && mission
-    ? { ...dronePosition, headingDeg: bearingDegrees(DEPOT, mission.target) }
+    ? {
+        ...dronePosition,
+        headingDeg: telemetry?.phase === 'returning' || telemetry?.phase === 'delivered'
+          ? bearingDegrees(mission.target, DEPOT)
+          : bearingDegrees(DEPOT, mission.target),
+      }
     : null;
   const distance = mission ? haversineKm(DEPOT, mission.target) : selected ? haversineKm(DEPOT, selected.target) : 0;
   const displayedPlan = missionBusy && mission ? mission.plan : selected?.plan;
+  const payloadDelivered = telemetry?.phase === 'returning' || telemetry?.phase === 'delivered';
+  const liveDestination = mission && payloadDelivered
+    ? 'Operations depot'
+    : mission?.target.label ?? selected?.target.label ?? 'Loading…';
 
   return (
     <div className="space-y-5">
@@ -184,7 +194,7 @@ export default function DispatchPage() {
           </div>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">
             Model predictions set each site&apos;s food requirement. A volunteer authorizes the mission,
-            and Parsel loads FEFO inventory, flies the route, and records the completed delivery.
+            and Parsel loads FEFO inventory, flies the route, releases the food, and returns to depot.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
@@ -213,7 +223,7 @@ export default function DispatchPage() {
                     </span>
                     <div><p className="text-xs uppercase tracking-[0.16em] text-slate-400">Mission {mission.id}</p><p className="font-semibold">{phaseLabel(telemetry.phase)} · {mission.target.label}</p></div>
                   </div>
-                  <p className="text-sm font-semibold text-emerald-300">{mission.plan.allocatedUnits} food units aboard</p>
+                  <p className="text-sm font-semibold text-emerald-300">{mission.plan.allocatedUnits} food units {payloadDelivered ? 'delivered' : 'aboard'}</p>
                 </div>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${telemetry.overallProgress * 100}%` }} /></div>
               </>
@@ -235,16 +245,16 @@ export default function DispatchPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live mission status</p><Signal size={15} className="text-emerald-600" /></div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Navigation size={13} /> Destination</div><p className="mt-1 truncate font-semibold text-slate-900">{mission?.target.label ?? selected?.target.label ?? 'Loading…'}</p></div>
+              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Navigation size={13} /> Destination</div><p className="mt-1 truncate font-semibold text-slate-900">{liveDestination}</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Route size={13} /> Route</div><p className="mt-1 font-semibold text-slate-900">{distance.toFixed(1)} km</p></div>
               <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Battery size={13} /> Battery</div><p className="mt-1 font-semibold text-slate-900">{telemetry ? `${telemetry.batteryPct}%` : '100%'}</p></div>
-              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> ETA</div><p className="mt-1 font-semibold text-slate-900">{telemetry ? `${telemetry.etaSeconds}s` : '—'}</p></div>
+              <div className="rounded-xl bg-slate-50 p-3"><div className="flex items-center gap-1.5 text-xs text-slate-500"><Clock3 size={13} /> {telemetry?.phase === 'returning' ? 'Return ETA' : 'ETA'}</div><p className="mt-1 font-semibold text-slate-900">{telemetry ? `${telemetry.etaSeconds}s` : '—'}</p></div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected payload</p>
-            {selected && displayedPlan ? <><div className="mt-3 flex items-end justify-between"><div><p className="text-3xl font-semibold text-slate-950">{displayedPlan.allocatedUnits}</p><p className="text-xs text-slate-500">{missionBusy ? 'food units aboard' : 'food units available to deliver'}</p></div><PackageCheck size={24} className="text-emerald-600" /></div><p className="mt-3 text-xs leading-5 text-slate-600">{itemSummary(displayedPlan.items) || 'No inventory available'}</p><button type="button" onClick={() => dispatch(selected.target, selected.plan)} disabled={missionBusy || selected.plan.allocatedUnits <= 0} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"><Send size={16} />{missionBusy ? 'Delivery in progress' : mission?.telemetry.phase === 'delivered' ? 'Deliver next payload' : 'Deliver food'}</button></> : <p className="mt-3 text-sm text-slate-500">Loading model recommendations…</p>}
+            {selected && displayedPlan ? <><div className="mt-3 flex items-end justify-between"><div><p className="text-3xl font-semibold text-slate-950">{displayedPlan.allocatedUnits}</p><p className="text-xs text-slate-500">{missionBusy ? payloadDelivered ? 'food units delivered' : 'food units aboard' : 'food units available to deliver'}</p></div><PackageCheck size={24} className="text-emerald-600" /></div><p className="mt-3 text-xs leading-5 text-slate-600">{itemSummary(displayedPlan.items) || 'No inventory available'}</p><button type="button" onClick={() => dispatch(selected.target, selected.plan)} disabled={missionBusy || selected.plan.allocatedUnits <= 0} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"><Send size={16} />{missionBusy ? telemetry?.phase === 'returning' ? 'Drone returning' : 'Delivery in progress' : mission?.telemetry.phase === 'delivered' ? 'Deliver next payload' : 'Deliver food'}</button></> : <p className="mt-3 text-sm text-slate-500">Loading model recommendations…</p>}
           </div>
         </div>
       </div>
@@ -255,8 +265,8 @@ export default function DispatchPage() {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-4 py-3"><h3 className="font-semibold text-slate-900">Delivery status log</h3><p className="text-xs text-slate-500">Completed missions also appear in Distributions and decrement warehouse inventory.</p></div>
-        <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><th className="px-4 py-3 font-medium">Mission</th><th className="px-4 py-3 font-medium">Destination</th><th className="px-4 py-3 font-medium">Food delivered</th><th className="px-4 py-3 font-medium">Completed</th><th className="px-4 py-3 font-medium">Status</th></tr></thead><tbody>{records.map((record) => <tr key={record.id} className="border-b border-slate-100 last:border-0"><td className="px-4 py-3 font-mono text-xs text-slate-500">{record.id}</td><td className="px-4 py-3 font-medium text-slate-900">{record.destination}</td><td className="px-4 py-3 text-slate-600">{record.units} units</td><td className="px-4 py-3 text-slate-600">{new Date(record.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td><td className="px-4 py-3"><span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800"><CheckCircle2 size={12} />{record.status}</span></td></tr>)}{records.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No completed drone deliveries yet.</td></tr>}</tbody></table></div>
+        <div className="border-b border-slate-200 px-4 py-3"><h3 className="font-semibold text-slate-900">Delivery status log</h3><p className="text-xs text-slate-500">Food drops appear immediately in Distributions; the mission closes when the drone returns to depot.</p></div>
+        <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500"><th className="px-4 py-3 font-medium">Mission</th><th className="px-4 py-3 font-medium">Destination</th><th className="px-4 py-3 font-medium">Food delivered</th><th className="px-4 py-3 font-medium">Updated</th><th className="px-4 py-3 font-medium">Status</th></tr></thead><tbody>{records.map((record) => <tr key={record.id} className="border-b border-slate-100 last:border-0"><td className="px-4 py-3 font-mono text-xs text-slate-500">{record.id}</td><td className="px-4 py-3 font-medium text-slate-900">{record.destination}</td><td className="px-4 py-3 text-slate-600">{record.units} units</td><td className="px-4 py-3 text-slate-600">{new Date(record.completedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td><td className="px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${record.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' : 'bg-cyan-100 text-cyan-800'}`}>{record.status === 'Delivered' ? <CheckCircle2 size={12} /> : <Plane size={12} />}{record.status}</span></td></tr>)}{records.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No completed drone deliveries yet.</td></tr>}</tbody></table></div>
       </section>
     </div>
   );
