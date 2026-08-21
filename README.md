@@ -147,9 +147,11 @@ backtest does not make old inputs current.
 ### Live drone-count feedback
 
 The delivery map now starts from the selected block ensemble instead of six fixed
-neighborhood centroids. An EyePop adapter, simulator, or operator can send an aggregate
-count to `POST /api/hotspots/observe`; the server applies an online Gamma-Poisson update to
-nearby blocks and recomputes all six hotspot centers immediately.
+neighborhood centroids. The Drone Ops screen can apply a stabilized EyePop frame count to
+the selected target; an external adapter, simulator, or operator can use the same
+`POST /api/hotspots/observe` endpoint. The server applies an online Gamma-Poisson update to
+nearby blocks and recomputes all six hotspot centers immediately. It never auto-adds every
+video frame, which would multiply-count the same visible people.
 
 ```bash
 curl -X POST http://localhost:3000/api/hotspots/observe \

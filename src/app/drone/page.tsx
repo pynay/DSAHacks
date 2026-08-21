@@ -1,15 +1,44 @@
 'use client';
 
-import { CheckCircle2, MapPin, Video, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Loader2, MapPin, RefreshCw, Video, XCircle } from 'lucide-react';
 import { useZones } from '@/lib/useZones';
 import { useDroneVision } from '@/lib/droneVision';
 
 export default function DronePage() {
-  const { zones } = useZones();
+  const { zones, refresh } = useZones();
   const vision = useDroneVision();
   const det = vision.detection;
   const clear = det?.label === 'clear';
   const targets = [...zones].filter((z) => z.need > 0).sort((a, b) => b.need - a.need).slice(0, 4);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const selected = targets.find((target) => target.id === selectedId) ?? targets[0];
+
+  async function captureHotspotCount() {
+    if (!det || !selected) return;
+    setFeedback('saving');
+    try {
+      const response = await fetch('/api/hotspots/observe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          lat: selected.lat,
+          lng: selected.lng,
+          count: det.count,
+          confidence: det.count > 0 ? Math.max(det.confidence, 0.1) : 0.8,
+          coverage: 1,
+          radiusKm: 0.18,
+          observedAt: new Date(det.ts).toISOString(),
+        }),
+      });
+      if (!response.ok) throw new Error('Hotspot update failed');
+      await refresh();
+      setFeedback('saved');
+    } catch {
+      setFeedback('error');
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -100,22 +129,47 @@ export default function DronePage() {
             <div className="mb-2 text-xs font-medium text-stone-500">Delivery targets (by need)</div>
             <ul className="space-y-1.5">
               {targets.map((z) => (
-                <li key={z.id} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1.5 text-stone-800">
-                    <MapPin size={12} className="text-red-500" /> {z.label}
-                  </span>
-                  <span className="text-xs text-stone-500">need {z.need}</span>
+                <li key={z.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(z.id);
+                      setFeedback('idle');
+                    }}
+                    className={`flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm ${selected?.id === z.id ? 'bg-yellow-50 ring-1 ring-yellow-300' : 'hover:bg-stone-50'}`}
+                  >
+                    <span className="flex items-center gap-1.5 text-stone-800">
+                      <MapPin size={12} className="text-red-500" /> {z.label}
+                    </span>
+                    <span className="text-xs text-stone-500">pred {z.need}</span>
+                  </button>
                 </li>
               ))}
               {targets.length === 0 && <li className="text-xs text-stone-400">Loading zones…</li>}
             </ul>
+            <button
+              type="button"
+              onClick={captureHotspotCount}
+              disabled={!det || !selected || feedback === 'saving'}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-yellow-600 px-3 py-2 text-xs font-medium text-white hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {feedback === 'saving' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+              {feedback === 'saving' ? 'Updating hotspot…' : `Apply live count${det ? ` (${det.count})` : ''}`}
+            </button>
+            {feedback === 'saved' && (
+              <p className="mt-1.5 text-[11px] text-emerald-700">Count assimilated; hotspot positions refreshed.</p>
+            )}
+            {feedback === 'error' && (
+              <p className="mt-1.5 text-[11px] text-red-700">Could not update the hotspot model.</p>
+            )}
           </div>
 
           <p className="text-[11px] text-stone-400">
             Feed runs <code className="rounded bg-stone-100 px-1">eyepop.person:latest</code> via
             <code className="rounded bg-stone-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
             live webcam (run without <code className="rounded bg-stone-100 px-1">VIDEO_SOURCE</code>) or
-            any video file.
+            any video file. Select a target and apply one stabilized frame count to move the
+            hotspot surface; repeated video frames are never counted automatically.
           </p>
         </div>
       </div>

@@ -202,6 +202,8 @@ export default function DeliveryMap({
       map.remove();
       mapRef.current = null;
     };
+    // `zoom` is an initial-map option; changing it must not recreate the map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync zone/spoke data + query elevations whenever zones change.
