@@ -234,8 +234,8 @@ export default function Home() {
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
+      <header className="header-condense sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+        <div className="header-shrink mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" aria-label="Parsel home" className="flex items-center gap-2.5">
             <PackageOpen size={25} className="text-[#3ca875]" />
             <span className="text-xl font-semibold tracking-tight">Parsel</span>
@@ -247,9 +247,9 @@ export default function Home() {
           </nav>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#123a54]"
+            className="group inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#123a54]"
           >
-            Open demo <ArrowRight size={15} />
+            Open demo <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
         <ScrollProgress />
@@ -260,7 +260,7 @@ export default function Home() {
           <div className="hero-rise inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
             <ShieldCheck size={14} /> Food insecurity decision-support demo
           </div>
-          <h1 className="hero-rise font-display mt-7 max-w-6xl text-5xl font-semibold leading-[0.93] tracking-[-0.045em] sm:text-7xl lg:text-[7rem]" style={{ ['--rise-delay' as string]: '90ms' }}>
+          <h1 className="hero-rise font-display text-balance mt-7 max-w-6xl text-5xl font-semibold leading-[0.93] tracking-[-0.045em] sm:text-7xl lg:text-[7rem]" style={{ ['--rise-delay' as string]: '90ms' }}>
             Hunger is local.{' '}
             <span className="hero-underline text-[#27875b]">Relief should be precise.</span>
           </h1>
@@ -272,15 +272,15 @@ export default function Home() {
             <div className="hero-rise flex flex-wrap gap-3 md:justify-end" style={{ ['--rise-delay' as string]: '320ms' }}>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]"
+                className="group inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123a54]"
               >
-                Open the demo <ArrowRight size={17} />
+                Open the demo <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="#case-for-action"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                className="group inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
               >
-                See why it matters <ArrowDown size={17} />
+                See why it matters <ArrowDown size={17} className="transition-transform group-hover:translate-y-0.5" />
               </a>
             </div>
           </div>
@@ -352,7 +352,7 @@ export default function Home() {
           <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
             <Reveal>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#9b511b]">After the drone lands</p>
-              <h2 id="platform-title" className="font-display mt-5 max-w-4xl text-5xl font-semibold leading-[0.96] tracking-[-0.04em] sm:text-7xl">
+              <h2 id="platform-title" className="font-display text-balance mt-5 max-w-4xl text-5xl font-semibold leading-[0.96] tracking-[-0.04em] sm:text-7xl">
                 Evidence becomes an operating decision.
               </h2>
             </Reveal>
@@ -407,9 +407,9 @@ export default function Home() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-colors ${styles.link}`}
+                        className={`group inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-colors ${styles.link}`}
                       >
-                        {link.label} <ArrowRight size={15} />
+                        {link.label} <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
                       </Link>
                     ))}
                     </>
@@ -426,7 +426,7 @@ export default function Home() {
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-end">
             <Reveal>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#76d6a7]">The adaptive feedback loop</p>
-              <h2 className="font-display mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.04em] sm:text-7xl">
+              <h2 className="font-display text-balance mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.04em] sm:text-7xl">
                 The model can move the map.
               </h2>
             </Reveal>
@@ -473,7 +473,7 @@ export default function Home() {
             </div>
           </Reveal>
           <Reveal delay={120}>
-            <h2 className="font-display parallax-drift mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.85] tracking-[-0.05em]">
+            <h2 className="font-display text-balance parallax-drift mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.85] tracking-[-0.05em]">
               No field evidence.
               <span className="mt-3 block text-[#9b511b]">No allocation.</span>
             </h2>
@@ -500,8 +500,8 @@ export default function Home() {
             ))}
           </ol>
 
-          <Link href="/allocation" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]">
-            Inspect the allocation gate <ArrowRight size={16} />
+          <Link href="/allocation" className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123a54]">
+            Inspect the allocation gate <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -513,7 +513,7 @@ export default function Home() {
               <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">
                 <HandHeart size={19} /> Human control is the product
               </div>
-              <h2 className="font-display mt-5 text-5xl font-semibold leading-[0.96] tracking-[-0.04em] sm:text-7xl">
+              <h2 className="font-display text-balance mt-5 text-5xl font-semibold leading-[0.96] tracking-[-0.04em] sm:text-7xl">
                 What stays human.
               </h2>
             </Reveal>
@@ -551,12 +551,12 @@ export default function Home() {
           </Reveal>
           <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
             <Reveal delay={120}>
-              <h2 className="font-display max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.04em] sm:text-7xl">
+              <h2 className="font-display text-balance max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.04em] sm:text-7xl">
                 Follow food from donation to verified allocation.
               </h2>
             </Reveal>
-            <Link href="/login" className="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-7 py-4 text-sm font-bold text-white hover:bg-[#123a54]">
-              Open Parsel <ArrowRight size={17} />
+            <Link href="/login" className="group inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-7 py-4 text-sm font-bold text-white transition-colors hover:bg-[#123a54]">
+              Open Parsel <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>

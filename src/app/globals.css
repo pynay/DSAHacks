@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth; /* header anchors glide; reduced-motion resets below */
+}
+
 body {
   background: #ffffff;
   color: #071a2b;
@@ -135,4 +139,30 @@ body {
 /* Source-rule draw-in: the citation's top border grows with its reveal. */
 [data-reveal] .rule-draw {
   transform-origin: left;
+}
+
+/* Header condenses as the story begins — scroll-driven, no JS. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes header-shadow {
+      to {
+        box-shadow: 0 8px 24px -18px rgba(7, 26, 43, 0.35);
+      }
+    }
+    .header-condense {
+      animation: header-shadow linear both;
+      animation-timeline: scroll();
+      animation-range: 0 140px;
+    }
+    @keyframes header-shrink {
+      to {
+        height: 3.75rem;
+      }
+    }
+    .header-shrink {
+      animation: header-shrink linear both;
+      animation-timeline: scroll();
+      animation-range: 0 140px;
+    }
+  }
 }
