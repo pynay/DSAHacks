@@ -8,8 +8,8 @@ import {
 
 const workflow = [
   { number: '01', icon: Database, title: 'Understand the need', body: 'Parsel brings together neighborhood-level homelessness signals, 311 requests, shelter capacity, enforcement activity, weather, and historical counts into one honest data commons.' },
-  { number: '02', icon: BrainCircuit, title: 'Predict where pressure is heading', body: 'Our forecasting model learns from the combined dataset to estimate how demand may shift across downtown neighborhoods—helping food banks prepare before the need peaks.' },
-  { number: '03', icon: Drone, title: 'Verify on the ground', body: 'A drone can visit the recommended zone and use computer vision to validate current conditions, giving operators a timely signal before food leaves the facility.' },
+  { number: '02', icon: BrainCircuit, title: 'Predict where pressure is heading', body: 'A leakage-tested spatial ensemble estimates block-level demand and recomputes six movable hotspots, while the app clearly marks stale source data.' },
+  { number: '03', icon: Drone, title: 'Verify on the ground', body: 'A camera-equipped drone or ground team can capture one reviewed EyePop count. The feedback layer updates nearby blocks and moves hotspot centers.' },
   { number: '04', icon: PackageCheck, title: 'Send the right amount', body: 'Parsel matches verified need with available, soonest-expiring inventory, then creates a clear distribution plan for every neighborhood.' },
 ];
 
@@ -17,15 +17,16 @@ const features = [
   { icon: BarChart3, title: 'One operational picture', body: 'Live KPIs, intake versus outflow, stock health, shelter capacity, and real San Diego need signals in one friendly dashboard.', href: '/dashboard', accent: 'bg-amber-100 text-amber-800' },
   { icon: Boxes, title: 'Inventory that thinks ahead', body: 'Track quantities, locations, reorder thresholds, and expiration dates. Parsel prioritizes food that should move first.', href: '/inventory', accent: 'bg-lime-100 text-lime-800' },
   { icon: HeartHandshake, title: 'Donations in, impact out', body: 'Log incoming donations and outgoing distributions while inventory updates automatically across the whole operation.', href: '/donations', accent: 'bg-rose-100 text-rose-800' },
-  { icon: Map, title: 'Need-aware delivery map', body: 'See downtown delivery zones in 3D with need, requests, tents, vehicles, distance, terrain, and custom drop points.', href: '/delivery', accent: 'bg-sky-100 text-sky-800' },
-  { icon: TrendingUp, title: 'Explainable allocation', body: 'Compare current and predicted need, split stock proportionally, and stage distribution records with one click.', href: '/allocation', accent: 'bg-violet-100 text-violet-800' },
-  { icon: Plane, title: 'Drone operations', body: 'Monitor route progress, battery, altitude, payload, position, and a vision-assisted clear-to-drop safety check.', href: '/drone', accent: 'bg-orange-100 text-orange-800' },
+  { icon: Map, title: 'Moving delivery hotspots', body: 'See model-derived downtown hotspots in 3D with need, requests, tents, vehicles, distance, terrain, and custom points.', href: '/delivery', accent: 'bg-sky-100 text-sky-800' },
+  { icon: TrendingUp, title: 'Explainable allocation', body: 'Compare model demand and 311 context, split available stock proportionally, and stage distribution records with one click.', href: '/allocation', accent: 'bg-violet-100 text-violet-800' },
+  { icon: ScanSearch, title: 'Food intake checks', body: 'Use EyePop object detection and a reviewable freshness check to flag questionable donations without replacing food-safety staff.', href: '/food-check', accent: 'bg-cyan-100 text-cyan-800' },
+  { icon: Plane, title: 'Drone operations', body: 'View the live camera, receive an operator-facing clear or hold signal, and apply one stabilized aggregate count to the hotspot model.', href: '/drone', accent: 'bg-orange-100 text-orange-800' },
 ];
 
 const technologyGroups = [
   { label: 'Product', icon: Box, items: ['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS', 'Recharts'] },
-  { label: 'Data + intelligence', icon: BrainCircuit, items: ['Python', 'DuckDB', 'scikit-learn', 'Ridge forecasting', 'Vitest'] },
-  { label: 'Maps + vision', icon: Radar, items: ['Mapbox GL', 'EyePop.ai', 'USGS elevation', 'GeoJSON', 'Drone telemetry'] },
+  { label: 'Data + intelligence', icon: BrainCircuit, items: ['Python', 'DuckDB', 'scikit-learn', 'Stacked spatial ensemble', 'XGBoost'] },
+  { label: 'Maps + feedback', icon: Radar, items: ['Mapbox GL', 'EyePop.ai', 'USGS elevation', 'GeoJSON', 'Gamma-Poisson updates'] },
   { label: 'Community signals', icon: Database, items: ['DSDP counts', 'Get It Done 311', 'HUD PIT', 'SDHC shelters', 'Parking activity'] },
 ];
 
@@ -89,7 +90,7 @@ export default function Home() {
 
       <section className="border-y border-stone-200/80 bg-white" aria-label="Platform outcomes">
         <div className="mx-auto grid max-w-7xl divide-y divide-stone-200 px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8">
-          {[['8+', 'community data sources', 'One shared picture of demand'], ['3 months', 'forecast horizon', 'Time to prepare, not react'], ['Every unit', 'assigned transparently', 'No black-box allocation']].map(([value, label, note]) => <div key={label} className="px-4 py-8 sm:px-8"><p className="text-3xl font-semibold tracking-tight text-stone-950">{value}</p><p className="mt-1 text-sm font-semibold text-amber-700">{label}</p><p className="mt-2 text-sm text-stone-500">{note}</p></div>)}
+          {[['10', 'integrated source groups', 'One shared picture of demand'], ['3 months', 'forecast horizon', 'Time to prepare, not react'], ['Every unit', 'assigned transparently', 'No black-box allocation']].map(([value, label, note]) => <div key={label} className="px-4 py-8 sm:px-8"><p className="text-3xl font-semibold tracking-tight text-stone-950">{value}</p><p className="mt-1 text-sm font-semibold text-amber-700">{label}</p><p className="mt-2 text-sm text-stone-500">{note}</p></div>)}
         </div>
       </section>
 
@@ -119,7 +120,7 @@ export default function Home() {
 
       <section className="bg-amber-400 py-20 sm:py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-2">
-          <div><p className="text-sm font-bold uppercase tracking-[0.18em] text-stone-700">Food quality, protected</p><h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] text-stone-950 sm:text-5xl">Better allocation starts inside the warehouse.</h2><p className="mt-5 max-w-xl text-lg leading-8 text-stone-800">Before a delivery goes out, Parsel considers what is available and what expires first. A future vision-assisted inspection flow can help teams identify damaged or spoiled food for safe staff review—keeping quality high and waste low.</p></div>
+          <div><p className="text-sm font-bold uppercase tracking-[0.18em] text-stone-700">Food quality, protected</p><h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] text-stone-950 sm:text-5xl">Better allocation starts inside the warehouse.</h2><p className="mt-5 max-w-xl text-lg leading-8 text-stone-800">Before a delivery goes out, Parsel considers what is available and what expires first. Food Check uses EyePop to identify donated items and flag possible freshness concerns for safe staff review—keeping quality high and waste low.</p></div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[[ScanSearch, 'Vision-assisted checks', 'Flag quality concerns without replacing trained food-safety decisions.'], [Warehouse, 'Live availability', 'Know exactly what can be packed before promising a delivery.'], [Route, 'FEFO planning', 'Move soonest-expiring food first to protect every donation.'], [HandHeart, 'Right-sized drops', 'Match available food to verified neighborhood demand.']].map(([Icon, title, body]) => { const FeatureIcon = Icon as typeof ScanSearch; return <div key={title as string} className="rounded-2xl bg-stone-950 p-5 text-white"><FeatureIcon size={22} className="text-amber-400" /><h3 className="mt-4 font-semibold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-stone-400">{body as string}</p></div>; })}
           </div>

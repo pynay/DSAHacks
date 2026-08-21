@@ -6,6 +6,11 @@ Repository: `pynay/DSAHacks`
 
 Working branch: `codex/hotspot-model-feedback`
 
+This is the detailed model and drone handoff. For the current system boundary,
+runtime responsibilities, and production evolution path, use
+[`ARCHITECTURE.md`](ARCHITECTURE.md) as the source of truth. The root
+[`README.md`](../README.md) is the canonical setup and operator entry point.
+
 ## Executive handoff
 
 Parsel is a food-inventory, donation, allocation, and delivery application for

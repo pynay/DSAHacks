@@ -8,8 +8,15 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const lng = Number(searchParams.get("lng"));
   const lat = Number(searchParams.get("lat"));
-  if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
-    return NextResponse.json({ error: "lng and lat required" }, { status: 400 });
+  if (
+    !Number.isFinite(lng) ||
+    !Number.isFinite(lat) ||
+    lng < -180 ||
+    lng > 180 ||
+    lat < -90 ||
+    lat > 90
+  ) {
+    return NextResponse.json({ error: "lng and lat must be valid coordinates" }, { status: 400 });
   }
   const elevation = await elevationMeters(lng, lat);
   return NextResponse.json({ elevation });

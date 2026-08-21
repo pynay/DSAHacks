@@ -13,10 +13,10 @@ Serves on localhost:8091:
     GET /stream.mjpg -> multipart MJPEG push stream at camera rate
     GET /frame.jpg   -> latest annotated frame (single shot)
 
-Run:  .venv/bin/python scripts/eyepop_bridge.py
+Run:  python3.12 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
+      .venv/bin/python scripts/eyepop_bridge.py
 Env:  scripts/.env  (EYEPOP_API_KEY=eyp_..., see scripts/.env.example)
-Venv note: eyepop pins pyarrow<22 which has no CPython 3.14 wheels; install
-with `pip install --no-deps eyepop` plus deps and `pyarrow>=22` (see git log).
+Python 3.12 is recommended because the EyePop SDK currently constrains pyarrow.
 """
 import asyncio
 import os
@@ -43,6 +43,14 @@ load_dotenv(Path(__file__).parent / ".env", override=True)
 API_KEY = os.environ.get("EYEPOP_API_KEY", "")
 PORT = int(os.environ.get("EYEPOP_BRIDGE_PORT", "8091"))
 CAMERA_INDEX = int(os.environ.get("CAMERA_INDEX", "0"))
+ALLOWED_ORIGINS = {
+    origin.strip()
+    for origin in os.environ.get(
+        "EYEPOP_BRIDGE_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    ).split(",")
+    if origin.strip()
+}
 # Optional: run EyePop on a video file/URL instead of the live webcam (loops).
 # Handy for demos where camera permission isn't available.
 VIDEO_SOURCE = os.environ.get("VIDEO_SOURCE")
@@ -257,8 +265,12 @@ async def get_stream(request):
     return resp
 
 
-async def cors(_req, res):
-    res.headers["Access-Control-Allow-Origin"] = "*"  # localhost demo bridge
+async def cors(req, res):
+    """Allow the Parsel web origin without exposing the camera feed globally."""
+    origin = req.headers.get("Origin")
+    if origin in ALLOWED_ORIGINS:
+        res.headers["Access-Control-Allow-Origin"] = origin
+        res.headers["Vary"] = "Origin"
 
 
 async def main():

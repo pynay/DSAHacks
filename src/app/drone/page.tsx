@@ -46,8 +46,8 @@ export default function DronePage() {
         <div>
           <h2 className="font-semibold text-stone-900">Drone delivery ops</h2>
           <p className="text-sm text-stone-500">
-            Live drone-camera vision by EyePop.ai. Detects people in the drop area so the drone
-            only releases when the zone is clear.
+            Live camera vision by EyePop.ai. It gives the operator a clear/hold signal and an
+            aggregate count that can update the selected hotspot after review.
           </p>
         </div>
         {vision.connected ? (
@@ -170,6 +170,7 @@ export default function DronePage() {
             live webcam (run without <code className="rounded bg-stone-100 px-1">VIDEO_SOURCE</code>) or
             any video file. Select a target and apply one stabilized frame count to move the
             hotspot surface; repeated video frames are never counted automatically.
+            Clear/hold is decision support only and does not autonomously release a payload.
           </p>
         </div>
       </div>

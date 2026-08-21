@@ -120,10 +120,11 @@ export default function FoodCheckPage() {
   }
 
   useEffect(() => {
+    const video = videoRef.current;
     return () => {
       runningRef.current = false;
       cancelAnimationFrame(rafRef.current);
-      (videoRef.current?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
+      (video?.srcObject as MediaStream | null)?.getTracks().forEach((t) => t.stop());
     };
   }, []);
 

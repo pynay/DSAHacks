@@ -4,6 +4,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { DeliveryZone, HotspotMeta } from './delivery';
 
+interface ZonesResponse {
+  zones: DeliveryZone[];
+  meta: HotspotMeta | null;
+}
+
+async function fetchZones(signal?: AbortSignal): Promise<ZonesResponse> {
+  const response = await fetch('/api/zones', { signal });
+  const data = await response.json();
+  if (!response.ok || !data.zones) throw new Error(data.error || 'Failed to load zones');
+  return { zones: data.zones, meta: data.meta ?? null };
+}
+
 export function useZones(): {
   zones: DeliveryZone[];
   meta: HotspotMeta | null;
@@ -16,11 +28,9 @@ export function useZones(): {
 
   const refresh = useCallback(async () => {
     try {
-      const response = await fetch('/api/zones');
-      const data = await response.json();
-      if (!response.ok || !data.zones) throw new Error(data.error || 'Failed to load zones');
+      const data = await fetchZones();
       setZones(data.zones);
-      setMeta(data.meta ?? null);
+      setMeta(data.meta);
       setError(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to load zones');
@@ -28,23 +38,19 @@ export function useZones(): {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/zones')
-      .then((r) => r.json())
-      .then((d) => {
-        if (cancelled) return;
-        if (d.zones) {
-          setZones(d.zones);
-          setMeta(d.meta ?? null);
-        }
-        else setError(d.error || 'Failed to load zones');
+    const controller = new AbortController();
+    fetchZones(controller.signal)
+      .then((data) => {
+        setZones(data.zones);
+        setMeta(data.meta);
+        setError(null);
       })
-      .catch(() => {
-        if (!cancelled) setError('Failed to load zones');
+      .catch((cause) => {
+        if (!(cause instanceof DOMException && cause.name === 'AbortError')) {
+          setError(cause instanceof Error ? cause.message : 'Failed to load zones');
+        }
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
   return { zones, meta, error, refresh };

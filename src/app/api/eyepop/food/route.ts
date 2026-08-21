@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkFood, warmup } from "@/lib/eyepop";
+import { decodeImagePayload, ImagePayloadError } from "@/lib/imagePayload";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,16 +15,18 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { image } = await req.json();
-    if (typeof image !== "string") {
-      return NextResponse.json({ error: "image (base64 data URL) required" }, { status: 400 });
-    }
-    const b64 = image.includes(",") ? image.slice(image.indexOf(",") + 1) : image;
-    const bytes = new Uint8Array(Buffer.from(b64, "base64"));
+    const body = (await req.json()) as { image?: unknown };
+    const bytes = decodeImagePayload(body?.image);
     const started = Date.now();
     const result = await checkFood(bytes);
     return NextResponse.json({ ...result, ms: Date.now() - started });
   } catch (err) {
+    if (err instanceof ImagePayloadError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    if (err instanceof SyntaxError) {
+      return NextResponse.json({ error: "request body must be valid JSON" }, { status: 400 });
+    }
     console.error("[/api/eyepop/food] failed:", err);
     return NextResponse.json({ error: "EyePop check failed" }, { status: 500 });
   }

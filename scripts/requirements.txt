@@ -1,0 +1,6 @@
+# Python 3.12 is recommended because the EyePop SDK currently constrains pyarrow.
+aiohttp>=3.11
+certifi>=2025.1
+eyepop
+opencv-python>=4.10
+python-dotenv>=1.0
