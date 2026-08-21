@@ -1,5 +1,5 @@
 from commons import db
-from commons.staging import src_a, src_c, src_d, src_h
+from commons.staging import src_a, src_b, src_c, src_d, src_e, src_f, src_h
 
 STEPS = []  # (name, source_id, fn) appended as loaders land
 # NOTE: src_c's *download/effort priority* is ahead of src_a (it's Source C, priority 1),
@@ -10,6 +10,9 @@ STEPS.append(("load_src_h", "H", src_h.load))
 STEPS.append(("load_src_c", "C", src_c.load))
 STEPS.append(("load_src_d_72hr", "D", src_d.load_72hr))
 STEPS.append(("load_src_d_citations", "D", src_d.load_citations))
+STEPS.append(("load_src_b_dsdp", "B", src_b.load))
+STEPS.append(("load_src_f_pit", "F", src_f.load))
+STEPS.append(("load_src_e_capacity", "E", src_e.load))
 
 def main():
     con = db.connect()
