@@ -1,11 +1,12 @@
 'use client';
 
-// Client hook for the DuckDB-derived delivery zones served by /api/zones.
+// Client hook for model-derived delivery zones served by /api/zones.
 import { useEffect, useState } from 'react';
-import type { DeliveryZone } from './delivery';
+import type { DeliveryZone, HotspotMeta } from './delivery';
 
-export function useZones(): { zones: DeliveryZone[]; error: string | null } {
+export function useZones(): { zones: DeliveryZone[]; meta: HotspotMeta | null; error: string | null } {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
+  const [meta, setMeta] = useState<HotspotMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -14,7 +15,10 @@ export function useZones(): { zones: DeliveryZone[]; error: string | null } {
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
-        if (d.zones) setZones(d.zones);
+        if (d.zones) {
+          setZones(d.zones);
+          setMeta(d.meta ?? null);
+        }
         else setError(d.error || 'Failed to load zones');
       })
       .catch(() => {
@@ -25,5 +29,5 @@ export function useZones(): { zones: DeliveryZone[]; error: string | null } {
     };
   }, []);
 
-  return { zones, error };
+  return { zones, meta, error };
 }

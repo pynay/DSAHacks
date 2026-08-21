@@ -13,7 +13,7 @@ const DeliveryMap = dynamic(() => import("@/components/DeliveryMap"), {
 });
 
 export default function DeliveryPage() {
-  const { zones: baseZones, error } = useZones();
+  const { zones: baseZones, meta, error } = useZones();
   const [custom, setCustom] = useState<DeliveryZone[]>([]);
   const zones = useMemo(() => [...baseZones, ...custom], [baseZones, custom]);
 
@@ -52,6 +52,7 @@ export default function DeliveryPage() {
   const totalKm = useMemo(() => zones.reduce((s, z) => s + haversineKm(DEPOT, z), 0), [zones]);
   const elevs = zones.map((z) => z.elevation).filter((e): e is number => e != null);
   const elevRange = elevs.length ? `${Math.round(Math.min(...elevs))}–${Math.round(Math.max(...elevs))} m` : "—";
+  const maxNeed = Math.max(...zones.map((z) => z.need), 1);
 
   return (
     <div className="flex h-[calc(100vh-7rem)] gap-4">
@@ -73,8 +74,15 @@ export default function DeliveryPage() {
         <div className="border-b border-stone-200 p-4">
           <h2 className="font-semibold text-stone-900">Delivery zones</h2>
           <p className="text-xs text-stone-500">
-            Need-weighted food-drop targets from the SD Homelessness Data Commons (DuckDB).
+            Movable block-level hotspots from the selected ensemble, ready for drone feedback.
           </p>
+          {meta && (
+            <p className={`mt-2 rounded-md px-2 py-1.5 text-[11px] ${meta.stale_source_warning ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
+              {meta.model.replaceAll("_", " ")} · source {meta.source_date}
+              {meta.observations ? ` · ${meta.observations} live observation${meta.observations === 1 ? "" : "s"}` : ""}
+              {meta.stale_source_warning ? " · stale source: verify by drone before dispatch" : ""}
+            </p>
+          )}
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-yellow-50 py-2">
               <div className="text-lg font-semibold text-stone-900">{zones.length}</div>
@@ -100,7 +108,7 @@ export default function DeliveryPage() {
         <ul className="flex-1 divide-y divide-stone-100 overflow-y-auto">
           {sorted.map((z) => {
             const km = haversineKm(DEPOT, z).toFixed(2);
-            const pct = Math.min(100, (z.need / 320) * 100);
+            const pct = Math.min(100, (z.need / maxNeed) * 100);
             return (
               <li key={z.id} className="px-4 py-3">
                 <div className="flex items-center justify-between">
@@ -116,11 +124,12 @@ export default function DeliveryPage() {
                   </div>
                 )}
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-stone-500">
-                  <span>need {z.need}</span>
+                  <span>{z.predicted ? "predicted visible" : "need"} {z.need}</span>
                   <span>{z.requests} reqs</span>
                   {!z.custom && <span>{z.tents ?? 0} tents</span>}
                   {!z.custom && <span>{z.vehicles ?? 0} veh</span>}
                   <span>elev {z.elevation != null ? `${Math.round(z.elevation)} m` : "—"}</span>
+                  {z.lastObservedAt && <span>updated {new Date(z.lastObservedAt).toLocaleString()}</span>}
                 </div>
               </li>
             );

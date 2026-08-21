@@ -103,6 +103,65 @@ python3 -m pip install -r ml/requirements.txt
 python3 ml/forecast.py    # deterministic; rewrites marts/forecast_*
 ```
 
+### Block-level hotspot model benchmark
+
+`ml/hotspot_benchmark.py` compares leakage-safe, one-step-ahead spatial models on the
+complete 50-month × 287-block Source A panel. The last 12 observed months are held out as
+expanding-window test folds. It scores count error, Poisson deviance, rank correlation,
+hotspot overlap, the share of observed people captured in the predicted top 10% of blocks,
+and weighted-centroid error.
+
+The selected model is **`stacked_hotspot_ensemble`**: 56.25% graph-diffusion GBM, 18.75%
+spatial KDE, and 25% Tweedie XGBoost. Its two blend weights were selected on six months
+preceding every reported test fold. It averages **1.789 MAE** per block, **2.367 Poisson
+deviance**, 48.3% observed-person capture in the top 10% of predicted blocks, and 67 m
+centroid error. Against the last-observation baseline that is 6.4% lower MAE and 78.9%
+lower Poisson deviance. This is an historical early-morning count benchmark, not yet proof
+of drone-time performance. Full DCRNN, TFT, Graph WaveNet, AGCRN, STAEformer, Neural CDE,
+and DeepSTPP remain gated until their required high-frequency observations exist.
+
+See [`docs/HOTSPOT_MODEL_BENCHMARK.md`](docs/HOTSPOT_MODEL_BENCHMARK.md) for the complete
+model table, methodology, limitations, and deep-model readiness gates. Reproduce it with:
+
+```bash
+python3 ml/hotspot_benchmark.py
+```
+
+`ml/hotspot_production.py` then fits that architecture to the newer 12-month × 261-block
+DSDP panel. A secondary four-fold forward backtest reduced MAE from **1.690 to 1.618** and
+Poisson deviance from **12.424 to 2.554** versus last-observation persistence. It exports
+`marts/hotspot_blocks.json` (the live-update priors) and `marts/hotspot_zones.json` (six
+initial moving centers):
+
+```bash
+python3 ml/hotspot_production.py
+```
+
+The latest block snapshot is January 2025, so the app labels the forecast stale and asks
+for drone/ground verification before dispatch. This warning is intentional; a strong
+backtest does not make old inputs current.
+
+### Live drone-count feedback
+
+The delivery map now starts from the selected block ensemble instead of six fixed
+neighborhood centroids. An EyePop adapter, simulator, or operator can send an aggregate
+count to `POST /api/hotspots/observe`; the server applies an online Gamma-Poisson update to
+nearby blocks and recomputes all six hotspot centers immediately.
+
+```bash
+curl -X POST http://localhost:3000/api/hotspots/observe \
+  -H 'content-type: application/json' \
+  -d '{"lat":32.7097,"lng":-117.1545,"count":42,"confidence":0.88,"coverage":0.9,"radiusKm":0.18}'
+```
+
+`count` is the deduplicated aggregate visible-person estimate, `confidence` is detector
+confidence, `coverage` is the estimated fraction of the footprint observed, and
+`radiusKm` is the camera footprint radius. The response includes updated zones and model
+metadata. This demo state is process-memory only: it survives later requests to the same
+server process but not a restart or multi-instance deployment. Production should persist
+aggregate observations in a mission database. No imagery, identity, face embedding, or
+person-level tracking record is stored by this endpoint.
+
 ### Drone verification and delivery roadmap
 
 The intended operating loop is:
@@ -110,17 +169,19 @@ The intended operating loop is:
 `forecast a zone → inspect and pack food → launch → verify visible demand → hand off food → return → record the outcome → improve the next forecast`
 
 This is a roadmap, not a claim about the current demo. Today Parsel has the inventory,
-donation, distribution, FEFO allocation, data API, and Mapbox delivery-zone surfaces. The
-Delivery screen renders terrain, buildings, zone markers, and straight depot-to-zone
-spokes when a Mapbox token is configured. It does **not** yet control a drone, stream
-video, call EyePop, animate a mission, persist operational state, or distinguish food
-that was loaded, delivered, taken, returned, or wasted.
+donation, distribution, FEFO allocation, data API, model-derived Mapbox hotspots, and an
+aggregate drone-observation endpoint. The Delivery screen renders terrain, buildings,
+zone markers, and straight depot-to-zone spokes when a Mapbox token is configured. It
+does **not** yet control a drone, stream video, call EyePop itself, animate a mission,
+persist operational state, or distinguish food that was loaded, delivered, taken,
+returned, or wasted.
 
-The current forecast is also deliberately narrower than the product vision: it predicts
-monthly neighborhood-level **311 request pressure**, then uses those predicted shares to
-redistribute a fixed total need. It does not currently predict a future headcount at an
-exact date and time. Repeated field observations and distribution outcomes are the
-missing labels needed to train and evaluate that model honestly.
+The current system has two deliberately narrow forecasts: monthly neighborhood-level
+**311 request pressure** for demand context, and monthly block-level **visible-person
+counts** for hotspot placement. The latter can move after aggregate drone feedback, but
+neither model yet resolves an exact date and time. Repeated timestamped field observations
+and distribution outcomes are the missing labels needed to train and evaluate that model
+honestly.
 
 #### Proposed mission flow
 
