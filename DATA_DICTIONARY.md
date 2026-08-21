@@ -7,7 +7,7 @@ Complaint (311) and enforcement tables measure reporting and enforcement activit
 they are NOT counts of people experiencing homelessness and must never be presented
 as such. Each table's **Known bias** section is part of the data.
 
-_Generated 2026-08-20 19:59_
+_Generated 2026-08-20 20:06_
 
 ## Sources
 

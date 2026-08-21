@@ -1,4 +1,4 @@
-# QA Report - generated 2026-08-20 19:59
+# QA Report - generated 2026-08-20 20:06
 
 ## Run summary
 
@@ -60,7 +60,7 @@
 
 ## Validation Correlations: do independent signals agree?
 
-- **(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)**: r = 0.393 (n=85 pairs). Complaints track observed street population direction only loosely. Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units.
+- **(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)**: r = 0.393 (n=85 pairs). Complaints track observed street population direction only loosely. Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units. Observed series merges source A (raw units) and source H (multiplier-adjusted) per month via max(); bases differ in the 2018-2019 overlap, so r is not an apples-to-apples comparison across the full window.
 
 - **(ii) 311 vs Source A counted units at block-month grain (2016-2018 overlap; note: stg_a_observations ends 2018-02 and 311 homelessness categories begin 2018-08 - by design the two series do not overlap in time)**: insufficient overlapping data (n=0).
 
@@ -68,4 +68,4 @@
 
 - **(iii) citations_vs_downtown_observed (monthly, citations are citywide)**: r = 0.320 (n=64 pairs). Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount.
 
-- **(iii) citations_vs_311 (monthly, citations are citywide)**: r = -0.488 (n=96 pairs). Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount.
+- **(iii) citations_vs_311 (monthly, citations are citywide)**: r = -0.488 (n=96 pairs). Note the NEGATIVE correlation: citation volume moves opposite to this series over the overlap window. Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount.

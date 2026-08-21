@@ -144,7 +144,7 @@ def write_qa_report(con, results, path=ROOT / "QA_REPORT.md") -> LoadResult:
 
     L.append("\n## Validation Correlations: do independent signals agree?\n")
     L.append(_fmt("(i) 311 downtown volume vs observed downtown totals - A/DSDP/H (monthly)", _corr_311_vs_dsdp(con),
-        lambda r: "Complaints track observed street population direction" + (" strongly" if r > .6 else " only loosely" if r > .3 else " weakly - complaint volume is NOT a proxy for people") + ". Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units."))
+        lambda r: "Complaints track observed street population direction" + (" strongly" if r > .6 else " only loosely" if r > .3 else " weakly - complaint volume is NOT a proxy for people") + ". Correlation of volumes, not a people count. Where H anchors the series, note H totals are occupancy-multiplier-adjusted volumes, not raw counted units. Observed series merges source A (raw units) and source H (multiplier-adjusted) per month via max(); bases differ in the 2018-2019 overlap, so r is not an apples-to-apples comparison across the full window."))
     L.append(_fmt("(ii) 311 vs Source A counted units at block-month grain (2016-2018 overlap; note: stg_a_observations ends 2018-02 and 311 homelessness categories begin 2018-08 - by design the two series do not overlap in time)",
         _corr_311_vs_blocks(con),
         lambda r: "Block-level agreement is " + ("strong" if r > .6 else "moderate" if r > .3 else "weak") + " - fine-grained complaint data locates hotspots" + ("" if r > .3 else " poorly") + "."))
@@ -152,6 +152,7 @@ def write_qa_report(con, results, path=ROOT / "QA_REPORT.md") -> LoadResult:
         lambda r: "Block-level agreement is " + ("strong" if r > .6 else "moderate" if r > .3 else "weak") + " - fine-grained complaint data locates hotspots" + ("" if r > .3 else " poorly") + ". These are raw counted units (component sums), not multiplier-adjusted."))
     for name, res in _corr_citations(con).items():
         L.append(_fmt(f"(iii) {name} (monthly, citations are citywide)", res,
-            lambda r: "Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount."))
+            lambda r: ("Note the NEGATIVE correlation: citation volume moves opposite to this series over the overlap window. " if r < 0 else "")
+            + "Enforcement volume reflects policy/patrol priorities as much as street population; treat as pressure signal, not headcount."))
     path.write_text("\n".join(L))
     return LoadResult("ok", 0, str(path))
