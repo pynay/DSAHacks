@@ -1,4 +1,4 @@
-from commons import db, marts
+from commons import db, docs_gen, marts, qa
 from commons.staging import src_a, src_b, src_c, src_d, src_e, src_f, src_g, src_h
 
 STEPS = []  # (name, source_id, fn) appended as loaders land
@@ -23,6 +23,11 @@ def main():
     con = db.connect()
     db.ensure_schema(con)
     results = db.run_steps(con, STEPS)
+    # QA needs the full results dict, so docs + QA run explicitly after the STEPS loop,
+    # not as STEPS entries themselves. Dictionary first, then QA last (QA's run summary
+    # should include the dictionary step).
+    results["data_dictionary"] = docs_gen.write_data_dictionary(con)
+    results["qa_report"] = qa.write_qa_report(con, results)
     return results
 
 if __name__ == "__main__":
