@@ -2,6 +2,9 @@
 
 y_t = b0 + b1*t + b2*post_t + b3*(t - T0)*post_t + month dummies + e_t,  OLS with
 Newey-West (HAC) standard errors. Pure functions, no I/O.
+
+HAC (Newey-West) SEs: robust to autocorrelation; slightly under-covers in
+samples of ~60 months -- read 95% CIs as ~85-90%.
 """
 from __future__ import annotations
 
@@ -24,17 +27,7 @@ def fit_its(y: pd.Series, t0: pd.Timestamp, hac_lags: int = 3) -> dict:
     X_full = _design(y.index, t0)
     s = y.dropna()
     X = X_full.loc[s.index]
-    # NOTE: deviates from the brief's cov_type="HAC" (Newey-West). On this
-    # design (15 params over 60/36 obs), Newey-West HAC(hac_lags) coverage is
-    # only ~85-90% across simulated draws (nominal 95%) and misses the
-    # brief's own hardcoded-seed test; it's anti-conservative in this
-    # finite-sample regime since the DGP noise is i.i.d., not autocorrelated.
-    # HC3 (MacKinnon-White small-sample-corrected heteroskedasticity-robust)
-    # is the textbook estimator for i.i.d./heteroskedastic small samples and
-    # empirically achieves ~98% coverage while passing the brief's tests.
-    # hac_lags is kept in the signature for interface compatibility but is
-    # currently unused.
-    res = sm.OLS(s.values, X).fit(cov_type="HC3")
+    res = sm.OLS(s.values, X).fit(cov_type="HAC", cov_kwds={"maxlags": hac_lags, "use_correction": True})
     ci = res.conf_int(alpha=0.05)
     out = {"n": int(len(s)), "pre_mean": float(s[s.index < t0].mean())}
     for term in ("post", "post_t"):
