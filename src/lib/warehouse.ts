@@ -283,8 +283,10 @@ export function stepDay(state: WarehouseState, ctx: StepCtx = {}): WarehouseStat
 
   return {
     inventory: inv,
-    donations,
-    distributions,
+    // Cap the ledgers so a long-running sim can't grow state (and localStorage)
+    // without bound; the app only ever reads the most recent entries.
+    donations: donations.slice(0, 200),
+    distributions: distributions.slice(0, 200),
     reorders: [...reorders, ...auto],
     prioritized: state.prioritized,
     events: [...newEvents, ...state.events].slice(0, 60),

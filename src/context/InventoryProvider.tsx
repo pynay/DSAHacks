@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { InventoryItem, Donation, Distribution } from '@/lib/types';
 import { applyDonation, applyDistribution, newId } from '@/lib/inventory';
 import { seedInventory, seedDonations, seedDistributions } from '@/data/mock';
@@ -32,6 +32,9 @@ interface InventoryContextValue {
 
 const InventoryContext = createContext<InventoryContextValue | null>(null);
 const STORAGE_KEY = 'parsel-warehouse-v1';
+// Wall-clock milliseconds per simulated day at 1x. Kept calm so stock and
+// expiry countdowns are watchable rather than blurring past.
+const BASE_TICK_MS = 6000;
 
 function freshSeed(): WarehouseState {
   return {
@@ -90,12 +93,24 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hydrated, state, running, speed]);
 
-  // The engine clock: while running, advance one simulated day per tick.
+  // The engine clock: while running, advance one simulated day per tick. The
+  // ref guard guarantees a single live interval even if StrictMode double-invokes
+  // this effect, so the sim can't run at 2x.
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
     if (!hydrated || !running) return;
-    const ms = Math.max(400, Math.round(3000 / speed));
-    const id = setInterval(() => setState((s) => stepDay(s)), ms);
-    return () => clearInterval(id);
+    const ms = Math.max(1200, Math.round(BASE_TICK_MS / speed));
+    tickRef.current = setInterval(() => setState((s) => stepDay(s)), ms);
+    return () => {
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+    };
   }, [hydrated, running, speed]);
 
   const addItem: InventoryContextValue['addItem'] = (item) => {
