@@ -1,18 +1,22 @@
 // Server-only. Builds the block-level need choropleth for the Response Map:
 // each downtown census-block polygon (marts/blocks.geojson) is tagged with the
-// predicted need of its nearest modeled hotspot block (marts/hotspot_blocks.json).
-// Cached per server process (the source files only change when the model reruns).
+// LIVE posterior need of its nearest modeled hotspot block. Because the need is
+// read from hotspotState (the Gamma-Poisson surface that assimilates drone
+// observations), the choropleth re-colors when a field observation lands.
+//
+// Block positions are fixed, so the polygon -> nearest-block mapping is cached
+// once; only the posterior values are recomputed per request.
 import fs from "node:fs";
 import path from "node:path";
 import type { FeatureCollection, Feature, Polygon } from "geojson";
+import { getHotspotBlocks } from "./hotspotState";
 
-interface HotspotBlock {
-  lng: number;
-  lat: number;
-  predicted: number;
+interface GeomCache {
+  features: Feature[]; // polygon + static props (no need yet)
+  nearestIdx: number[]; // index into the hotspot-block array, per feature
 }
 
-let cache: FeatureCollection | null = null;
+let geomCache: GeomCache | null = null;
 
 function ringCentroid(ring: number[][]): [number, number] {
   let x = 0;
@@ -26,39 +30,47 @@ function ringCentroid(ring: number[][]): [number, number] {
   return n ? [x / n, y / n] : [0, 0];
 }
 
-export function getBlocksNeed(): FeatureCollection {
-  if (cache) return cache;
+function buildGeom(): GeomCache {
   const blocksPath = path.join(process.cwd(), "marts", "blocks.geojson");
-  const hotspotPath = path.join(process.cwd(), "marts", "hotspot_blocks.json");
-
   const blocks = JSON.parse(fs.readFileSync(blocksPath, "utf8")) as FeatureCollection;
-  const hb = (JSON.parse(fs.readFileSync(hotspotPath, "utf8")).blocks ?? []) as HotspotBlock[];
+  const hb = getHotspotBlocks(); // positions are fixed; use for the nearest join
 
-  const features: Feature[] = (blocks.features as Feature<Polygon>[]).map((f) => {
+  const features: Feature[] = [];
+  const nearestIdx: number[] = [];
+  for (const f of blocks.features as Feature<Polygon>[]) {
     const ring = (f.geometry.coordinates?.[0] ?? []) as number[][];
     const [clng, clat] = ringCentroid(ring);
-    // Nearest modeled block by squared lng/lat distance (fine at this scale).
-    let need = 0;
+    let idx = 0;
     let bestD = Infinity;
-    for (const p of hb) {
-      const d = (p.lng - clng) ** 2 + (p.lat - clat) ** 2;
+    for (let i = 0; i < hb.length; i += 1) {
+      const d = (hb[i].lng - clng) ** 2 + (hb[i].lat - clat) ** 2;
       if (d < bestD) {
         bestD = d;
-        need = p.predicted;
+        idx = i;
       }
     }
-    return {
+    features.push({
       type: "Feature",
       geometry: f.geometry,
       properties: {
         geo_block: f.properties?.geo_block,
         neighborhood: f.properties?.neighborhood,
         zip: f.properties?.zip,
-        need: Math.round(need * 100) / 100,
+        need: 0,
       },
-    };
-  });
+    });
+    nearestIdx.push(idx);
+  }
+  return { features, nearestIdx };
+}
 
-  cache = { type: "FeatureCollection", features };
-  return cache;
+export function getBlocksNeed(): FeatureCollection {
+  geomCache ??= buildGeom();
+  const hb = getHotspotBlocks(); // current posteriors + verification flags
+  const features = geomCache.features.map((f, i) => {
+    const src = hb[geomCache!.nearestIdx[i]];
+    const need = Math.round((src?.need ?? 0) * 100) / 100;
+    return { ...f, properties: { ...f.properties, need, verified: !!src?.verified } };
+  });
+  return { type: "FeatureCollection", features };
 }

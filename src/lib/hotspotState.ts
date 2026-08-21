@@ -110,6 +110,26 @@ function centerIndices(blocks: HotspotBlock[]): number[] {
   return centers;
 }
 
+// Live per-block posterior intensities (position is fixed; only the posterior
+// moves as drone observations assimilate). The Response Map's block choropleth
+// reads this so field observations actually re-color the map.
+export function getHotspotBlocks(): {
+  lng: number;
+  lat: number;
+  neighborhood: string;
+  need: number;
+  verified: boolean;
+}[] {
+  const live = currentState();
+  return live.blocks.map((block) => ({
+    lng: block.lng,
+    lat: block.lat,
+    neighborhood: block.neighborhood,
+    need: posterior(block),
+    verified: (block.feedbackObservationIds?.length ?? 0) > 0,
+  }));
+}
+
 export function getHotspotMeta(): HotspotMeta {
   const live = currentState();
   return {

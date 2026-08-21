@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getBlocksNeed } from "@/lib/blocksNeed";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // the block posterior moves as drone observations land
 
 // GET /api/blocks — census-block polygons tagged with predicted need, for the
 // Response Map's block-level choropleth.

@@ -35,10 +35,16 @@ export default function DeliveryPage() {
       .then((r) => r.json())
       .then((d) => d.series && setSeries(d.series))
       .catch(() => {});
-    fetch("/api/blocks")
-      .then((r) => r.json())
-      .then((d) => d.features && setBlocks(d))
-      .catch(() => {});
+    // Poll the block choropleth so drone observations re-color the map live
+    // (the /api/blocks posterior assimilates each accepted count).
+    const loadBlocks = () =>
+      fetch("/api/blocks", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => d.features && setBlocks(d))
+        .catch(() => {});
+    loadBlocks();
+    const id = setInterval(loadBlocks, 5000);
+    return () => clearInterval(id);
   }, []);
 
   // Context multiplier for a neighborhood at a horizon step (from the ML 311 forecast).
@@ -135,6 +141,7 @@ export default function DeliveryPage() {
           </div>
           <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-full bg-fuchsia-500" /> scenario center</div>
           <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-[3px] bg-emerald-600" /> operations base</div>
+          <div className="flex items-center gap-2"><span className="inline-block h-3 w-3 rounded-[2px] border-2 border-emerald-400" /> drone-verified area</div>
           <div className="mt-1 text-slate-400">
             {step === 0
               ? verifiedCount

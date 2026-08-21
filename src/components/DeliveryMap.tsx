@@ -157,6 +157,16 @@ export default function DeliveryMap({
         source: "blocks",
         paint: { "line-color": "rgba(255,255,255,0.14)", "line-width": 0.6 },
       });
+      // Blocks with an accepted drone observation get a distinct emerald ring,
+      // so a reviewed field check is unmistakable on the map even when the
+      // Bayesian need shift is subtle.
+      map.addLayer({
+        id: "blocks-verified",
+        type: "line",
+        source: "blocks",
+        filter: ["==", ["get", "verified"], true],
+        paint: { "line-color": "#34d399", "line-width": 2.2, "line-opacity": 0.95 },
+      });
 
       // Empty sources, filled by the sync effect.
       map.addSource("spokes", { type: "geojson", data: spokesFC([]) });

@@ -40,8 +40,12 @@ export default function DronePage() {
           lng: selected.lng,
           count,
           confidence: count > 0 ? Math.max(det.confidence, 0.1) : 0.8,
-          coverage: 1,
-          radiusKm: 0.18,
+          // The camera frame covers only a fraction of the target's footprint, so
+          // a reviewed count is a sample: expand it to an area estimate (coverage)
+          // and assimilate it across the zone's blocks (radiusKm). This is what
+          // makes a field check visibly move the Response Map's need surface.
+          coverage: 0.25,
+          radiusKm: 0.35,
           observedAt: new Date(observedAtMs).toISOString(),
         }),
       });
