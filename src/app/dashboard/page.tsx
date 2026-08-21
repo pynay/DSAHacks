@@ -53,17 +53,6 @@ export default function DashboardPage() {
         <StatCard label="Distributions / wk" value={distributionsThisWeek} icon={Truck} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 font-semibold text-stone-900">Inventory by category</h2>
-          <CategoryChart data={catData} />
-        </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-2 font-semibold text-stone-900">Intake vs. outflow (6 wks)</h2>
-          <TrendChart data={trend} />
-        </div>
-      </div>
-
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
@@ -138,6 +127,17 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-2 font-semibold text-stone-900">Inventory by category</h2>
+          <CategoryChart data={catData} />
+        </div>
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-2 font-semibold text-stone-900">Intake vs. outflow (6 wks)</h2>
+          <TrendChart data={trend} />
+        </div>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">

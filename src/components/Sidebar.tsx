@@ -40,7 +40,7 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="mt-auto p-4 text-xs text-stone-400">DSA Hacks · demo data</div>
+      <div className="mt-auto p-4 text-xs text-stone-400">Building for Good 2026 · real SD need data · demo inventory</div>
     </aside>
   );
 }
