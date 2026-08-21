@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import DroneMissionStory from '@/components/landing/DroneMissionStory';
 import {
   Activity,
   ArrowRight,
@@ -145,9 +146,9 @@ export default function Home() {
             <span className="text-xl font-semibold tracking-tight">Parsel</span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex" aria-label="Landing page">
+            <a href="#drone-concept" className="hover:text-[#071a2b]">Drone concept</a>
             <a href="#platform" className="hover:text-[#071a2b]">What works</a>
             <a href="#feedback-loop" className="hover:text-[#071a2b]">Feedback loop</a>
-            <a href="#evidence" className="hover:text-[#071a2b]">Decision gate</a>
           </nav>
           <Link
             href="/login"
@@ -237,6 +238,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <DroneMissionStory />
 
       <section id="platform" className="scroll-mt-8 bg-[#f8fafb] py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
