@@ -73,7 +73,7 @@ BOOT_ID = f"{os.getpid()}-{int(time.time() * 1000)}"  # changes per process; let
 # Privacy: pixelate faces on every served frame (raw frames sent to EyePop stay
 # unblurred so detection quality is unaffected). BLUR_FACES=0 disables.
 BLUR_FACES = os.environ.get("BLUR_FACES", "1") != "0"
-BLUR_BLOCKS = int(os.environ.get("BLUR_BLOCKS", "14"))  # blur thumbnail px per axis: lower = stronger
+BLUR_BLOCKS = int(os.environ.get("BLUR_BLOCKS", "15"))  # blur thumbnail px per axis: lower = stronger
 BLUR_PAD = float(os.environ.get("BLUR_PAD", "0.25"))  # padding around face boxes
 FACE_ABILITY = os.environ.get("EYEPOP_FACE_ABILITY", "eyepop.person.face.short-range:latest")
 # Telemetry: JSONL log of 5s samples + verdict-transition events. Empty path disables.
