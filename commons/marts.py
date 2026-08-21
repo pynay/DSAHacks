@@ -187,10 +187,11 @@ def export(con) -> LoadResult:
     con.execute(f"COPY (SELECT * FROM mart_monthly_neighborhood ORDER BY obs_month, neighborhood, metric) TO '{MARTS_DIR}/monthly_by_neighborhood.csv' (HEADER)")
     con.execute(f"COPY (SELECT * FROM mart_monthly_block ORDER BY obs_month, geo_block, metric) TO '{MARTS_DIR}/monthly_by_block.csv' (HEADER)")
     con.execute(f"COPY (SELECT * FROM mart_daily_downtown ORDER BY obs_date, neighborhood, metric) TO '{MARTS_DIR}/daily_downtown.csv' (HEADER)")
+    con.execute(f"COPY (SELECT * FROM mart_monthly_context WHERE source_id='I' ORDER BY obs_month, geography, metric) TO '{MARTS_DIR}/food_access_la_jolla.csv' (HEADER)")
     blocks = con.execute("SELECT geo_block, block_name, neighborhood, zip, geometry_wkt FROM dim_blocks").fetch_df()
     features = [{"type": "Feature",
                  "properties": {k: (None if pd.isna(v) else v) for k, v in row.items() if k != "geometry_wkt"},
                  "geometry": mapping(from_wkt(row["geometry_wkt"]))}
                 for row in blocks.to_dict("records")]
     (MARTS_DIR / "blocks.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": features}))
-    return LoadResult("ok", len(features), "4 files exported")
+    return LoadResult("ok", len(features), "5 files exported")
