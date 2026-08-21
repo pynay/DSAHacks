@@ -252,12 +252,14 @@ def _read_together(r_d, p_d, r_r, p_r):
     parts = []
     if sig_d:
         pct_d = round(abs(100 * r_d["post"]["estimate"] / r_d["pre_mean"]) / 5) * 5
-        verb_d = "fell" if r_d["post"]["estimate"] < 0 else "rose"
-        parts.append(f"Counted units {verb_d} ~{pct_d}% immediately{_continuation_phrase(r_d, p_d)}")
+        rel_d = "below" if r_d["post"]["estimate"] < 0 else "above"
+        parts.append(f"Counted units were ~{pct_d}% {rel_d} the pre-ban trend immediately after "
+                     f"enforcement began{_continuation_phrase(r_d, p_d)}")
     if sig_r:
         pct_r = round(abs(100 * r_r["post"]["estimate"] / r_r["pre_mean"]) / 5) * 5
-        verb_r = "jumped" if r_r["post"]["estimate"] > 0 else "dropped"
-        parts.append(f"311 reports {verb_r} ~{pct_r}% immediately{_continuation_phrase(r_r, p_r, with_year=True)}")
+        rel_r = "above" if r_r["post"]["estimate"] > 0 else "below"
+        parts.append(f"311 reports ran ~{pct_r}% {rel_r} trend immediately after "
+                     f"enforcement began{_continuation_phrase(r_r, p_r, with_year=True)}")
     lead = "; ".join(parts) + "."
     fall_word = "fall" if (sig_d and r_d["post"]["estimate"] < 0) else "rise"
     desc_r = "spike" if (sig_r and r_r["post"]["estimate"] > 0) else "drop"
@@ -272,12 +274,14 @@ def _fmt_bullet_311_shift(r_r):
         return "- 311 report volume did not show a statistically significant immediate shift at the ban date — avoid reading a trend narrative into noise."
     pct_r = round(abs(100 * r_r["post"]["estimate"] / r_r["pre_mean"]) / 5) * 5
     if r_r["post"]["estimate"] <= 0:
-        return f"- 311 reports dropped roughly {pct_r}% immediately after the ban — treat this as a reporting-volume shift, not evidence about the underlying population, when briefing decision-makers."
+        return (f"- 311 reports ran roughly {pct_r}% below the pre-ban trend immediately after enforcement began "
+                "— treat this as a reporting-volume shift, not evidence about the underlying population, when briefing decision-makers.")
     fading = (r_r["post"]["estimate"] >= 0) != (r_r["post_t"]["estimate"] >= 0)
     if fading:
-        return (f"- 311 reports spiked roughly {pct_r}% immediately after the ban, then decayed back toward their prior trend "
-                "within the following year — treat it as a temporary reporting shift, not a lasting change in the underlying population.")
-    return f"- 311 reports rose roughly {pct_r}% immediately after the ban and stayed elevated — treat this as a reporting-volume shift, not a population count, when briefing decision-makers."
+        return (f"- 311 reports ran roughly {pct_r}% above the pre-ban trend immediately after enforcement began, then decayed back "
+                "toward their prior trend within the following year — treat it as a temporary reporting shift, not a lasting change in the underlying population.")
+    return (f"- 311 reports ran roughly {pct_r}% above the pre-ban trend immediately after enforcement began and stayed elevated "
+            "— treat this as a reporting-volume shift, not a population count, when briefing decision-makers.")
 
 
 def write_findings(meta, bt, path: Path):

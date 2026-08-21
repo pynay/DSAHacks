@@ -36,7 +36,7 @@ HAC 95% CIs read as roughly 85–90% in samples of ~60 months.
 - 311 reports (GID requests), 12 months out: -55 reports/month relative to a counterfactual that assumes the 2021–23 pre-ban trend continued linearly for 12 more months (95% CI -275 to 165; placebo -308, 95% CI -758 to 141).
 With a steep pre-ban upswing, this counterfactual is generous; read the immediate level change above as the least trend-dependent effect.
 
-**Read together:** Counted units fell ~40% immediately (subsequent trend not distinguishable from noise); 311 reports jumped ~55% immediately, then decayed toward its prior trend over the following year. A fall in people seen on sweep mornings alongside a temporary spike in reports is consistent with displacement into less-visible locations and with enforcement-driven reporting; it is associated with — not proven caused by — the ordinance, which coincided with shelter openings and sweeps.
+**Read together:** Counted units were ~40% below the pre-ban trend immediately after enforcement began (subsequent trend not distinguishable from noise); 311 reports ran ~55% above trend immediately after enforcement began, then decayed toward its prior trend over the following year. A fall in people seen on sweep mornings alongside a temporary spike in reports is consistent with displacement into less-visible locations and with enforcement-driven reporting; it is associated with — not proven caused by — the ordinance, which coincided with shelter openings and sweeps.
 
 **Robustness:** Post estimate by pre-window start: 2020-01 -347; 2021-01 -421; 2021-07 -421; 2022-01 -357; 2022-07 -404 (all p<0.001).
 
@@ -44,4 +44,4 @@ With a steep pre-ban upswing, this counterfactual is generous; read the immediat
 - Plan capacity against the band, not the point: the 80% range is the honest planning envelope.
 - Target outreach at the blocks the complaint signal misses: QA_REPORT.md shows 311 volume explains only a fraction of block-level counts (r≈0.23), and the block map shows counted people on blocks with zero reports. Complaint-driven deployment under-serves them.
 - Do not read enforcement as need: coded citation volume is negatively correlated with complaints (r≈−0.49) — it tracks policy cycles.
-- 311 reports spiked roughly 55% immediately after the ban, then decayed back toward their prior trend within the following year — treat it as a temporary reporting shift, not a lasting change in the underlying population.
+- 311 reports ran roughly 55% above the pre-ban trend immediately after enforcement began, then decayed back toward their prior trend within the following year — treat it as a temporary reporting shift, not a lasting change in the underlying population.

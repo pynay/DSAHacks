@@ -55,6 +55,8 @@ def test_read_together_names_both_series_and_avoids_persistence_overclaim():
     r_r = _its(_term(303, 52, 553), _term(-29.8, -41.5, -18.1), pre_mean=551.3)
     p_r = _its(_term(-203, -471, 65), _term(-8.8, -39.8, 22.2))
     text = _read_together(r_d, p_d, r_r, p_r)
-    assert "Counted units fell" in text and "311 reports jumped" in text
+    assert "Counted units were ~40% below the pre-ban trend" in text
+    assert "311 reports ran ~55% above trend" in text
     assert "not distinguishable from noise" in text  # DSDP slope gated per F5
     assert "and stayed lower" not in text
+    assert "fell ~" not in text and "jumped ~" not in text  # no observed-change phrasing (F1/F3)

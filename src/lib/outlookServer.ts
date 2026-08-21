@@ -58,7 +58,7 @@ export interface OutlookPayload {
   meta: OutlookMeta; // ml/outlook.py's outlook_meta.json, verbatim
   history: MonthPoint[]; // downtown DSDP sum, published months only
   forecast: ForecastPoint[]; // downtown DSDP sum, nowcast + forecast horizon
-  requests: MonthPoint[]; // downtown 311 sum, last 36 months (reality check)
+  requests: MonthPoint[]; // downtown 311 sum, last 36 complete months (reality check)
   its: Partial<Record<"dsdp_adjusted_total" | "gid_requests", ItsSeries>>;
   backtest: BacktestRow[];
   beatsNaiveThrough: number;
@@ -87,11 +87,15 @@ async function build(): Promise<OutlookPayload> {
     .getRowObjects()
     .map((r) => ({ month: String(r.month), value: Math.round(Number(r.value)) }));
 
-  // Downtown 311 totals, last 36 months (reality check against the DSDP series).
+  // Downtown 311 totals, last 36 complete months (reality check against the DSDP series).
+  // The raw 311 feed ends mid-month, so the current calendar month is always partial
+  // (e.g. a 2026-08 run only sees part of August) -- exclude it so the panel never plots
+  // a spurious final drop that's really just an incomplete month.
   const reqReader = await conn.runAndReadAll(`
     SELECT strftime(obs_month, '%Y-%m') AS month, SUM(value) AS value
     FROM read_csv_auto('${byHood}')
     WHERE metric = 'gid_requests' AND neighborhood IN (${hoodList})
+      AND obs_month < date_trunc('month', current_date)
     GROUP BY 1 ORDER BY 1 DESC LIMIT ${REQUESTS_MONTHS}`);
   const requests: MonthPoint[] = reqReader
     .getRowObjects()

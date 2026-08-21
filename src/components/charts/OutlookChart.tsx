@@ -226,8 +226,8 @@ export default function OutlookChart({
           </ComposedChart>
         </ResponsiveContainer>
         <p className="mt-1 text-[11px] text-slate-400">
-          External check on the nowcast months: 311 reports (volume, not people) &mdash; DSDP has not
-          published 2026 counts.
+          External check on the nowcast months, through the last complete month: 311 reports (volume, not
+          people) &mdash; DSDP has not published 2026 counts.
         </p>
       </div>
     </div>
