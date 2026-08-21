@@ -4,7 +4,6 @@ import {
   Activity,
   ArrowDown,
   ArrowRight,
-  BarChart3,
   Boxes,
   BrainCircuit,
   Camera,
@@ -13,10 +12,8 @@ import {
   Database,
   ExternalLink,
   HandHeart,
-  Map,
   PackageCheck,
   PackageOpen,
-  Plane,
   ShieldCheck,
   TriangleAlert,
   Warehouse,
@@ -127,48 +124,92 @@ const workflow = [
   },
 ];
 
-const capabilities = [
+const operatingLayers = [
   {
-    icon: BarChart3,
-    title: 'Operations dashboard',
-    body: 'Review stock, intake, outflow, and recent activity without presenting browser-held demo records as a live production ledger.',
-    note: 'Demo operational state',
-    href: '/dashboard',
-  },
-  {
+    number: '01',
     icon: Activity,
-    title: 'Community signals',
-    body: 'Explore food-access need first, then review PIT, shelter, 311, and parking as separate context for mobile outreach planning.',
-    note: 'Aggregate public data',
-    href: '/signals',
+    eyebrow: 'See need',
+    title: 'Start with food access, not assumptions.',
+    body: 'Compare nutrition insecurity, meal gaps, benefit access, and retailer coverage. Outreach hotspots are kept separate and used only to choose where a current field check may help.',
+    links: [
+      { label: 'Community signals', href: '/signals' },
+      { label: 'Response map', href: '/delivery' },
+    ],
+    tone: 'paper',
   },
   {
+    number: '02',
     icon: Boxes,
-    title: 'Inventory and food flow',
-    body: 'Record inventory, donations, and distributions with derived stock and expiration status. Current records reset on reload.',
-    note: 'Browser-held demo state',
-    href: '/inventory',
+    eyebrow: 'Know stock',
+    title: 'Turn donated food into usable inventory.',
+    body: 'Track what arrived, what is available, what expires first, and what already left the building. Parsel keeps the food ledger visible before it recommends another allocation.',
+    links: [
+      { label: 'Inventory', href: '/inventory' },
+      { label: 'Donations', href: '/donations' },
+      { label: 'Distributions', href: '/distributions' },
+    ],
+    tone: 'signal',
   },
   {
-    icon: Map,
-    title: 'Response planning map',
-    body: 'Inspect six model-derived outreach hotspots on a 3D map without presenting visible-person estimates as direct measures of hunger.',
-    note: 'Experimental outreach prior',
-    href: '/delivery',
-  },
-  {
+    number: '03',
     icon: ClipboardCheck,
-    title: 'Explainable allocation',
-    body: 'Split available stock proportionally and move earlier-expiring items first, but only for zones with reviewed field evidence.',
-    note: 'Field-gated deterministic FEFO',
-    href: '/allocation',
+    eyebrow: 'Decide response',
+    title: 'Allocate only after the location is reviewed.',
+    body: 'A reviewed aggregate observation can update the outreach map. Deterministic FEFO then moves earlier-expiring food first while the operator remains responsible for approval and handoff.',
+    links: [
+      { label: 'Drone Ops', href: '/drone' },
+      { label: 'Allocation', href: '/allocation' },
+      { label: 'Dashboard', href: '/dashboard' },
+    ],
+    tone: 'night',
+  },
+] as const;
+
+const layerStyles = {
+  paper: {
+    section: 'bg-white text-[#071a2b]',
+    accent: 'text-[#27875b]',
+    icon: 'bg-[#071a2b] text-[#76d6a7]',
+    body: 'text-slate-600',
+    line: 'border-slate-200',
+    link: 'border-slate-300 text-[#071a2b] hover:bg-[#071a2b] hover:text-white',
+  },
+  signal: {
+    section: 'bg-[#dff2e7] text-[#071a2b]',
+    accent: 'text-[#176b48]',
+    icon: 'bg-[#3ca875] text-[#071a2b]',
+    body: 'text-[#315c4b]',
+    line: 'border-[#176b48]/25',
+    link: 'border-[#176b48]/35 text-[#0b4b33] hover:bg-[#071a2b] hover:text-white',
+  },
+  night: {
+    section: 'bg-[#071a2b] text-white',
+    accent: 'text-[#76d6a7]',
+    icon: 'bg-[#3ca875] text-[#071a2b]',
+    body: 'text-slate-400',
+    line: 'border-white/15',
+    link: 'border-white/20 text-white hover:border-[#76d6a7] hover:text-[#76d6a7]',
+  },
+} as const;
+
+const decisionSteps = [
+  {
+    number: '01',
+    label: 'Prior',
+    title: 'Choose where to verify',
+    body: 'Historical model output remains planning-only.',
   },
   {
-    icon: Plane,
-    title: 'Drone sensing feedback',
-    body: 'Use a local video bridge to gather aggregate people and object observations, then manually apply one reviewed count to the model.',
-    note: 'Information gathering · no drone delivery',
-    href: '/drone',
+    number: '02',
+    label: 'Review',
+    title: 'Accept one aggregate observation',
+    body: 'A person decides whether the count is suitable evidence.',
+  },
+  {
+    number: '03',
+    label: 'Allocate',
+    title: 'Unlock the updated zone',
+    body: 'Untouched priors cannot stage food or decrement inventory.',
   },
 ];
 
@@ -292,151 +333,186 @@ export default function Home() {
 
       <DroneMissionStory />
 
-      <section id="platform" className="scroll-mt-8 bg-[#f8fafb] py-20 sm:py-28">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="grid gap-8 lg:grid-cols-[.75fr_1.25fr] lg:items-end">
+      <section id="platform" className="scroll-mt-20" aria-labelledby="platform-title">
+        <div className="flex min-h-[72svh] items-center bg-[#f4f1e8]">
+          <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">What works today</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Six connected food-relief tools.</h2>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#9b511b]">After the drone lands</p>
+              <h2 id="platform-title" className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.94] tracking-[-0.055em] sm:text-7xl">
+                Evidence becomes an operating decision.
+              </h2>
             </div>
-            <p className="max-w-2xl text-lg leading-8 text-slate-600">
-              Follow food from donation and inventory through food-access evidence, field
-              verification, allocation, and recorded distribution.
+            <p className="max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+              Parsel is not one heatmap. It connects the need outside, the food inside,
+              and the person responsible for deciding what happens next.
             </p>
-          </div>
-
-          <div className="mt-12 grid overflow-hidden border border-slate-200 bg-slate-200 md:grid-cols-2 lg:grid-cols-3">
-            {capabilities.map(({ icon: Icon, title, body, note, href }) => (
-              <Link key={title} href={href} className="bg-white p-7 hover:bg-emerald-50">
-                <div className="flex items-center justify-between">
-                  <span className="grid h-11 w-11 place-items-center rounded-full bg-[#071a2b] text-[#76d6a7]">
-                    <Icon size={20} />
-                  </span>
-                  <ArrowRight size={17} className="text-slate-400" />
-                </div>
-                <h3 className="mt-6 text-xl font-semibold">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{body}</p>
-                <p className="mt-5 border-t border-slate-200 pt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {note}
-                </p>
-              </Link>
-            ))}
           </div>
         </div>
+
+        {operatingLayers.map((layer) => {
+          const styles = layerStyles[layer.tone];
+          const Icon = layer.icon;
+
+          return (
+            <article key={layer.number} className={`flex min-h-[76svh] items-center border-t ${styles.line} ${styles.section}`}>
+              <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.72fr_1.28fr] lg:items-end lg:gap-20">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <span className={`grid h-12 w-12 place-items-center rounded-full ${styles.icon}`}>
+                      <Icon size={21} />
+                    </span>
+                    <p className={`text-xs font-bold uppercase tracking-[0.18em] ${styles.accent}`}>
+                      {layer.number} · {layer.eyebrow}
+                    </p>
+                  </div>
+                  <p className={`mt-10 font-mono text-[clamp(5rem,14vw,11rem)] leading-none tracking-[-0.08em] ${styles.accent}`} aria-hidden="true">
+                    {layer.number}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="max-w-3xl text-4xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl">
+                    {layer.title}
+                  </h3>
+                  <p className={`mt-6 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8 ${styles.body}`}>
+                    {layer.body}
+                  </p>
+                  <div className="mt-9 flex flex-wrap gap-3">
+                    {layer.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-colors ${styles.link}`}
+                      >
+                        {link.label} <ArrowRight size={15} />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </section>
 
-      <section id="feedback-loop" className="scroll-mt-8 bg-[#071a2b] py-20 text-white sm:py-28">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#76d6a7]">The adaptive feedback loop</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The map can move. Food allocation stays human-approved.</h2>
-            <p className="mt-5 text-lg leading-8 text-slate-400">
-              Offline modeling supplies a starting outreach map. A person decides whether a field
-              count is suitable evidence before it changes the map or an allocation recommendation.
+      <section id="feedback-loop" className="flex min-h-[100svh] scroll-mt-20 items-center bg-[#071a2b] text-white">
+        <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#76d6a7]">The adaptive feedback loop</p>
+              <h2 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.93] tracking-[-0.055em] sm:text-7xl">
+                The model can move the map.
+              </h2>
+            </div>
+            <p className="max-w-xl text-2xl font-semibold leading-tight text-[#76d6a7] sm:text-3xl">
+              Only people move food.
             </p>
           </div>
 
-          <ol className="mt-14 grid border border-white/15 md:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-16 grid gap-px border border-white/15 bg-white/15 md:grid-cols-2 lg:grid-cols-4">
             {workflow.map(({ number, icon: Icon, title, body }) => (
-              <li key={number} className="border-b border-white/15 p-7 last:border-b-0 md:border-r md:[&:nth-child(2)]:border-r-0 lg:border-b-0 lg:[&:nth-child(2)]:border-r lg:last:border-r-0">
-                <div className="flex items-center justify-between">
+              <li key={number} className="bg-[#071a2b] p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-4">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-[#3ca875] text-[#071a2b]">
                     <Icon size={20} />
                   </span>
-                  <span className="font-mono text-xs text-slate-600">{number}</span>
+                  <span className="font-mono text-4xl font-semibold tracking-[-0.08em] text-white/15">{number}</span>
                 </div>
-                <h3 className="mt-7 text-xl font-semibold">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-400">{body}</p>
+                <h3 className="mt-10 text-2xl font-semibold leading-tight">{title}</h3>
+                <p className="mt-4 text-sm leading-6 text-slate-400">{body}</p>
               </li>
             ))}
           </ol>
 
-          <div className="mt-8 grid gap-4 border border-[#54b889]/30 bg-[#54b889]/[0.07] p-5 text-sm leading-6 text-slate-300 sm:grid-cols-[auto_1fr]">
-            <ShieldCheck size={23} className="text-[#76d6a7]" />
-            <p>
-              <strong className="text-white">Why one reviewed count?</strong> Adjacent video frames
-              contain many of the same people. Automatically submitting every frame would multiply-count
-              them, so Drone Ops requires an explicit operator action.
+          <div className="mt-10 grid gap-4 border-t border-[#54b889]/35 pt-7 text-sm leading-6 text-slate-300 sm:grid-cols-[auto_1fr]">
+            <ShieldCheck size={24} className="text-[#76d6a7]" />
+            <p className="max-w-4xl">
+              <strong className="text-white">One observation, one deliberate update.</strong>{' '}
+              Adjacent frames contain many of the same people. Drone Ops waits for an operator
+              to apply one stabilized aggregate count instead of multiplying people across frames.
             </p>
           </div>
         </div>
       </section>
 
-      <section id="evidence" className="scroll-mt-8 bg-white py-20 sm:py-28">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">Decision gate</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The model suggests where to verify. It never diagnoses hunger.</h2>
-            <p className="mt-5 text-lg leading-8 text-slate-600">
-              The current model estimates visible mobile-outreach demand. It does not predict
-              whether a particular person needs food. Only a reviewed local observation can move
-              a zone into the food-allocation workflow.
-            </p>
-            <div className="mt-8 divide-y divide-slate-200 border-y border-slate-200">
-              <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">01 · Prior</p>
-                <div>
-                  <p className="font-semibold text-slate-900">Choose where to verify</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">Historical model output stays visible but is marked planning-only.</p>
-                </div>
-              </div>
-              <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">02 · Review</p>
-                <div>
-                  <p className="font-semibold text-slate-900">Apply one aggregate observation</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">A person accepts the count before it updates nearby blocks.</p>
-                </div>
-              </div>
-              <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">03 · Allocate</p>
-                <div>
-                  <p className="font-semibold text-slate-900">Unlock only the updated zone</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">Unverified priors cannot stage distributions or decrement inventory.</p>
-                </div>
-              </div>
+      <section id="evidence" className="flex min-h-[100svh] scroll-mt-20 items-center bg-[#f2c46d] text-[#071a2b]">
+        <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#72400f]/30 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#72400f]">
+            <TriangleAlert size={15} /> Decision gate
+          </div>
+          <h2 className="mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.82] tracking-[-0.07em]">
+            No field evidence.
+            <span className="mt-3 block text-[#9b511b]">No allocation.</span>
+          </h2>
+          <p className="mt-10 max-w-3xl text-lg leading-8 text-[#5f3b16] sm:text-xl">
+            The current model estimates visible mobile-outreach demand. It does not diagnose
+            hunger or authorize a distribution. A reviewed local observation is the gate between
+            a planning prior and a food recommendation.
+          </p>
+
+          <ol className="mt-14 grid gap-px border border-[#72400f]/25 bg-[#72400f]/25 md:grid-cols-3">
+            {decisionSteps.map((step) => (
+              <li key={step.number} className="bg-[#f2c46d] p-6 sm:p-8">
+                <p className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-[#72400f]">
+                  {step.number} · {step.label}
+                </p>
+                <h3 className="mt-7 text-2xl font-semibold">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-[#5f3b16]">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+
+          <Link href="/allocation" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]">
+            Inspect the allocation gate <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      <section id="human-control" className="flex min-h-[92svh] scroll-mt-20 items-center bg-[#f4f1e8]">
+        <div className="mx-auto grid w-full max-w-7xl gap-14 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[.8fr_1.2fr] lg:items-start lg:gap-20">
+          <div className="lg:sticky lg:top-28">
+            <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">
+              <HandHeart size={19} /> Human control is the product
             </div>
-            <Link href="/allocation" className="mt-7 inline-flex items-center gap-2 text-sm font-bold underline decoration-[#3ca875] decoration-2 underline-offset-4">
-              Inspect the allocation gate <ArrowRight size={15} />
-            </Link>
+            <h2 className="mt-5 text-5xl font-semibold leading-[0.94] tracking-[-0.055em] sm:text-7xl">
+              What stays human.
+            </h2>
+            <p className="mt-6 max-w-lg text-lg leading-8 text-slate-600">
+              Parsel shortens the distance between evidence and a decision. It does not remove
+              the people accountable for consent, safety, food quality, dispatch, or handoff.
+            </p>
           </div>
 
-          <div className="border border-slate-200 bg-[#f3f7f8] p-6 sm:p-8">
-            <div className="flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-[#27875b] text-white">
-                <TriangleAlert size={20} />
-              </span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Non-negotiable limits</p>
-                <h3 className="mt-1 text-2xl font-semibold">What Parsel does not claim</h3>
-              </div>
-            </div>
-            <ul className="mt-7 divide-y divide-slate-200 border-y border-slate-200">
-              {boundaries.map((boundary) => (
-                <li key={boundary} className="flex gap-3 py-4 text-sm leading-6 text-slate-700">
-                  <CheckCircle2 size={17} className="mt-1 shrink-0 text-[#27875b]" />
-                  {boundary}
+          <div>
+            <ol className="border-y border-slate-300">
+              {boundaries.map((boundary, index) => (
+                <li key={boundary} className="grid gap-4 border-b border-slate-300 py-6 last:border-b-0 sm:grid-cols-[4rem_1fr] sm:items-start">
+                  <span className="font-mono text-sm text-[#27875b]">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-lg font-medium leading-7 text-slate-800">{boundary}</span>
                 </li>
               ))}
-            </ul>
-            <div className="mt-6 flex items-start gap-3 text-sm leading-6 text-slate-600">
-              <Warehouse size={18} className="mt-1 shrink-0 text-[#071a2b]" />
-              <p>Real deployment requires durable inventory and mission records, partner confirmation, calibrated coverage, and site-specific flight and safety review.</p>
+            </ol>
+            <div className="mt-8 flex items-start gap-4 border border-slate-300 bg-white p-5 text-sm leading-6 text-slate-600">
+              <Warehouse size={20} className="mt-0.5 shrink-0 text-[#071a2b]" />
+              <p>Real deployment still requires durable inventory and mission records, partner confirmation, calibrated coverage, and site-specific flight and safety review.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-[#27875b] bg-[#3ca875] py-16 sm:py-20">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 px-5 sm:px-8 lg:flex-row lg:items-center">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#0b3f2b]">
-              <HandHeart size={18} /> See the system, including its caveats
-            </div>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Follow food from inventory to verified allocation.</h2>
+      <section id="closing" className="flex min-h-[72svh] scroll-mt-20 items-center border-y border-[#27875b] bg-[#3ca875]">
+        <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8">
+          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#0b3f2b]">
+            <CheckCircle2 size={18} /> From evidence to food flow
           </div>
-          <Link href="/login" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]">
-            Open Parsel <ArrowRight size={17} />
-          </Link>
+          <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+            <h2 className="max-w-5xl text-5xl font-semibold leading-[0.92] tracking-[-0.055em] sm:text-7xl">
+              Follow food from donation to verified allocation.
+            </h2>
+            <Link href="/login" className="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-7 py-4 text-sm font-bold text-white hover:bg-[#123a54]">
+              Open Parsel <ArrowRight size={17} />
+            </Link>
+          </div>
         </div>
       </section>
 

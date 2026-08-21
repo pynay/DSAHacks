@@ -76,6 +76,9 @@ food distribution. The pinned, scroll-controlled 3D mission scene then illustrat
 the intended sensing route, aggregate observation, reviewed outreach-map update,
 response optimization and return. The drone is an information-gathering input to
 the model, not a food-delivery mechanism, and the scene is not live flight telemetry.
+After the mission, the landing narrative continues through three operator chapters,
+the adaptive feedback loop, the field-evidence allocation gate, explicit human-control
+boundaries, and a direct path into the working demo.
 
 ## Architecture
 
