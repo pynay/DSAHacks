@@ -1,0 +1,14 @@
+case_record_type,service_name,service_name_detail,canon_category,include,rationale
+Neighborhood Policing,Encampment,,encampment,true,Direct encampment report category; largest volume category 2019-2026 (n=273448 in Step-1 enumeration)
+ESD Complaint/Report,Encampment,,encampment,true,Environmental Services Dept encampment complaint category; second-largest volume 2018-2026 (n=52185)
+Parks & Recreation,Encampment,,encampment,true,Encampment reports within park/open-space areas 2021-2026 (n=1727)
+Homeless Outreach,Homeless Outreach,,outreach_request,true,Direct homeless-outreach request category; both case type and service name signal outreach 2021-2022 (n=1279)
+ESD Complaint/Report,Illegal Dumping,Shopping Cart,,false,Shopping-cart retrieval is an illegal-dumping/litter proxy not a homelessness indicator; precision over recall per judgment guide (n=627)
+ESD Abatement,Encampment,,encampment,true,Encampment abatement/cleanup requests 2023-2024 (n=398)
+DSD,Encampment,,encampment,true,Development Services Dept encampment reports 2020-2026 (n=331)
+Homeless Outreach,Encampment,,encampment,true,Homeless Outreach case type with explicit Encampment service name 2022 (n=125)
+TSW,Encampment,,encampment,true,Transportation & Storm Water Dept encampment reports 2022-2024 (n=14)
+Neighborhood Policing,Homeless Outreach,,outreach_request,true,Homeless outreach request routed through Neighborhood Policing 2022 (n=4)
+ESD Complaint/Report,Homeless Outreach,,outreach_request,true,Homeless outreach request routed through ESD Complaint/Report 2021 (n=3)
+TSW ROW,Encampment,,encampment,true,Transportation & Storm Water right-of-way encampment report 2026 (n=1)
+Homeless Outreach,Other,,,false,service_name 'Other' under Homeless Outreach case type carries no interpretable category signal beyond the department name; single row (n=1); excluded per precision-over-recall guidance for genuinely ambiguous combos

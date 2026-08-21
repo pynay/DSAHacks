@@ -1943,3 +1943,34 @@ Expected: run.py completes with marts + both .md files regenerated; all tests pa
 - **Spec coverage check:** A→Task 3; B→Task 7; C→Task 5; D→Task 6; E→Task 9; F→Task 8; G→Task 10; harmonization→Tasks 3/4 (grid) + marts (time/layer tags); outputs 1-2→Task 11; output 3→Task 12; output 4→Task 13; output 5→Task 14; engineering reqs→Tasks 0-2 (deps/cache/fail-soft), PII guard→Tasks 5/11 tests; commit cadence→every task.
 - **Known simplifications (documented, deliberate):** citations not geocoded (source has no coords); zip for downtown = 92101 constant; H3-r8 columns populated on point tables but marts roll up to block/neighborhood (H3 marts are a stretch goal, not required by spec's outputs); refresh.py incrementality via conditional GET rather than delta parsing.
 - **Risk register:** metatab server is http:// and occasionally slow — cache after first fetch mitigates; DSDP/SDHC PDFs may be unfetchable tonight — stub+seed path is first-class; ZORI filename drifts — Task 10 Step 1 verifies before coding against it.
+
+---
+
+## Amendment 1 (2026-08-20, mid-execution): hackathon mandatory dataset → Source H
+
+User supplied the hackathon's mandatory dataset bundle (curated DSDP downtown counts,
+Data Science Alliance) mid-run; committed at `data/hackathon/` with provenance in
+`docs/hackathon/`. Changes:
+
+- **New Task 4b** (brief: `.superpowers/sdd/.../task-4b-brief.md`): staging tables
+  stg_h_monthly, stg_h_blocklevel, dim_h_blockgrid (with census-block overlay via
+  representative_point + geo.enrich), stg_h_method_periods, stg_h_area_crosswalk;
+  SOURCES["H"]; run.py step after src_a.
+- **Task 7 (Source B) rescoped**: H supersedes press-collected DSDP totals for
+  2017–2025. Keep the pdfplumber stub loader and seed schema, but the seed research
+  timebox is dropped — seed only needs months NOT covered by H (2025-07/08/10/11 gaps
+  or post-bundle months) if trivially findable; otherwise a header-only seed is
+  acceptable and status 'stubbed' is honest.
+- **Task 11 (marts) amended**: mart_monthly_neighborhood gains H metrics —
+  `dsdp_adjusted_total` (component='total', neighborhood NOT NULL, source 'H';
+  replaces B as the primary modern observed series; B rows keep metric
+  'dsdp_reported_total'), and `dsdp_individuals`/`dsdp_tents`/`dsdp_vehicles`
+  (digitized components, unadjusted units). mart_monthly_block gains
+  `dsdp_units_total` = individuals+tents+vehicles from stg_h_blocklevel joined to
+  dim_h_blockgrid.geo_block (census-mapped rows only), plus is_imputed=false,
+  source 'H'.
+- **Task 13 (QA) amended**: correlation (i) observed series = stg_h_monthly totals
+  (sum over 6 core neighborhoods per month) UNION legacy stg_a_neighborhood_totals /
+  stg_dsdp_monthly (max per month as before). New correlation (ii-b): 311 vs H block
+  units at census-block-month grain (2018+, census-mapped blocks). Interpretations
+  must note H totals are multiplier-adjusted volumes.
