@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BedDouble } from 'lucide-react';
 import type { CommonsStats } from '@/lib/commonsStats';
 import { buildScaleupSeries } from '@/lib/scaleupSeries';
 import ScaleupChart from '@/components/charts/ScaleupChart';
 import PitChart from '@/components/charts/PitChart';
-import NeedHeatmap from '@/components/charts/NeedHeatmap';
 import IndexedSignals from '@/components/charts/IndexedSignals';
 import LaJollaSlope from '@/components/charts/LaJollaSlope';
 
@@ -42,50 +40,6 @@ export default function SignalsPage() {
 
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
-          {/* Need heatmap showing where and when need concentrates */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h2 className="font-semibold text-slate-900">Where need concentrates</h2>
-            <p className="mb-3 text-xs text-slate-500">
-              311 homelessness requests by neighborhood over the last 18 months. Rows ranked by
-              total; darker = higher need. East Village runs hottest and rising.
-            </p>
-            <NeedHeatmap months={commons.heatmap.months} rows={commons.heatmap.rows} />
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="flex items-center gap-2 font-semibold text-slate-900">
-              <BedDouble size={16} className="text-emerald-700" /> City shelter capacity
-            </h2>
-            <p className="text-xs text-slate-500">SDHC roster, as of {commons.shelters.asOf}</p>
-            <div className="mt-2 text-2xl font-semibold text-slate-900">
-              {commons.shelters.totalBeds.toLocaleString()}{' '}
-              <span className="text-sm font-normal text-slate-500">
-                beds · {commons.shelters.siteCount} sites
-              </span>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {commons.shelters.occupancy.map((o) => (
-                <span
-                  key={o.category}
-                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${o.pct >= 95 ? 'bg-red-100 text-red-800' : o.pct >= 85 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}
-                  title={`as of ${o.month}`}
-                >
-                  {o.category} {o.pct}%
-                </span>
-              ))}
-            </div>
-            <ul className="mt-3 space-y-1 text-xs text-slate-600">
-              {commons.shelters.sites.slice(0, 4).map((s) => (
-                <li key={`${s.program}-${s.site}`} className="flex justify-between gap-2">
-                  <span className="truncate">{s.site}</span>
-                  <span className="shrink-0 font-medium text-slate-800">{s.beds}</span>
-                </li>
-              ))}
-              {commons.shelters.sites.length > 4 && (
-                <li className="text-slate-400">+{commons.shelters.sites.length - 4} more sites</li>
-              )}
-            </ul>
-          </div>
-
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
             <h2 className="font-semibold text-slate-900">San Diego homelessness (HUD PIT counts)</h2>
             <p className="mb-1 text-xs text-slate-500">
