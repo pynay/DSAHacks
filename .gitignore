@@ -51,3 +51,4 @@ __pycache__/
 
 # Drone vision bridge runtime log
 data/drone_vision_log.jsonl
+data/hotspot_observations.jsonl

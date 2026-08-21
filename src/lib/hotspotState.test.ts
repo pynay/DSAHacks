@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -54,5 +55,68 @@ describe("live hotspot assimilation", () => {
       observations: 1,
       latest_observation: "2026-08-21T12:00:00.000Z",
     });
+  });
+});
+
+describe("observation persistence + replay", () => {
+  function useTempStore(): string {
+    const file = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), "hotspot-obs-test-")),
+      "observations.jsonl",
+    );
+    process.env.HOTSPOT_OBSERVATIONS_FILE = file;
+    resetHotspotState();
+    return file;
+  }
+
+  const validLine = (observedAt: string, count = 25) =>
+    JSON.stringify({ lat: 32.7097, lng: -117.1545, count, confidence: 0.9, coverage: 1, radiusKm: 0.18, observedAt });
+
+  it("persists an accepted observation to the JSONL store", () => {
+    const file = useTempStore();
+    observeHotspot({ lat: 32.7097, lng: -117.1545, count: 42, observedAt: "2026-08-21T12:00:00.000Z" });
+    const lines = fs.readFileSync(file, "utf8").trim().split("\n");
+    expect(lines).toHaveLength(1);
+    const record = JSON.parse(lines[0]);
+    expect(record.count).toBe(42);
+    expect(record.lat).toBe(32.7097);
+    expect(record.observedAt).toBe("2026-08-21T12:00:00.000Z");
+    expect(record.source).toBe("live");
+  });
+
+  it("replays persisted observations on cold start, skipping junk", () => {
+    const file = useTempStore();
+    fs.writeFileSync(
+      file,
+      [
+        validLine("2026-08-21T10:00:00.000Z"),
+        "corrupt {{{",
+        JSON.stringify({ lat: 1, lng: 1, count: 999999 }), // out of range
+        validLine("2026-08-21T11:00:00.000Z", 30),
+      ].join("\n") + "\n",
+    );
+    resetHotspotState(); // force rehydration from the file
+    const meta = getHotspotMeta();
+    expect(meta.observations).toBe(2);
+    expect(meta.latest_observation).toBe("2026-08-21T11:00:00.000Z");
+    const zones = getHotspotZones();
+    expect(zones.some((zone) => zone.confidence === "drone-updated")).toBe(true);
+  });
+
+  it("replay never re-appends to the store (idempotent across restarts)", () => {
+    const file = useTempStore();
+    fs.writeFileSync(file, validLine("2026-08-21T10:00:00.000Z") + "\n");
+    resetHotspotState();
+    getHotspotZones();
+    resetHotspotState();
+    getHotspotZones();
+    expect(fs.readFileSync(file, "utf8").trim().split("\n")).toHaveLength(1);
+    expect(getHotspotMeta().observations).toBe(1);
+  });
+
+  it("boots clean when the store file is missing", () => {
+    useTempStore(); // path exists but file never written
+    expect(getHotspotZones()).toHaveLength(6);
+    expect(getHotspotMeta().observations).toBe(0);
   });
 });

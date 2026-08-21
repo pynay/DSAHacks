@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DeliveryZone, HotspotMeta } from "./delivery";
+import { appendObservation, loadObservations } from "./observationStore";
 
 interface HotspotBlock {
   id: string;
@@ -76,6 +77,14 @@ function currentState(): State {
     blocks: seed.blocks.map((block) => ({ ...block })),
     observations: [],
   };
+  // Rehydrate the feedback loop: replay persisted observations through the
+  // same Gamma-Poisson path so the need surface survives restarts/HMR.
+  // Replay never appends (only observeHotspot does), so it is idempotent.
+  try {
+    for (const input of loadObservations()) applyObservation(state, input);
+  } catch (error) {
+    console.warn("[hotspotState] observation replay failed:", error);
+  }
   return state;
 }
 
@@ -181,7 +190,12 @@ export function getHotspotZones(): DeliveryZone[] {
 }
 
 export function observeHotspot(input: HotspotObservationInput): AcceptedHotspotObservation {
-  const live = currentState();
+  const observation = applyObservation(currentState(), input);
+  appendObservation({ ...observation, source: "live" });
+  return observation;
+}
+
+function applyObservation(live: State, input: HotspotObservationInput): AcceptedHotspotObservation {
   const confidence = input.confidence ?? 0.8;
   const coverage = input.coverage ?? 1;
   const radiusKm = input.radiusKm ?? 0.18;
