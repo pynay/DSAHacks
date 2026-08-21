@@ -10,27 +10,33 @@ grain, history, join key, recommended use, and the bias that must travel with th
 and `P3` is restricted or a last resort. “Cataloged” means researched and ready for an
 adapter; it does not mean the data has already been copied into this repository.
 
-## Recommended acquisition order
+## Recommended data implementation order
 
-1. **Already implemented in this branch:** City daily paid-parking sessions (Source J),
-   mapped to the six DSDP downtown neighborhoods and exported at daily/monthly grain.
-2. **System pressure:** RTFH monthly HMIS entries/exits, project capacity, and tract PIT.
-3. **Independent activity signals:** special events, MTS GTFS, SANDAG ridership and bicycle
-   counters. Use these together; no single series is a foot-traffic count.
-4. **Food access and need:** current/historic SNAP retailers, county-month CalFresh,
+1. **Food access and need:** current/historic SNAP retailers, county-month CalFresh,
    WIC vendors, school FRPM, then expand FARA from La Jolla to all San Diego tracts.
+2. **Food-relief operations:** durable inventory, donation, distribution, expiration,
+   partner-capacity, and outcome records at the lowest safe operational grain.
+3. **Independent activity signals:** special events, MTS GTFS, SANDAG ridership and bicycle
+   counters. Use these together; no single series is a foot-traffic count or food-need measure.
+4. **Mobile-outreach context:** RTFH monthly HMIS entries/exits, project capacity, and tract
+   PIT. These can prioritize verification but must not stand in for food insecurity.
 5. **Affordability:** HUD CHAS, ACS, assisted housing/LIHTC, STRO, permits, parcels,
    business openings/closures, rents, and SANDAG population denominators.
 6. **Street and health context:** selected non-personal 311 categories, aggregated Fire/EMS,
    police calls, overdose, treatment access, HPI, and CalEnviroScreen.
+
+City paid-parking sessions are already implemented as Source J and remain useful as
+context. Their implementation status does not make them a higher product priority than
+food-access and food-flow data.
 
 ## Proxy map
 
 | Question | Best available open signal | Pair with | Never claim |
 |---|---|---|---|
 | Is downtown activity changing? | paid parking sessions | bike counts, transit ridership, events, weather | pedestrians or unique visitors |
-| Is homelessness-system pressure changing? | HMIS entries/exits and project use | DSDP/PIT, shelter beds, 311 | exact people on a block today |
 | Is food need changing? | CalFresh participation/benefits | FRPM, SNAP/WIC retailer access, pantry operations | household hunger from one proxy |
+| Where should mobile food outreach verify first? | reviewed field observations | DSDP/PIT, HMIS, transit, events | food insecurity or meals required from visible people |
+| Is homelessness-system pressure changing? | HMIS entries/exits and project use | DSDP/PIT, shelter beds, 311 | exact people on a block today |
 | Is affordability worsening? | CHAS/ACS cost burden and ZORI | permits, subsidized stock, business and population change | individual displacement |
 | Are public-realm conditions changing? | category-specific 311 and aggregate emergency activity | maintenance schedules, events, weather | prevalence from complaints alone |
 

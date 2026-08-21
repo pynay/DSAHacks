@@ -25,42 +25,42 @@ import {
 const impactSlides = [
   {
     number: '01',
-    stat: '9,803',
-    kicker: 'The need is still near five figures',
-    headline: 'people were experiencing homelessness across San Diego County in the 2026 count.',
-    detail: 'That is only 1% lower than 2025. Progress is real, but the scale remains urgent.',
-    source: 'Regional Task Force on Homelessness, 2026 PIT Count',
-    href: 'https://www.rtfhsd.org/unsheltered-homelessness-drops-11-across-san-diego-region-as-investments-show-results/',
+    stat: '850K',
+    kicker: 'Food insecurity touches every community',
+    headline: 'San Diegans are estimated to be nutrition insecure.',
+    detail: 'As of March 2026, more than 1 in 4 residents could not afford three nutritious meals a day. San Diego has now remained at or above 25% nutrition insecurity for two years.',
+    source: 'San Diego Hunger Coalition, March 2026 Data Release & Analysis',
+    href: 'https://www.sdhunger.org/research',
     tone: 'night',
   },
   {
     number: '02',
-    stat: '10 / 14',
-    kicker: 'The system remains under pressure',
-    headline: 'people found housing for every 14 who experienced homelessness for the first time.',
-    detail: 'That is the regional monthly average across the latest 12-month period published by RTFH.',
-    source: 'RTFH monthly homelessness data reports, accessed August 2026',
-    href: 'https://www.rtfhsd.org/reports-data/',
+    stat: '4.1M',
+    kicker: 'Millions of meals are still missing',
+    headline: 'additional meals were needed in March for a hunger-free San Diego County.',
+    detail: 'The hunger-relief sector provided 29 million meals that month and met 88% of estimated need. The remaining gap shows why food availability and placement both matter.',
+    source: 'San Diego Hunger Coalition, March 2026 Data Release & Analysis',
+    href: 'https://www.sdhunger.org/research',
     tone: 'signal',
   },
   {
     number: '03',
-    stat: '400K+',
-    kicker: 'Food support operates at immense scale',
-    headline: 'people receive food assistance each month through the San Diego Food Bank.',
-    detail: 'The organization distributes about 53 million pounds of food each year through more than 450 nonprofit hunger-relief partners. At this scale, timing and placement matter.',
-    source: 'San Diego Food Bank, audited FY2025 financial statements',
-    href: 'https://www.sandiegofoodbank.org/wp-content/uploads/2026/01/JCSDFB-2025-FS.pdf',
+    stat: '400K',
+    kicker: 'Relief already operates at massive scale',
+    headline: 'people are fed each month by the San Diego Food Bank and its partners.',
+    detail: 'A network of 450 nonprofit partners moves food through pantries, schools, shelters, senior centers, and other community programs across the county.',
+    source: 'San Diego Food Bank, Hunger Facts & Research',
+    href: 'https://www.sandiegofoodbank.org/about/hunger-facts-research/',
     tone: 'paper',
   },
   {
     number: '04',
-    stat: '1 night',
-    kicker: 'Our clearest location picture is a snapshot',
-    headline: 'is what the annual Point-in-Time Count is designed to capture.',
-    detail: 'The count is essential evidence and a minimum estimate. It cannot tell an operator where need has moved by tomorrow afternoon. Parsel starts with a January 2025 block prior, then uses reviewed field observations to narrow that gap.',
-    source: 'RTFH 2026 Point-in-Time Count methodology',
-    href: 'https://www.rtfhsd.org/unsheltered-homelessness-drops-11-across-san-diego-region-as-investments-show-results/',
+    stat: '52M lbs',
+    kicker: 'Inventory is not a side feature',
+    headline: 'of food and supplies moved through the San Diego Food Bank in FY2024-25.',
+    detail: 'At this scale, inventory, expiration, and location must connect. Parsel’s current block model estimates visible outreach demand, not food insecurity, so it is used to choose where to verify before allocation.',
+    source: 'San Diego Food Bank, Hunger Facts & Research',
+    href: 'https://www.sandiegofoodbank.org/about/hunger-facts-research/',
     tone: 'warm',
   },
 ] as const;
@@ -104,14 +104,14 @@ const workflow = [
   {
     number: '01',
     icon: Database,
-    title: 'Build a documented evidence base',
-    body: 'Normalize public observations and contextual signals in DuckDB while preserving source, grain, date, and known bias.',
+    title: 'Build a food-access evidence base',
+    body: 'Connect nutrition insecurity, meal gaps, inventory, and public contextual signals while preserving source, date, grain, and known bias.',
   },
   {
     number: '02',
     icon: BrainCircuit,
-    title: 'Initialize block-level hotspots',
-    body: 'A leakage-tested ensemble estimates a starting intensity surface. It is an experimental prior, not a live census.',
+    title: 'Prioritize a field check',
+    body: 'An experimental block ensemble estimates where visible outreach demand may concentrate. It does not measure food insecurity or meals required.',
   },
   {
     number: '03',
@@ -122,7 +122,7 @@ const workflow = [
   {
     number: '04',
     icon: PackageCheck,
-    title: 'Recalculate the plan',
+    title: 'Recalculate food allocation',
     body: 'A Gamma-Poisson update can move the hotspots. Only field-updated zones become eligible for deterministic FEFO allocation.',
   },
 ];
@@ -138,7 +138,7 @@ const capabilities = [
   {
     icon: Activity,
     title: 'Community signals',
-    body: 'Explore PIT, shelter, 311, parking, and food-access data with contextual proxies clearly separated from headcounts.',
+    body: 'Explore food-access need first, then review PIT, shelter, 311, and parking as separate context for mobile outreach planning.',
     note: 'Aggregate public data',
     href: '/signals',
   },
@@ -152,8 +152,8 @@ const capabilities = [
   {
     icon: Map,
     title: 'Response planning map',
-    body: 'Inspect six model-derived hotspots on a 3D map and test a separate 311-pressure scenario without presenting requests as people.',
-    note: 'Experimental model + contextual scenario',
+    body: 'Inspect six model-derived outreach hotspots on a 3D map without presenting visible-person estimates as direct measures of hunger.',
+    note: 'Experimental outreach prior',
     href: '/delivery',
   },
   {
@@ -173,9 +173,9 @@ const capabilities = [
 ];
 
 const boundaries = [
-  'The historical block prior is not a current or exact date-and-time population forecast.',
-  'A visible-person estimate is not identity, eligibility, consent, or a complete census.',
-  '311 requests, parking, enforcement, shelter capacity, and weather are context, not people.',
+  'The historical hotspot prior estimates visible outreach demand, not food insecurity, eligibility, or meals required.',
+  'A visible-person estimate is not identity, consent, or a complete census.',
+  'PIT, 311, parking, enforcement, shelter capacity, and weather are context, not food need.',
   'The hotspot state and inventory are not yet durable across restarts or multiple servers.',
   'An operator approves field evidence, sensing missions, response recommendations, dispatch, and food handoff.',
 ];
@@ -213,16 +213,16 @@ export default function Home() {
       <section id="main-story" className="flex min-h-[calc(100svh-5rem)] items-center border-b border-slate-200 bg-white">
         <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
-            <ShieldCheck size={14} /> San Diego research demo · operator reviewed
+            <ShieldCheck size={14} /> Food insecurity decision-support demo
           </div>
           <h1 className="mt-7 max-w-6xl text-5xl font-semibold leading-[0.91] tracking-[-0.06em] sm:text-7xl lg:text-[7.25rem]">
-            Need moves.{' '}
-            <span className="text-[#27875b]">Our picture should too.</span>
+            Hunger is local.{' '}
+            <span className="text-[#27875b]">Relief should be precise.</span>
           </h1>
           <div className="mt-9 grid gap-8 border-t border-slate-200 pt-7 md:grid-cols-[1.15fr_.85fr] md:items-end">
             <p className="max-w-3xl text-xl leading-8 text-slate-600 sm:text-2xl sm:leading-9">
-              Parsel helps food-relief teams decide where to look, verify what is happening now,
-              and update how supplies are allocated. The model guides attention. People approve action.
+              Parsel connects food inventory, nutrition-insecurity data, a planning model, and
+              reviewed drone observations to help operators decide what food to send, where, and when.
             </p>
             <div className="flex flex-wrap gap-3 md:justify-end">
               <Link
@@ -297,11 +297,11 @@ export default function Home() {
           <div className="grid gap-8 lg:grid-cols-[.75fr_1.25fr] lg:items-end">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">What works today</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">One demo, six system areas.</h2>
+              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">Six connected food-relief tools.</h2>
             </div>
             <p className="max-w-2xl text-lg leading-8 text-slate-600">
-              Each area labels its data mode and limits. The product combines real aggregate
-              sources with demo operational records instead of pretending every value is live.
+              Follow food from donation and inventory through food-access evidence, field
+              verification, allocation, and recorded distribution.
             </p>
           </div>
 
@@ -329,10 +329,10 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#76d6a7]">The adaptive feedback loop</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The map can move, but only after review.</h2>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The map can move. Food allocation stays human-approved.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-400">
-              Offline modeling supplies the starting map. A person decides whether a field count
-              is suitable evidence before it changes the current hotspot surface.
+              Offline modeling supplies a starting outreach map. A person decides whether a field
+              count is suitable evidence before it changes the map or an allocation recommendation.
             </p>
           </div>
 
@@ -366,11 +366,11 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">Decision gate</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The model can suggest. Field evidence unlocks action.</h2>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The model suggests where to verify. It never diagnoses hunger.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              Parsel does not turn a stale prediction directly into a food distribution. The
-              starting surface is useful for deciding where to verify; only the locally updated
-              zone is allowed into the allocation workflow.
+              The current model estimates visible mobile-outreach demand. It does not predict
+              whether a particular person needs food. Only a reviewed local observation can move
+              a zone into the food-allocation workflow.
             </p>
             <div className="mt-8 divide-y divide-slate-200 border-y border-slate-200">
               <div className="grid gap-2 py-5 sm:grid-cols-[8rem_1fr]">
@@ -432,7 +432,7 @@ export default function Home() {
             <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#0b3f2b]">
               <HandHeart size={18} /> See the system, including its caveats
             </div>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Follow the demo from data to allocation.</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Follow food from inventory to verified allocation.</h2>
           </div>
           <Link href="/login" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]">
             Open Parsel <ArrowRight size={17} />
