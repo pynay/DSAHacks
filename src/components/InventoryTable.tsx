@@ -15,10 +15,10 @@ export default function InventoryTable({
   now: Date;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="border-b border-stone-200 text-left text-stone-500">
+          <tr className="border-b border-slate-200 text-left text-slate-500">
             <th className="px-4 py-3 font-medium">Item</th>
             <th className="px-4 py-3 font-medium">Category</th>
             <th className="px-4 py-3 font-medium">Quantity</th>
@@ -29,14 +29,14 @@ export default function InventoryTable({
         </thead>
         <tbody>
           {items.map((i) => (
-            <tr key={i.id} className="border-b border-stone-100 last:border-0 hover:bg-yellow-50/50">
-              <td className="px-4 py-3 font-medium text-stone-900">{i.name}</td>
-              <td className="px-4 py-3 text-stone-600">{i.category}</td>
+            <tr key={i.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+              <td className="px-4 py-3 font-medium text-slate-900">{i.name}</td>
+              <td className="px-4 py-3 text-slate-600">{i.category}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => onAdjust(i.id, -1)}
-                    className="grid place-items-center w-6 h-6 rounded border border-stone-300 text-stone-500 hover:bg-stone-100"
+                    className="grid place-items-center w-6 h-6 rounded border border-slate-300 text-slate-500 hover:bg-slate-100"
                     aria-label={`Decrease ${i.name}`}
                   >
                     <Minus size={12} />
@@ -46,15 +46,15 @@ export default function InventoryTable({
                   </span>
                   <button
                     onClick={() => onAdjust(i.id, 1)}
-                    className="grid place-items-center w-6 h-6 rounded border border-stone-300 text-stone-500 hover:bg-stone-100"
+                    className="grid place-items-center w-6 h-6 rounded border border-slate-300 text-slate-500 hover:bg-slate-100"
                     aria-label={`Increase ${i.name}`}
                   >
                     <Plus size={12} />
                   </button>
                 </div>
               </td>
-              <td className="px-4 py-3 text-stone-600">{i.expirationDate}</td>
-              <td className="px-4 py-3 text-stone-600">{i.location}</td>
+              <td className="px-4 py-3 text-slate-600">{i.expirationDate}</td>
+              <td className="px-4 py-3 text-slate-600">{i.location}</td>
               <td className="px-4 py-3">
                 <StatusPill status={deriveStatus(i, now)} />
               </td>
@@ -62,7 +62,7 @@ export default function InventoryTable({
           ))}
           {items.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
+              <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                 No items match your filters.
               </td>
             </tr>

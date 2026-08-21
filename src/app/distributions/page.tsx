@@ -38,10 +38,10 @@ export default function DistributionsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-stone-500">{distributions.length} recorded distributions</p>
+        <p className="text-sm text-slate-500">{distributions.length} recorded distributions</p>
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
+          className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           <Plus size={16} /> Record distribution
         </button>
@@ -49,20 +49,20 @@ export default function DistributionsPage() {
 
       <div className="space-y-3">
         {distributions.map((d) => (
-          <div key={d.id} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div key={d.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-stone-900">{d.recipient}</div>
-                <div className="text-xs uppercase tracking-wide text-stone-400">
+                <div className="font-medium text-slate-900">{d.recipient}</div>
+                <div className="text-xs uppercase tracking-wide text-slate-400">
                   {d.type}
                   {d.householdsServed ? ` · ${d.householdsServed} households` : ''}
                 </div>
               </div>
-              <div className="text-sm text-stone-500">{d.date}</div>
+              <div className="text-sm text-slate-500">{d.date}</div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {d.items.map((it, idx) => (
-                <span key={idx} className="rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-700">
+                <span key={idx} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
                   {it.quantity} {it.unit} · {it.name}
                 </span>
               ))}
@@ -98,12 +98,12 @@ export default function DistributionsPage() {
               <input type="number" min={0} className={inputClass} value={form.householdsServed} onChange={(e) => setForm({ ...form, householdsServed: Number(e.target.value) })} />
             </FormField>
           </div>
-          <p className="text-xs text-stone-400">Recording reduces the selected item&apos;s inventory (not below zero).</p>
+          <p className="text-xs text-slate-400">Recording reduces the selected item&apos;s inventory (not below zero).</p>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm text-stone-600 hover:bg-stone-100">
+            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700">
+            <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
               Record distribution
             </button>
           </div>

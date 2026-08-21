@@ -85,22 +85,22 @@ export default function AllocationPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-stone-900">Need-based allocation</h2>
-          <p className="text-sm text-stone-500">
+          <h2 className="font-semibold text-slate-900">Need-based allocation</h2>
+          <p className="text-sm text-slate-500">
             Splits current stock across movable hotspot demand, shipping soonest-expiring items
             first.
           </p>
         </div>
         <div className="flex items-end gap-3">
           <div>
-            <span className="mb-1 block text-xs font-medium text-stone-500">Allocate on</span>
-            <div className="flex overflow-hidden rounded-lg border border-stone-300">
+            <span className="mb-1 block text-xs font-medium text-slate-500">Allocate on</span>
+            <div className="flex overflow-hidden rounded-lg border border-slate-300">
               <button
                 onClick={() => {
                   setMode('current');
                   setStaged(false);
                 }}
-                className={`px-3 py-2 text-sm font-medium ${mode === 'current' ? 'bg-yellow-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50'}`}
+                className={`px-3 py-2 text-sm font-medium ${mode === 'current' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
               >
                 {modelDriven ? 'Hotspot model' : 'Current need'}
               </button>
@@ -110,14 +110,14 @@ export default function AllocationPage() {
                   setStaged(false);
                 }}
                 disabled={!forecast}
-                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium disabled:opacity-40 ${mode === 'predicted' ? 'bg-yellow-600 text-white' : 'bg-white text-stone-600 hover:bg-stone-50'}`}
+                className={`flex items-center gap-1 px-3 py-2 text-sm font-medium disabled:opacity-40 ${mode === 'predicted' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
               >
                 <TrendingUp size={14} /> {modelDriven ? '311-adjusted' : 'Predicted'}
               </button>
             </div>
           </div>
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-stone-500">Units / person</span>
+            <span className="mb-1 block text-xs font-medium text-slate-500">Units / person</span>
             <input
               type="number"
               min={1}
@@ -133,7 +133,7 @@ export default function AllocationPage() {
           <button
             onClick={stage}
             disabled={staged || result.totalAllocated === 0}
-            className="flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {staged ? <CheckCircle2 size={16} /> : <Send size={16} />}
             {staged ? 'Staged' : 'Stage distributions'}
@@ -177,9 +177,9 @@ export default function AllocationPage() {
 
       {forecast && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <h3 className="font-semibold text-stone-900">Downtown need forecast</h3>
-            <p className="mb-1 text-xs text-stone-500">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
+            <h3 className="font-semibold text-slate-900">Downtown need forecast</h3>
+            <p className="mb-1 text-xs text-slate-500">
               Monthly 311 homelessness-related requests, all six neighborhoods combined — 24 months
               actual + {(forecast.meta as ForecastMeta).horizon_months}-month model forecast.
             </p>
@@ -202,8 +202,8 @@ export default function AllocationPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-            <h3 className="font-semibold text-stone-900">Model card</h3>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="font-semibold text-slate-900">Model card</h3>
             {(() => {
               const m = forecast.meta as ForecastMeta;
               const vsNaive =
@@ -211,20 +211,20 @@ export default function AllocationPage() {
                   m.backtest.naive_last_month_mae) *
                 100;
               return (
-                <dl className="mt-2 space-y-2 text-xs text-stone-600">
+                <dl className="mt-2 space-y-2 text-xs text-slate-600">
                   <div>
-                    <dt className="font-medium text-stone-800">Model</dt>
+                    <dt className="font-medium text-slate-800">Model</dt>
                     <dd>{m.model}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-stone-800">Training data</dt>
+                    <dt className="font-medium text-slate-800">Training data</dt>
                     <dd>
                       {m.train_window.n_rows} neighborhood-months, {m.train_window.start} →{' '}
                       {m.train_window.end}
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-stone-800">
+                    <dt className="font-medium text-slate-800">
                       Backtest (rolling, last {m.backtest.window_months} months,{' '}
                       {m.backtest.n_predictions} predictions)
                     </dt>
@@ -235,14 +235,14 @@ export default function AllocationPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-stone-800">Caveats</dt>
+                    <dt className="font-medium text-slate-800">Caveats</dt>
                     <dd>
                       Aggregate neighborhood-level demand forecasting for aid pre-positioning. 311
                       signals are proxies with known biases, never headcounts. No individual-level
                       data exists in the commons.
                     </dd>
                   </div>
-                  <div className="text-stone-400">
+                  <div className="text-slate-400">
                     Generated {m.generated_on} · ml/forecast.py (deterministic)
                   </div>
                 </dl>
@@ -252,10 +252,10 @@ export default function AllocationPage() {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-stone-200 text-left text-stone-500">
+            <tr className="border-b border-slate-200 text-left text-slate-500">
               <th className="px-4 py-3 font-medium">Zone</th>
               <th className="px-4 py-3 font-medium">Need</th>
               <th className="px-4 py-3 font-medium">Demand</th>
@@ -266,30 +266,30 @@ export default function AllocationPage() {
           </thead>
           <tbody>
             {result.zones.map((z) => (
-              <tr key={z.zoneId} className="border-b border-stone-100 last:border-0 hover:bg-yellow-50/50">
-                <td className="px-4 py-3 font-medium text-stone-900">{z.label}</td>
-                <td className="px-4 py-3 text-stone-600">{z.need}</td>
-                <td className="px-4 py-3 text-stone-600">{z.demand}</td>
-                <td className="px-4 py-3 tabular-nums text-stone-900">{z.allocated}</td>
+              <tr key={z.zoneId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                <td className="px-4 py-3 font-medium text-slate-900">{z.label}</td>
+                <td className="px-4 py-3 text-slate-600">{z.need}</td>
+                <td className="px-4 py-3 text-slate-600">{z.demand}</td>
+                <td className="px-4 py-3 tabular-nums text-slate-900">{z.allocated}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-stone-100">
+                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
                       <div
                         className={`h-full rounded-full ${z.coverage >= 1 ? 'bg-emerald-500' : z.coverage >= 0.5 ? 'bg-amber-500' : 'bg-red-500'}`}
                         style={{ width: `${Math.min(100, z.coverage * 100)}%` }}
                       />
                     </div>
-                    <span className="text-xs text-stone-500">{pct(z.coverage)}</span>
+                    <span className="text-xs text-slate-500">{pct(z.coverage)}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-xs text-stone-500">
+                <td className="px-4 py-3 text-xs text-slate-500">
                   {z.items.length ? categorySummary(z.items) : '—'}
                 </td>
               </tr>
             ))}
             {result.zones.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-stone-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                   {error ? 'Zones unavailable.' : 'Loading zones…'}
                 </td>
               </tr>
@@ -298,7 +298,7 @@ export default function AllocationPage() {
         </table>
       </div>
 
-      <p className="text-xs text-stone-400">
+      <p className="text-xs text-slate-400">
         Method: demand = need × units/person · FEFO (soonest-expiring ships first) ·
         largest-remainder proportional split, capped by stock and demand.
       </p>

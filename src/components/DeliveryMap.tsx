@@ -227,7 +227,7 @@ export default function DeliveryMap({
       // Depot marker.
       const el = document.createElement("div");
       el.style.cssText =
-        "width:26px;height:26px;border-radius:7px;background:#ca8a04;border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:14px";
+        "width:26px;height:26px;border-radius:7px;background:#059669;border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);display:grid;place-items:center;color:#fff;font-size:14px";
       el.textContent = "▣";
       el.title = DEPOT.label;
       new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat([DEPOT.lng, DEPOT.lat]).addTo(map);
@@ -338,7 +338,7 @@ export default function DeliveryMap({
 
   if (!TOKEN) {
     return (
-      <div className="grid h-full place-items-center bg-stone-100 text-sm text-stone-500">
+      <div className="grid h-full place-items-center bg-slate-100 text-sm text-slate-500">
         Set NEXT_PUBLIC_MAPBOX_TOKEN in .env.local to load the map.
       </div>
     );
