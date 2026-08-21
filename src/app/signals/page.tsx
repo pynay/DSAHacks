@@ -90,7 +90,8 @@ export default function SignalsPage() {
             <h2 className="font-semibold text-slate-900">San Diego homelessness (HUD PIT counts)</h2>
             <p className="mb-1 text-xs text-slate-500">
               Annual region-wide Point-in-Time counts (no 2021 bar: the unsheltered count was not
-              conducted that year).
+              conducted that year). The dashed line is an illustrative 4-year trend projection, not
+              a validated forecast.
             </p>
             <PitChart data={commons.pit} />
           </div>
@@ -151,7 +152,8 @@ export default function SignalsPage() {
                   <p className="mt-1 text-[11px] text-slate-400">
                     A food desert beyond downtown: {Math.round(v.lowAccessShare)}% of{' '}
                     {(v.pop / 1000).toFixed(0)}k residents live &gt;1 mi from a supermarket. A
-                    candidate expansion zone for field sensing and food-access planning.
+                    candidate expansion zone for field sensing and food-access planning. The dashed
+                    points are an illustrative trend projection, not a validated forecast.
                   </p>
                 </>
               );
