@@ -30,6 +30,16 @@ CITATION_YEARS = range(2014, dt.date.today().year + 1)
 CITATIONS_URL = "https://seshat.datasd.org/parking_citations/parking_citations_{year}_part{part}_datasd.csv"
 CITATIONS_PAGE = "https://data.sandiego.gov/datasets/parking-citations/"
 
+PARKING_METER_YEARS = range(2021, dt.date.today().year + 1)
+PARKING_METER_DAILY_URL = (
+    "https://seshat.datasd.org/parking_meters_transactions_daily/"
+    "treas_meters_{year}_pole_by_mo_day_datasd.csv"
+)
+PARKING_METER_LOCATIONS_URL = (
+    "https://seshat.datasd.org/parking_meters_locations/parking_meters_current.csv"
+)
+PARKING_METER_PAGE = "https://data.sandiego.gov/datasets/parking-meters-transactions-daily/"
+
 NOAA_STATION = "USW00023188"  # San Diego Intl Airport
 NOAA_URL = (
     "https://www.ncei.noaa.gov/access/services/data/v1"

@@ -103,6 +103,121 @@ python3 -m pip install -r ml/requirements.txt
 python3 ml/forecast.py    # deterministic; rewrites marts/forecast_*
 ```
 
+### Drone verification and delivery roadmap
+
+The intended operating loop is:
+
+`forecast a zone → inspect and pack food → launch → verify visible demand → hand off food → return → record the outcome → improve the next forecast`
+
+This is a roadmap, not a claim about the current demo. Today Parsel has the inventory,
+donation, distribution, FEFO allocation, data API, and Mapbox delivery-zone surfaces. The
+Delivery screen renders terrain, buildings, zone markers, and straight depot-to-zone
+spokes when a Mapbox token is configured. It does **not** yet control a drone, stream
+video, call EyePop, animate a mission, persist operational state, or distinguish food
+that was loaded, delivered, taken, returned, or wasted.
+
+The current forecast is also deliberately narrower than the product vision: it predicts
+monthly neighborhood-level **311 request pressure**, then uses those predicted shares to
+redistribute a fixed total need. It does not currently predict a future headcount at an
+exact date and time. Repeated field observations and distribution outcomes are the
+missing labels needed to train and evaluate that model honestly.
+
+#### Proposed mission flow
+
+1. **Select a zone and time.** Combine historical need signals, shelter and meal-service
+   schedules, weather, events, mobility/activity proxies, and previous delivery outcomes
+   to forecast servings needed, with a confidence interval.
+2. **Inspect inventory before flight.** A fixed camera/inspection station at the food
+   center checks package damage, visible spoilage, expiration, and temperature records.
+   Automation may quarantine a suspect lot; a person approves disposal or donation
+   rejection. A drone should not autonomously throw food away.
+3. **Create and approve a manifest.** Allocate normalized servings that fit the aircraft's
+   weight, volume, temperature, range, and battery limits. FEFO remains the tie-breaker.
+4. **Fly a mission.** A drone adapter supplies telemetry and live/recorded video. The same
+   mission contract powers either real hardware or a 3D simulator, so the hackathon demo
+   can animate the route and POV before hardware is available.
+5. **Verify aggregate demand.** EyePop detects and tracks visible people within a defined
+   observation zone and time window. Tracking IDs deduplicate people across video frames;
+   the UI shows an estimate, confidence, occlusion warning, and optional human correction.
+6. **Complete a safe handoff.** Record what was delivered to an authorized distribution
+   point or ground partner, what was actually distributed/taken, what remained, and what
+   returned. Do not equate an aerial detection with consent to receive a package.
+7. **Close the loop.** Compare forecast demand, verified visible count, delivered servings,
+   and actual uptake. These outcomes become training and calibration data for future runs.
+
+A drone that first counts people cannot then return to the warehouse and still be the same
+one-pass delivery. Parsel should support both operationally honest patterns:
+
+- **Scout then deliver:** observe first, calculate the manifest, then dispatch a delivery
+  mission. This is more responsive but uses two flight legs or two aircraft.
+- **Forecast-loaded delivery:** load from the forecast, verify on arrival, hand off the
+  safe amount, return surplus, and create a follow-up mission when verified demand exceeds
+  the payload. This is the simplest credible demo flow.
+
+#### Operational data contract
+
+The existing commons tells Parsel where need pressure may be concentrated. A production
+delivery system also needs persistent operational tables like these:
+
+| Entity | Minimum fields | Why it is needed |
+|---|---|---|
+| `inventory_lots` | item/lot, quantity, **servings per unit**, weight, volume, expiration, temperature class, quality status, drone eligibility | Prevents the current mistake of adding cans, pounds, bottles, and gallons as though they were interchangeable payload units |
+| `quality_inspections` | lot, inspection time, camera/model version, visible condition, temperature, confidence, quarantine state, human decision | Creates an auditable food-safety gate before packing |
+| `forecast_runs` | zone, service window, model/data version, predicted people or servings, lower/upper bound, feature snapshot | Makes every recommendation reproducible and measurable |
+| `allocation_decisions` | forecast, verified count, servings/person, safety buffer, recommended/approved quantity, limiting constraint, approver | Explains why a specific amount was selected |
+| `drone_missions` | mission, zone, aircraft/operator, planned/actual times, status, manifest, route, handoff method, failure reason | Drives the mission timeline rather than decrementing stock immediately |
+| `drone_telemetry` | mission, timestamp, latitude/longitude, altitude, speed, heading, battery, link/GPS health | Powers the 3D aircraft view, ETA, safety alerts, and replay |
+| `video_streams` | mission, source/protocol, start/stop time, status, retention policy | Connects live hardware or simulated/recorded POV to the same UI |
+| `eyepop_observations` | mission, zone/window, unique visible-person estimate, confidence, occlusion, trace count, model version, manual correction | Provides privacy-limited field verification and future training labels |
+| `delivery_events` | planned, packed, loaded, launched, arrived, observed, handed-off, returned, failed timestamps | Prevents a staged plan from being counted as a completed delivery |
+| `distribution_outcomes` | delivered servings, distributed/taken, remaining, returned, spoiled, unmet estimate, partner confirmation | Supplies the dashboard funnel and the learning signal the current app lacks |
+
+The dashboard should therefore report a traceable funnel—**available → allocated → loaded →
+delivered → distributed/taken → remaining/returned/spoiled**—plus forecast error, verified
+demand, fulfillment rate, unmet servings, waste avoided, mission success, battery, and ETA.
+
+#### Data still needed for date-and-time forecasts
+
+The 58-source [`data source catalog`](docs/DATA_SOURCE_CATALOG.md) maps the larger backlog.
+The highest-value additions for this product are time-stamped, location-aligned features:
+
+- historical verified observations from missions or trained outreach teams;
+- food-bank, pantry, shelter, meal-service, and outreach schedules plus capacity/occupancy;
+- donation arrivals, inventory lots, spoilage, servings distributed, leftovers, and unmet need;
+- pedestrian counters where available, with bike counts, parking transactions, transit
+  boardings, and road volumes used only as calibrated **activity proxies**, not headcounts;
+- weather and heat alerts, holidays, major events, construction/closures, service changes,
+  and documented policy/enforcement events; and
+- block/zone geometry, legal launch/landing sites, obstacles, airspace, route distance,
+  payload limits, battery consumption, and ground-partner availability.
+
+Every source must carry its observation time, geography, refresh time, missingness, method,
+and known bias. Models should be backtested by **future time windows and held-out zones**;
+success means better serving/allocation accuracy than simple recent-value and seasonal
+baselines, not merely fitting historical proxy data.
+
+#### EyePop, privacy, and flight guardrails
+
+[EyePop's React/Node SDK](https://docs.eyepop.ai/developer-documentation/sdks/react-node-sdk)
+can process live ingress and video streams, and its documented
+[video tracking](https://docs.eyepop.ai/developer-documentation/self-service-training/how-to-train-a-model/deployment)
+can attach trace IDs across frames. The integration still needs a local validation set for
+the actual camera height, angle, motion, lighting, density, and occlusion; dense aerial
+scenes must not be assumed accurate from a generic person detector.
+
+Parsel must never classify a person as homeless from appearance, perform face recognition,
+or infer demographics. Count only visible people in an approved service area, store the
+aggregate and confidence needed for operations, minimize raw-video retention, restrict
+access, and document consent/signage and deletion rules with participating organizations.
+Use server-only credentials such as `EYEPOP_API_KEY`/`EYEPOP_POP_ID`; never expose them as
+`NEXT_PUBLIC_*` variables.
+
+Real flights require an operator and site-specific safety review. In the United States,
+confirm [FAA Part 107](https://www.faa.gov/newsroom/small-unmanned-aircraft-systems-uas-regulations-part-107),
+airspace authorization, operations-over-people rules, visual-line-of-sight or waiver needs,
+payload-release safety, local restrictions, insurance, and an approved ground handoff. The
+3D simulation and recorded POV remain the default when those prerequisites are not met.
+
 ### Running the console
 
 Requires Node 20.9+ (developed on Node 25) and a free
@@ -129,7 +244,13 @@ bindings and must not be bundled).
   provider (`src/context/InventoryProvider.tsx`), so swapping in a real backend for app
   state touches one file (zones already come from a server API).
 - Delivery spokes are straight lines (haversine distances), not routed flight paths, and
-  there is no visit-order optimization yet.
+  there is no visit-order optimization, drone telemetry, video stream, EyePop integration,
+  or mission-state machine yet.
+- Allocation currently totals heterogeneous inventory as generic "units." Real packing
+  requires servings, weight, volume, temperature, and aircraft payload constraints.
+- Staging an allocation immediately creates distribution records and decrements inventory;
+  it is not proof that items were loaded, delivered, or taken. The mission/outcome tables
+  above are required before those dashboard metrics can be operational claims.
 - The depot is a fixed demo staging point on the waterfront edge of Little Italy, not the
   real Jacobs & Cushman San Diego Food Bank warehouse (which is in Miramar).
 - Need values are as fresh as the committed marts (e.g. `dsdp_individuals` runs through
@@ -144,7 +265,7 @@ mapbox-gl 3 · @duckdb/node-api 1.5 · lucide-react · Vitest 4 · scikit-learn 
 
 # SD Homelessness Data Commons
 
-Reproducible pipeline fusing eight San Diego homelessness signal sources into one
+Reproducible pipeline fusing ten San Diego homelessness, food-access, and activity signal sources into one
 DuckDB database, plus exported marts. Built for the 2026-08-20 DSA hackathon.
 
 **Core principle: this is a dataset of signals with known biases, not a census.**
@@ -162,16 +283,16 @@ citing a number.
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python run.py        # full build: fetch all 8 sources, build marts, write docs/QA
-python refresh.py    # incremental: re-pull 311 (C) + enforcement (D) only, rebuild marts/docs
+python run.py        # full build: fetch all 10 sources, build marts, write docs/QA
+python refresh.py    # incremental: re-pull 311 (C), enforcement (D), and parking activity (J)
 python -m pytest -q  # test suite
 ```
 
 `run.py` is idempotent — rerunning it re-fetches everything (cheap after the first run,
 since `raw/` downloads are conditional-GET cached) and rebuilds the database from
 scratch each time via `CREATE OR REPLACE TABLE`. `refresh.py` is the cheap daily-driver:
-it only re-scans sources C (311) and D (72-hour violations + citations), since those are
-the only auto-updating feeds; everything else (manual seeds, static bundles, annual data)
+it re-scans sources C (311), D (72-hour violations + citations), and J (daily parking
+activity); everything else (manual seeds, static bundles, annual data)
 keeps its last load and marts/docs are rebuilt on top of the refreshed staging tables.
 
 ## Sources
@@ -187,10 +308,17 @@ keeps its last load and marts/docs are rebuilt on top of the refreshed staging t
 | G | Weather (NOAA), rent (Zillow ZORI), policy events | context | daily/monthly/manual |
 | H | Hackathon mandatory bundle: DSDP downtown counts, curated by Data Science Alliance | observation | static bundle, committed |
 | I | USDA Food Access Research Atlas — La Jolla food access | food_access | periodic (manual seed) |
+| J | City daily paid-parking transactions — six downtown neighborhoods | activity_proxy | daily/annual files (auto) |
 
 Full per-table lineage (grain, URL, refresh cadence, `measures`, `known_bias`) is
 auto-generated into `DATA_DICTIONARY.md` on every run — that file, not this README, is
 the source of truth for column-level detail.
+
+The implementation backlog in [`docs/DATA_SOURCE_CATALOG.md`](docs/DATA_SOURCE_CATALOG.md)
+and its machine-readable [`docs/data_source_catalog.csv`](docs/data_source_catalog.csv)
+ranks 58 researched San Diego sources and expansion candidates across mobility,
+homelessness, street conditions, housing affordability, food access, public health,
+economics, and climate.
 
 ### Source H — the hackathon mandatory dataset
 
@@ -251,6 +379,24 @@ recompute it by dividing the two rollup counts.
 **Rebuild the seed** from the real FARA files (auto-downloaded to `raw/fara/`):
 `python scripts/build_food_access_seed.py`.
 
+### Source J — paid parking as a downtown activity proxy
+
+Source J downloads the City's daily per-meter transaction files (2021-present), joins
+current meter coordinates, and maps observations into the same six DSDP downtown
+neighborhoods. Historic meters missing from the current location inventory use the
+coarser City parking-area crosswalk in `seeds/parking_area_map.csv`; each row exposes
+`spatial_method` so coordinate/block matches can be separated from fallbacks.
+The committed exports currently summarize **2,784,211 meter-day rows** from
+**2021-01-01 through 2026-08-19**; 91.7% mapped through meter coordinates to a downtown
+block and 8.3% use the disclosed City-area fallback.
+
+The marts carry `paid_sessions`, `parking_revenue_usd`, and
+`parking_meters_reporting`. **Paid sessions are not pedestrians, unique visitors, or
+people counts.** They exclude walking, biking, transit, ride-hail, free parking, and
+unpaid sessions, and move with meter inventory, rates/hours, enforcement, events,
+construction, remote work, payment behavior, and travel-mode choice. Use the series
+alongside bike counters, transit ridership, special events, and weather—not alone.
+
 ## Outputs
 
 1. **`commons.duckdb`** — every staging table plus the four marts, queryable directly.
@@ -268,6 +414,10 @@ recompute it by dividing the two rollup counts.
    - **Public tier**: `food_access_la_jolla.csv` — La Jolla FARA food-access metrics
      (Source I), per-tract + `la_jolla` rollup, annual snapshots. Aggregate census data,
      no personal fields — the same rows also live in `mart_monthly_context` (`source_id='I'`).
+   - **Public tier**: `parking_activity_daily.csv` and `parking_activity_monthly.csv` —
+     Source J aggregate paid-parking activity by DSDP neighborhood. Meter IDs and exact
+     coordinates are excluded; reporting-meter counts travel with sessions/revenue as a
+     coverage denominator.
 3. **`DATA_DICTIONARY.md`** — auto-generated every run: every table, column, grain,
    source URL, refresh cadence, `measures`, `known_bias`.
 4. **`QA_REPORT.md`** — auto-generated every run: row counts and load status per
@@ -322,6 +472,10 @@ is a small CSV with a `source_url` column per row so every number is traceable.
   `note` recording the vintage and any fields absent that year. Regenerate from the real
   FARA files with `python scripts/build_food_access_seed.py` (it auto-downloads them to
   `raw/fara/`); don't hand-edit.
+- **`parking_area_map.csv`** — coarse fallback from City parking-area labels to canonical
+  DSDP neighborhoods when a historic meter cannot join the current coordinate inventory.
+  Coordinate/block assignment always wins; keep the mixed Core-Columbia warning when
+  changing this crosswalk.
 
 - **Citations are not geocoded.** Source D's parking-citation files carry no
   lat/lng (only a text `location` and `sector1`); `geo_block`/`h3_r8`/`neighborhood`

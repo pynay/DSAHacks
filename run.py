@@ -1,5 +1,5 @@
 from commons import db, docs_gen, marts, qa
-from commons.staging import src_a, src_b, src_c, src_d, src_e, src_f, src_g, src_h, src_i
+from commons.staging import src_a, src_b, src_c, src_d, src_e, src_f, src_g, src_h, src_i, src_j
 
 STEPS = []  # (name, source_id, fn) appended as loaders land
 # NOTE: src_c's *download/effort priority* is ahead of src_a (it's Source C, priority 1),
@@ -17,6 +17,7 @@ STEPS.append(("load_src_g_weather", "G_weather", src_g.load_weather))
 STEPS.append(("load_src_g_zori", "G_zori", src_g.load_zori))
 STEPS.append(("load_src_g_events", "G_events", src_g.load_events))
 STEPS.append(("load_src_i", "I", src_i.load))
+STEPS.append(("load_src_j", "J", src_j.load))
 STEPS.append(("build_marts", None, marts.build))
 STEPS.append(("export_marts", None, marts.export))
 
