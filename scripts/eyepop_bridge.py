@@ -43,6 +43,9 @@ load_dotenv(Path(__file__).parent / ".env", override=True)
 API_KEY = os.environ.get("EYEPOP_API_KEY", "")
 PORT = int(os.environ.get("EYEPOP_BRIDGE_PORT", "8091"))
 CAMERA_INDEX = int(os.environ.get("CAMERA_INDEX", "0"))
+# Optional: run EyePop on a video file/URL instead of the live webcam (loops).
+# Handy for demos where camera permission isn't available.
+VIDEO_SOURCE = os.environ.get("VIDEO_SOURCE")
 CAMERA_FPS_REQ = int(os.environ.get("CAMERA_FPS", "120"))  # hardware clamps to what it can do
 CONFIDENCE = 0.5
 
@@ -112,6 +115,12 @@ def open_camera(index):
 def open_best_camera():
     """Open the configured camera; if it only delivers black frames (e.g. a
     face-down Continuity iPhone grabbed index 0), scan for a live device."""
+    if VIDEO_SOURCE:
+        vcap = cv2.VideoCapture(VIDEO_SOURCE)
+        if vcap.isOpened():
+            print(f"Using VIDEO_SOURCE {VIDEO_SOURCE} (looped) instead of the webcam", flush=True)
+            return vcap
+        print(f"VIDEO_SOURCE {VIDEO_SOURCE} could not be opened; falling back to camera", flush=True)
     cap = open_camera(CAMERA_INDEX)
     if cap is not None:
         mean = _warmup_mean(cap)
@@ -148,6 +157,10 @@ async def capture_loop():
             got_frame = await loop.run_in_executor(
                 None, grab_and_annotate, cap, state["persons"], state["video_fps"], state["infer_fps"])
             if got_frame is None:
+                if VIDEO_SOURCE:  # end of file -> loop it
+                    await loop.run_in_executor(None, cap.set, cv2.CAP_PROP_POS_FRAMES, 0)
+                    await asyncio.sleep(0.01)
+                    continue
                 misses += 1
                 if misses >= 60:
                     sys.exit("Camera gone for 30s, giving up. If index 0 is a Continuity "
@@ -165,6 +178,8 @@ async def capture_loop():
             latest_raw["jpg"] = got_frame[0]
             state["jpeg"] = got_frame[1]
             state["frame_seq"] += 1
+            if VIDEO_SOURCE:  # pace file playback to ~25 fps (a live camera self-paces)
+                await asyncio.sleep(1 / 25)
     finally:
         cap.release()
 
