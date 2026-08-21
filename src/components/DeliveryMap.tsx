@@ -140,7 +140,7 @@ export default function DeliveryMap({
         },
       });
       // Need heat surface: a continuous density field weighted by each zone's
-      // need. This is the primary read of "where need is" — it blooms and
+      // need. This is the primary read of "where need is". It blooms and
       // re-shapes itself as the forecast step changes the need values, instead
       // of showing rigid pins. Sits under the circles; dominates when zoomed
       // out, fades as the discrete circles take over on zoom-in.
@@ -249,7 +249,7 @@ export default function DeliveryMap({
         const p = (hits[0].properties ?? {}) as { id?: string; label?: string };
         const z = zonesRef.current.find((x) => x.id === p.id);
         const dist = z ? haversineKm(DEPOT, z).toFixed(2) : "?";
-        const elev = z?.elevation != null ? `${Math.round(z.elevation)} m` : "—";
+        const elev = z?.elevation != null ? `${Math.round(z.elevation)} m` : "N/A";
         new mapboxgl.Popup({ offset: 14, closeButton: false })
           .setLngLat(e.lngLat)
           .setHTML(

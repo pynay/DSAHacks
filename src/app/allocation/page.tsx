@@ -143,7 +143,7 @@ export default function AllocationPage() {
 
       {staged && (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Reviewed-zone distributions staged — demo inventory has been decremented. See the
+          Reviewed-zone distributions staged. Demo inventory has been decremented. See the
           Distributions screen for the records.
         </p>
       )}
@@ -202,7 +202,7 @@ export default function AllocationPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-xs text-slate-500">
-                  {zone.items.length ? categorySummary(zone.items) : '—'}
+                  {zone.items.length ? categorySummary(zone.items) : 'N/A'}
                 </td>
               </tr>
             ))}

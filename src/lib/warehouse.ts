@@ -1,5 +1,5 @@
 // The "Warehouse Ops" engine: pure, deterministic simulation of a working food
-// bank. stepDay() advances one simulated day — shipping stock to distribution sites
+// bank. stepDay() advances one simulated day, shipping stock to distribution sites
 // (FEFO, soonest-expiring first), taking donations in, writing off expired
 // perishables, and fulfilling inbound reorders. All randomness comes through an
 // injected rng so the engine is testable; the provider passes Math.random.
@@ -54,7 +54,7 @@ export interface StepCtx {
   makeId?: () => string;
 }
 
-// Downtown distribution sites — aligned with the delivery neighborhoods.
+// Downtown distribution sites, aligned with the delivery neighborhoods.
 export const DROP_ZONES = [
   'East Village distribution site',
   'City Center distribution site',
@@ -78,7 +78,7 @@ export function addDays(dateISO: string, n: number): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-// Shelf life by category (days) — a fresh shipment resets an item's expiry, so
+// Shelf life by category (days). A fresh shipment resets an item's expiry, so
 // restocked perishables don't inherit a stale (already-expired) date.
 const SHELF_DAYS: Record<Category, number> = {
   Produce: 12,

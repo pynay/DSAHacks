@@ -60,7 +60,7 @@ const workflow = [
     number: '02',
     icon: BrainCircuit,
     title: 'Initialize block-level hotspots',
-    body: 'A leakage-tested ensemble estimates a starting intensity surface. It is an experimental prior—not a live census.',
+    body: 'A leakage-tested ensemble estimates a starting intensity surface. It is an experimental prior, not a live census.',
   },
   {
     number: '03',
@@ -108,7 +108,7 @@ const capabilities = [
   {
     icon: ClipboardCheck,
     title: 'Explainable allocation',
-    body: 'Split available stock proportionally and move earlier-expiring items first—but only for zones with reviewed field evidence.',
+    body: 'Split available stock proportionally and move earlier-expiring items first, but only for zones with reviewed field evidence.',
     note: 'Field-gated deterministic FEFO',
     href: '/allocation',
   },
@@ -124,7 +124,7 @@ const capabilities = [
 const boundaries = [
   'The historical block prior is not a current or exact date-and-time population forecast.',
   'A visible-person estimate is not identity, eligibility, consent, or a complete census.',
-  '311 requests, parking, enforcement, shelter capacity, and weather are context—not people.',
+  '311 requests, parking, enforcement, shelter capacity, and weather are context, not people.',
   'The hotspot state and inventory are not yet durable across restarts or multiple servers.',
   'An operator approves field evidence, sensing missions, response recommendations, dispatch, and food handoff.',
 ];
@@ -278,7 +278,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-3xl">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#76d6a7]">The adaptive feedback loop</p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The map can move—but only after review.</h2>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">The map can move, but only after review.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-400">
               Offline modeling supplies the starting map. A person decides whether a field count
               is suitable evidence before it changes the current hotspot surface.

@@ -241,7 +241,7 @@ export default function DeliveryPage() {
                   </span>
                   <span>{z.requests} reqs</span>
                   {!z.custom && <span>{z.tents ?? 0} tents</span>}
-                  <span>elev {z.elevation != null ? `${Math.round(z.elevation)} m` : "—"}</span>
+                  <span>elev {z.elevation != null ? `${Math.round(z.elevation)} m` : "N/A"}</span>
                   {z.confidence === "drone-updated" && <span className="font-medium text-emerald-700">reviewed evidence</span>}
                   {z.lastObservedAt && <span>updated {new Date(z.lastObservedAt).toLocaleString()}</span>}
                 </div>

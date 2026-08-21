@@ -2,7 +2,7 @@
 
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-// Downtown DSDP monthly adjusted totals, 2017-2025 — the challenge's core
+// Downtown DSDP monthly adjusted totals, 2017-2025, the challenge's core
 // historical series. connectNulls is intentionally OFF so the provider's true
 // reporting gaps (4 months in 2025) render as gaps, not interpolated lines.
 export default function DsdpChart({ data }: { data: { month: string; value: number | null }[] }) {

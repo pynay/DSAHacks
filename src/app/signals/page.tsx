@@ -25,7 +25,7 @@ export default function SignalsPage() {
       <div>
         <h1 className="text-lg font-semibold text-slate-900">Community need signals</h1>
         <p className="text-sm text-slate-500">
-          Real San Diego demand context from the SD Homelessness Data Commons — the evidence behind
+          Real San Diego demand context from the SD Homelessness Data Commons, the evidence behind
           the forecast and the delivery hotspots.
         </p>
       </div>
@@ -38,7 +38,7 @@ export default function SignalsPage() {
 
       {commons && (
         <div className="grid gap-4 lg:grid-cols-3">
-          {/* Need heatmap — where/when need concentrates */}
+          {/* Need heatmap showing where and when need concentrates */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
             <h2 className="font-semibold text-slate-900">Where need concentrates</h2>
             <p className="mb-3 text-xs text-slate-500">
@@ -95,17 +95,17 @@ export default function SignalsPage() {
             <h2 className="font-semibold text-slate-900">Real data sources</h2>
             <p className="text-xs text-slate-500">via the SD Homelessness Data Commons (DuckDB)</p>
             <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
-              <li><b>DSDP downtown counts</b> — monthly unsheltered totals by neighborhood, 2017–2025 (hackathon bundle)</li>
-              <li><b>311 &quot;Get It Done&quot;</b> — homelessness-related requests, 2018–2026 (need forecast target)</li>
-              <li><b>72-hr enforcement reports</b> — per-neighborhood violation signals</li>
-              <li><b>HUD Point-in-Time</b> — annual regional counts, 2016–2025</li>
-              <li><b>SDHC shelter roster</b> — real sites, beds &amp; occupancy, 2026</li>
-              <li><b>Paid parking sessions</b> — downtown activity proxy, 2021–2026 (Source J)</li>
-              <li><b>USDA FARA</b> — La Jolla food access by tract, 2010/2015/2019 (Source I)</li>
-              <li><b>USGS / Mapbox terrain</b> — target-site ground elevation</li>
+              <li><b>DSDP downtown counts:</b> monthly unsheltered totals by neighborhood, 2017 to 2025 (hackathon bundle)</li>
+              <li><b>311 &quot;Get It Done&quot;:</b> homelessness-related requests, 2018 to 2026 (need forecast target)</li>
+              <li><b>72-hr enforcement reports:</b> per-neighborhood violation signals</li>
+              <li><b>HUD Point-in-Time:</b> annual regional counts, 2016 to 2025</li>
+              <li><b>SDHC shelter roster:</b> real sites, beds &amp; occupancy, 2026</li>
+              <li><b>Paid parking sessions:</b> downtown activity proxy, 2021 to 2026 (Source J)</li>
+              <li><b>USDA FARA:</b> La Jolla food access by tract, 2010/2015/2019 (Source I)</li>
+              <li><b>USGS / Mapbox terrain:</b> target-site ground elevation</li>
             </ul>
             <p className="mt-2 text-[11px] text-slate-400">
-              Signals are proxies with known biases, not headcounts — see the repo data dictionary.
+              Signals are proxies with known biases, not headcounts. See the repo data dictionary.
             </p>
           </div>
 
@@ -113,8 +113,8 @@ export default function SignalsPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
             <h2 className="font-semibold text-slate-900">Do the signals move together?</h2>
             <p className="mb-1 text-xs text-slate-500">
-              Three downtown series of different scale — DSDP counts, 311 requests, paid-parking
-              activity — each shown as a percent of its own average (100 = typical) so they share
+              Three downtown series of different scale, including DSDP counts, 311 requests, and paid-parking
+              activity, are each shown as a percent of their own average (100 = typical) so they share
               one axis. When need diverges from activity, that gap is where a drone check earns its
               trip.
             </p>

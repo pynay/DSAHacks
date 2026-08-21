@@ -53,7 +53,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [running, setRunning] = useState(true);
   const [speed, setSpeed] = useState(1);
   // `hydrated` is STATE, not a ref, so flipping it re-runs the persist and clock
-  // effects. It starts false so neither runs on the initial (seed) render — that
+  // effects. It starts false so neither runs on the initial (seed) render. That
   // prevents the persist effect from clobbering saved storage with the seeds, and
   // the clock from stepping the seed, before hydration commits.
   const [hydrated, setHydrated] = useState(false);

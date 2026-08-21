@@ -113,7 +113,7 @@ export default function InventoryTable({
                   </div>
                 </td>
                 <td className={`px-4 py-3 tabular-nums ${daysColor}`}>
-                  {i.quantity <= 0 ? '—' : days <= 0 ? 'expired' : `${days}d`}
+                  {i.quantity <= 0 ? 'N/A' : days <= 0 ? 'expired' : `${days}d`}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{i.location}</td>
                 <td className="px-4 py-3">

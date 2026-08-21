@@ -5,8 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   BrainCircuit,
   Check,
-  CirclePause,
-  CirclePlay,
   Crosshair,
   Radar,
   Route,
@@ -51,17 +49,46 @@ function easeInOut(value: number) {
 }
 
 export default function DroneMissionStory() {
+  const sectionRef = useRef<HTMLElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const pausedRef = useRef(false);
-  const seekRef = useRef<number | null>(null);
+  const progressRef = useRef(0);
+  const renderSceneRef = useRef<(() => void) | null>(null);
   const [activeStage, setActiveStage] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    pausedRef.current = isPaused;
-  }, [isPaused]);
+    let frame = 0;
+
+    const updateFromScroll = () => {
+      const section = sectionRef.current;
+      if (!section) return;
+      const rect = section.getBoundingClientRect();
+      const scrollDistance = Math.max(section.offsetHeight - window.innerHeight, 1);
+      const nextProgress = Math.min(1, Math.max(0, -rect.top / scrollDistance));
+      const nextStage = Math.min(stages.length - 1, Math.floor(nextProgress * stages.length));
+
+      progressRef.current = nextProgress;
+      setScrollProgress(nextProgress);
+      setActiveStage((current) => current === nextStage ? current : nextStage);
+      renderSceneRef.current?.();
+    };
+
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateFromScroll);
+    };
+
+    updateFromScroll();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -309,41 +336,23 @@ export default function DroneMissionStory() {
               renderer.setSize(width, height, false);
               camera.aspect = width / height;
               camera.updateProjectionMatrix();
+              renderSceneRef.current?.();
             };
             const resizeObserver = new ResizeObserver(resize);
             resizeObserver.observe(mount);
-            resize();
 
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (reducedMotion) {
-              pausedRef.current = true;
-              setIsPaused(true);
-            }
-
-            let timeline = reducedMotion ? 0.3 : 0;
-            let previousTime = performance.now();
-            let animationFrame = 0;
-            let previousStage = -1;
             const currentPosition = new THREE.Vector3();
             const hotspotPosition = new THREE.Vector3();
             const dataPacketPosition = new THREE.Vector3();
 
-            const animate = (time: number) => {
-              const deltaSeconds = Math.min((time - previousTime) / 1000, 0.05);
-              previousTime = time;
-              if (seekRef.current !== null) {
-                timeline = seekRef.current;
-                seekRef.current = null;
-              } else if (!pausedRef.current) {
-                timeline = (timeline + deltaSeconds / 15) % 1;
-              }
-
+            const renderScene = () => {
+              const rawTimeline = progressRef.current;
+              const timeline = reducedMotion
+                ? (Math.min(3, Math.floor(rawTimeline * 4)) + 0.08) / 4
+                : rawTimeline;
               const stage = Math.min(3, Math.floor(timeline * 4));
               const stageProgress = timeline * 4 - stage;
-              if (stage !== previousStage) {
-                previousStage = stage;
-                setActiveStage(stage);
-              }
 
               if (stage === 0) {
                 route.getPoint(easeInOut(stageProgress), currentPosition);
@@ -354,12 +363,9 @@ export default function DroneMissionStory() {
                 route.getPoint(1 - returnProgress, currentPosition);
               }
 
-              const motionTime = time / 1000;
-              const hover = reducedMotion ? 0 : Math.sin(motionTime * 2.8) * 0.07;
               drone.position.copy(currentPosition);
-              drone.position.y += hover;
-              drone.rotation.z = reducedMotion ? 0 : Math.sin(motionTime * 1.7) * 0.035;
-              if (!reducedMotion && !pausedRef.current) rotors.rotation.y += deltaSeconds * 8.5;
+              drone.rotation.set(0, 0, 0);
+              rotors.rotation.set(0, 0, 0);
 
               const scanStrength = stage === 1
                 ? Math.sin(Math.min(stageProgress * 1.7, 1) * Math.PI / 2)
@@ -372,7 +378,7 @@ export default function DroneMissionStory() {
               const hotspotProgress = stage < 2 ? 0 : stage === 2 ? easeInOut(stageProgress) : 1;
               hotspotPosition.copy(oldHotspot).lerp(verifiedHotspot, hotspotProgress);
               hotspotGroup.position.copy(hotspotPosition);
-              hotspotGroup.rotation.y = reducedMotion ? 0 : motionTime * 0.22;
+              hotspotGroup.rotation.y = reducedMotion ? 0 : timeline * 1.25;
               hotspotGroup.scale.setScalar(1 + (stage === 2 ? Math.sin(stageProgress * Math.PI) * 0.18 : 0));
 
               dataPacketGroup.visible = stage === 3;
@@ -380,26 +386,26 @@ export default function DroneMissionStory() {
                 const relayProgress = easeInOut(Math.min(stageProgress / 0.42, 1));
                 route.getPoint(1 - relayProgress, dataPacketPosition);
                 dataPacketGroup.position.copy(dataPacketPosition);
-                dataPacketGroup.position.y += reducedMotion ? 0 : Math.sin(motionTime * 4) * 0.06;
-                dataPacketGroup.rotation.y = reducedMotion ? 0 : motionTime * 1.4;
+                dataPacketGroup.rotation.y = reducedMotion ? 0 : stageProgress * Math.PI * 2;
                 dataPacketGroup.scale.setScalar(0.8 + Math.sin(Math.min(stageProgress * 5, 1) * Math.PI / 2) * 0.25);
               }
 
               if (!reducedMotion) {
-                camera.position.x = 9.6 + Math.sin(motionTime * 0.12) * 0.35;
-                camera.position.z = 11.5 + Math.cos(motionTime * 0.12) * 0.3;
+                camera.position.x = 9.6 + Math.sin(timeline * Math.PI) * 0.35;
+                camera.position.z = 11.5 + Math.cos(timeline * Math.PI) * 0.3;
                 camera.lookAt(0, 0.25, 0);
               }
 
               renderer.render(scene, camera);
-              animationFrame = requestAnimationFrame(animate);
             };
 
-            animationFrame = requestAnimationFrame(animate);
+            renderSceneRef.current = renderScene;
+            resize();
+            renderScene();
             setIsReady(true);
 
             disposeScene = () => {
-              cancelAnimationFrame(animationFrame);
+              renderSceneRef.current = null;
               resizeObserver.disconnect();
               scene.traverse((object) => {
                 const mesh = object as ThreeMesh;
@@ -429,37 +435,60 @@ export default function DroneMissionStory() {
     };
   }, []);
 
-  const chooseStage = (index: number) => {
-    seekRef.current = (index + 0.08) / stages.length;
-    setActiveStage(index);
-  };
-
   const active = stages[activeStage];
+  const ActiveIcon = active.icon;
 
   return (
-    <section id="drone-concept" className="scroll-mt-8 overflow-hidden bg-[#071a2b] py-20 text-white sm:py-28">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="grid gap-8 lg:grid-cols-[0.86fr_1.14fr] lg:items-end">
-          <div>
+    <section ref={sectionRef} id="drone-concept" className="relative h-[360vh] scroll-mt-8 bg-[#071a2b] text-white">
+      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+        <div className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-5 sm:gap-8 sm:px-8 sm:py-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-center lg:gap-12">
+          <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#76d6a7]/35 bg-[#54b889]/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.15em] text-[#76d6a7]">
-              <Crosshair size={14} /> 3D mission concept
+              <Crosshair size={14} /> Scroll-controlled mission
             </div>
-            <h2 className="mt-5 max-w-xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-              See how field feedback closes the loop.
+            <h2 className="mt-4 max-w-xl text-3xl font-semibold leading-[1.02] tracking-[-0.04em] sm:mt-5 sm:text-4xl lg:text-5xl">
+              The drone observes. The model adapts.
             </h2>
-          </div>
-          <p className="max-w-2xl text-lg leading-8 text-slate-300">
-            The drone is a mobile sensor. It gathers aggregate field observations that an
-            operator can review before the model updates locations and optimizes a response.
-          </p>
-        </div>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-slate-400 sm:mt-4 sm:text-base sm:leading-7">
+              Scroll to move through the sensing loop. The scene advances only with your position on the page.
+            </p>
 
-        <div className="mt-12 overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#0b2538] shadow-2xl shadow-black/25 lg:grid lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,.55fr)]">
-          <div className="relative min-h-[31rem] overflow-hidden border-b border-white/10 lg:min-h-[39rem] lg:border-b-0 lg:border-r">
+            <div className="mt-5 border-l-2 border-[#54b889] pl-4 sm:mt-8 sm:pl-5">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#76d6a7]">
+                <ActiveIcon size={15} /> {active.eyebrow}
+              </div>
+              <h3 className="mt-2 text-xl font-semibold sm:text-2xl">{active.title}</h3>
+              <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">{active.body}</p>
+            </div>
+
+            <div className="mt-5 sm:mt-8" aria-label={`${Math.round(scrollProgress * 100)} percent through the mission story`}>
+              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                <span>Scroll progress</span>
+                <span className="tabular-nums">{String(Math.round(scrollProgress * 100)).padStart(2, '0')}%</span>
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+                <span className="block h-full bg-[#54b889]" style={{ width: `${scrollProgress * 100}%` }} />
+              </div>
+              <ol className="mt-3 grid grid-cols-4 gap-2" aria-label="Mission stages">
+                {stages.map((stage, index) => (
+                  <li key={stage.eyebrow} className={`text-[10px] font-bold uppercase tracking-[0.1em] ${index === activeStage ? 'text-[#76d6a7]' : 'text-slate-600'}`}>
+                    {String(index + 1).padStart(2, '0')}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="mt-5 hidden items-start gap-2.5 text-xs leading-5 text-slate-500 sm:flex lg:mt-8">
+              <Check size={15} className="mt-0.5 shrink-0 text-amber-300" />
+              <p>Sensing concept only. Human review remains required before the model changes an operational plan.</p>
+            </div>
+          </div>
+
+          <div className="relative h-[44vh] min-h-[19rem] overflow-hidden rounded-[1.35rem] border border-white/15 bg-[#0b2538] shadow-2xl shadow-black/25 sm:h-[52vh] sm:min-h-[22rem] lg:h-[72vh] lg:max-h-[44rem]">
             <div ref={mountRef} className="absolute inset-0" />
             {!isReady && !loadFailed && (
               <div className="absolute inset-0 grid place-items-center bg-[#071a2b] text-sm text-slate-400">
-                Preparing 3D mission…
+                Preparing 3D mission...
               </div>
             )}
             {loadFailed && (
@@ -467,7 +496,7 @@ export default function DroneMissionStory() {
                 <div>
                   <Radar size={34} className="mx-auto text-[#76d6a7]" />
                   <p className="mt-4 font-semibold">3D preview is unavailable in this browser.</p>
-                  <p className="mt-2 text-sm text-slate-400">Use the four mission steps beside the scene to review the workflow.</p>
+                  <p className="mt-2 text-sm text-slate-400">The text beside the scene still explains each stage.</p>
                 </div>
               </div>
             )}
@@ -485,64 +514,13 @@ export default function DroneMissionStory() {
             <div className="pointer-events-none absolute inset-x-4 bottom-4 sm:inset-x-6 sm:bottom-6">
               <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#071a2b]/88 p-4 shadow-xl backdrop-blur-md sm:max-w-sm">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#54b889] text-[#071a2b]">
-                  <active.icon size={19} />
+                  <ActiveIcon size={19} />
                 </span>
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#76d6a7]">Mission status</p>
                   <p className="mt-1 truncate text-sm font-semibold">{active.sceneLabel}</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col bg-[#0a2031] p-5 sm:p-7">
-            <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Mission loop</p>
-                <p className="mt-1 text-sm text-slate-300">Select a step to inspect it</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPaused((value) => !value)}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-[#76d6a7]/60 hover:text-white"
-                aria-label={isPaused ? 'Play mission animation' : 'Pause mission animation'}
-              >
-                {isPaused ? <CirclePlay size={16} /> : <CirclePause size={16} />}
-                {isPaused ? 'Play' : 'Pause'}
-              </button>
-            </div>
-
-            <ol className="mt-3 flex-1">
-              {stages.map((stage, index) => {
-                const Icon = stage.icon;
-                const selected = activeStage === index;
-                return (
-                  <li key={stage.eyebrow}>
-                    <button
-                      type="button"
-                      onClick={() => chooseStage(index)}
-                      aria-current={selected ? 'step' : undefined}
-                      className={`group grid w-full grid-cols-[2.5rem_1fr] gap-3 border-b border-white/10 py-5 text-left transition-colors ${selected ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      <span className={`grid h-9 w-9 place-items-center rounded-full border transition-colors ${selected ? 'border-[#76d6a7] bg-[#54b889] text-[#071a2b]' : 'border-white/15 text-slate-500 group-hover:border-white/30'}`}>
-                        <Icon size={17} />
-                      </span>
-                      <span>
-                        <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${selected ? 'text-[#76d6a7]' : ''}`}>{stage.eyebrow}</span>
-                        <span className="mt-1 block text-base font-semibold">{stage.title}</span>
-                        <span className={`mt-2 block text-xs leading-5 transition-all ${selected ? 'max-h-20 opacity-100 text-slate-400' : 'max-h-0 overflow-hidden opacity-0'}`}>
-                          {stage.body}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-
-            <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-3 text-xs leading-5 text-slate-400">
-              <Check size={15} className="mt-0.5 shrink-0 text-amber-300" />
-              <p>Future sensing missions still require site approval, aviation review, calibrated coverage, privacy safeguards, and human control.</p>
             </div>
           </div>
         </div>

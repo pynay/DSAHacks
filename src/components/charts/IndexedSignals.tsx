@@ -60,7 +60,7 @@ export default function IndexedSignals({
           tickFormatter={(m: string) => m.slice(0, 4)}
         />
         <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `${v}`} />
-        <Tooltip formatter={(v, name) => [v == null ? '—' : `${v} (index)`, name]} />
+        <Tooltip formatter={(v, name) => [v == null ? 'N/A' : `${v} (index)`, name]} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Line type="monotone" dataKey="homeless" name="Homelessness (DSDP)" stroke={COLORS.homeless} strokeWidth={2} dot={false} connectNulls />
         <Line type="monotone" dataKey="requests" name="311 requests" stroke={COLORS.requests} strokeWidth={2} dot={false} connectNulls />

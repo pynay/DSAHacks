@@ -60,13 +60,13 @@ export default function DronePage() {
           </span>
         ) : (
           <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" /> vision offline — start the bridge
+            <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" /> vision offline: start the bridge
           </span>
         )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Live EyePop feed — the drone's-eye view */}
+        {/* Live EyePop feed from the drone's-eye view */}
         <div className="lg:col-span-2">
           <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
             {vision.connected ? (
@@ -107,7 +107,7 @@ export default function DronePage() {
             <div className="text-xs font-medium uppercase tracking-wide opacity-70">Observation snapshot</div>
             <div className="mt-1 flex items-center gap-2 text-2xl font-bold">
               {det ? <ScanLine size={22} /> : null}
-              {det ? det.count : '—'}
+              {det ? det.count : 'N/A'}
             </div>
             <div className="mt-1 text-xs opacity-80">
               {det ? `${det.count} visible ${det.count === 1 ? 'person' : 'people'} in this frame · review required` : 'Awaiting vision feed'}

@@ -256,7 +256,7 @@ Display, per mission:
 - Model version, source timestamp, observation timestamp, and human correction.
 - Why a recommendation changed after feedback.
 
-Inventory should decrement at an approved handoff or recorded distribution—not
+Inventory should decrement at an approved handoff or recorded distribution, not
 merely when a drone is dispatched.
 
 ### P2: Collect training data
