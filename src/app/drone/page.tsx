@@ -73,11 +73,11 @@ export default function DronePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold text-stone-900">Drone delivery ops</h2>
-          <p className="text-sm text-stone-500">
-            Live camera vision by EyePop.ai detects people and objects, holds the release while
-            the landing zone is occupied — clearing only after it stays empty for a few seconds —
-            and can apply a reviewed aggregate person count to the selected hotspot.
+          <h2 className="font-semibold text-slate-900">Drone verification</h2>
+          <p className="text-sm text-slate-500">
+            Live camera vision by EyePop.ai detects people and objects, holds the release while the
+            landing zone is occupied, and can apply one reviewed aggregate person count to a
+            historical-prior target.
           </p>
         </div>
         {vision.connected ? (
@@ -94,7 +94,7 @@ export default function DronePage() {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Live EyePop feed — the drone's-eye view */}
         <div className="lg:col-span-2">
-          <div className="relative aspect-video overflow-hidden rounded-xl border border-stone-800 bg-stone-900">
+          <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
             {vision.connected ? (
               // eslint-disable-next-line @next/next/no-img-element -- localhost MJPEG live stream
               <img
@@ -104,7 +104,7 @@ export default function DronePage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="grid h-full place-items-center text-center text-stone-400">
+              <div className="grid h-full place-items-center text-center text-slate-400">
                 <div>
                   <Video size={30} className="mx-auto mb-2" />
                   <p className="text-sm">Waiting for the EyePop vision bridge on :8091</p>
@@ -114,16 +114,16 @@ export default function DronePage() {
 
             {det && (
               <div className="absolute left-3 top-3 rounded-lg bg-black/65 px-3 py-2 backdrop-blur">
-                <div className="text-[10px] uppercase tracking-wide text-stone-400">EyePop.ai · drop-zone check · LIVE</div>
+                <div className="text-[10px] uppercase tracking-wide text-slate-400">EyePop.ai · drop-zone check · LIVE</div>
                 <div className={`flex items-center gap-2 text-base font-bold ${ds!.overlay}`}>
                   {DecisionIcon && <DecisionIcon size={18} />}
                   {ds!.title}
-                  <span className="text-xs font-normal text-stone-300">{reason}</span>
+                  <span className="text-xs font-normal text-slate-300">{reason}</span>
                 </div>
               </div>
             )}
             {det && (
-              <div className="absolute bottom-3 right-3 rounded-lg bg-black/65 px-3 py-1.5 text-[11px] font-medium text-stone-200 backdrop-blur">
+              <div className="absolute bottom-3 right-3 rounded-lg bg-black/65 px-3 py-1.5 text-[11px] font-medium text-slate-200 backdrop-blur">
                 eyepop.common-objects:latest · {det.videoFps.toFixed(0)} fps video · {det.inferFps.toFixed(1)} fps inference
               </div>
             )}
@@ -132,7 +132,7 @@ export default function DronePage() {
 
         {/* Side: decision + detections + delivery targets */}
         <div className="space-y-3">
-          <div className={`rounded-xl border border-stone-200 p-4 shadow-sm ${ds ? ds.card : 'bg-white'}`}>
+          <div className={`rounded-xl border border-slate-200 p-4 shadow-sm ${ds ? ds.card : 'bg-white'}`}>
             <div className="text-xs font-medium uppercase tracking-wide opacity-70">Drop decision</div>
             <div className="mt-1 flex items-center gap-2 text-2xl font-bold">
               {DecisionIcon && <DecisionIcon size={22} />}
@@ -149,8 +149,8 @@ export default function DronePage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
-            <div className="mb-1 text-xs font-medium text-stone-500">Detected in frame</div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="mb-1 text-xs font-medium text-slate-500">Detected in frame</div>
             {classes.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {classes.map(([label, n]) => (
@@ -164,33 +164,33 @@ export default function DronePage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-stone-400">{vision.connected ? 'Nothing in frame.' : 'Offline.'}</p>
+              <p className="text-xs text-slate-400">{vision.connected ? 'Nothing in frame.' : 'Offline.'}</p>
             )}
           </div>
 
           {det?.stats && (
-            <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
               <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-stone-500">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                   <Activity size={13} /> Session telemetry
                 </div>
-                <span className="flex items-center gap-1 text-[11px] text-stone-400">
+                <span className="flex items-center gap-1 text-[11px] text-slate-400">
                   <ScanFace size={12} />
                   {det.blurred > 0 ? `${det.blurred} face${det.blurred === 1 ? '' : 's'} blurred` : 'privacy blur on'}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <div className="text-lg font-semibold text-stone-900">{det.count}</div>
-                  <div className="text-[11px] text-stone-500">people now</div>
+                  <div className="text-lg font-semibold text-slate-900">{det.count}</div>
+                  <div className="text-[11px] text-slate-500">people now</div>
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-stone-900">{det.stats.peakPeople}</div>
-                  <div className="text-[11px] text-stone-500">peak people</div>
+                  <div className="text-lg font-semibold text-slate-900">{det.stats.peakPeople}</div>
+                  <div className="text-[11px] text-slate-500">peak people</div>
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-stone-900">{det.stats.holds}</div>
-                  <div className="text-[11px] text-stone-500">holds</div>
+                  <div className="text-lg font-semibold text-slate-900">{det.stats.holds}</div>
+                  <div className="text-[11px] text-slate-500">holds</div>
                 </div>
               </div>
               {det.stats.series.length > 1 && (
@@ -199,7 +199,7 @@ export default function DronePage() {
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.5"
-                    className="text-yellow-600"
+                    className="text-emerald-600"
                     points={det.stats.series
                       .map(([, n], i) => {
                         const max = Math.max(1, ...det.stats!.series.map(([, v]) => v));
@@ -209,14 +209,14 @@ export default function DronePage() {
                   />
                 </svg>
               )}
-              <div className="mt-1 text-[10px] text-stone-400">
+              <div className="mt-1 text-[10px] text-slate-400">
                 people in frame · 5s samples + verdict events → data/drone_vision_log.jsonl
               </div>
             </div>
           )}
 
-          <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
-            <div className="mb-2 text-xs font-medium text-stone-500">Delivery targets (by need)</div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="mb-2 text-xs font-medium text-slate-500">Targets to verify (by prior)</div>
             <ul className="space-y-1.5">
               {targets.map((z) => (
                 <li key={z.id}>
@@ -226,45 +226,49 @@ export default function DronePage() {
                       setSelectedId(z.id);
                       setFeedback('idle');
                     }}
-                    className={`flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm ${selected?.id === z.id ? 'bg-yellow-50 ring-1 ring-yellow-300' : 'hover:bg-stone-50'}`}
+                    className={`flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm ${selected?.id === z.id ? 'bg-emerald-50 ring-1 ring-emerald-300' : 'hover:bg-slate-50'}`}
                   >
-                    <span className="flex items-center gap-1.5 text-stone-800">
+                    <span className="flex items-center gap-1.5 text-slate-800">
                       <MapPin size={12} className="text-red-500" /> {z.label}
                     </span>
-                    <span className="text-xs text-stone-500">pred {z.need}</span>
+                    <span className={`text-xs ${z.confidence === 'drone-updated' ? 'font-medium text-emerald-700' : 'text-slate-500'}`}>
+                      {z.confidence === 'drone-updated' ? 'updated' : 'prior'} {z.need}
+                    </span>
                   </button>
                 </li>
               ))}
-              {targets.length === 0 && <li className="text-xs text-stone-400">Loading zones…</li>}
+              {targets.length === 0 && <li className="text-xs text-slate-400">Loading zones…</li>}
             </ul>
             <button
               type="button"
               onClick={captureHotspotCount}
               disabled={!det || !selected || feedback === 'saving'}
-              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-yellow-600 px-3 py-2 text-xs font-medium text-white hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {feedback === 'saving' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
               {feedback === 'saving' ? 'Updating hotspot…' : `Apply live count${det ? ` (${det.count})` : ''}`}
             </button>
             {feedback === 'saved' && (
-              <p className="mt-1.5 text-[11px] text-emerald-700">Count assimilated; hotspot positions refreshed.</p>
+              <p className="mt-1.5 text-[11px] text-emerald-700">
+                Count assimilated; the affected zone is now allocation-eligible.
+              </p>
             )}
             {feedback === 'error' && (
               <p className="mt-1.5 text-[11px] text-red-700">Could not update the hotspot model.</p>
             )}
           </div>
 
-          <p className="text-[11px] text-stone-400">
-            Feed runs <code className="rounded bg-stone-100 px-1">eyepop.common-objects:latest</code> via
-            <code className="rounded bg-stone-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
-            live webcam (run without <code className="rounded bg-stone-100 px-1">VIDEO_SOURCE</code>) or
+          <p className="text-[11px] text-slate-400">
+            Feed runs <code className="rounded bg-slate-100 px-1">eyepop.common-objects:latest</code> via
+            <code className="rounded bg-slate-100 px-1">scripts/eyepop_bridge.py</code>. Point it at a
+            live webcam (run without <code className="rounded bg-slate-100 px-1">VIDEO_SOURCE</code>) or
             any video file. Select a target and apply one stabilized frame count to move the
             hotspot surface; repeated frames are never counted automatically. Set{' '}
-            <code className="rounded bg-stone-100 px-1">EYEPOP_ABILITY</code> to swap models.
+            <code className="rounded bg-slate-100 px-1">EYEPOP_ABILITY</code> to swap models.
             Drop verdict = visibility gate + landing-zone filter + hazard severity + sustained-clear
-            hysteresis (tune <code className="rounded bg-stone-100 px-1">CLEAR_HOLD_S</code>,{' '}
-            <code className="rounded bg-stone-100 px-1">MIN_BRIGHTNESS</code>,{' '}
-            <code className="rounded bg-stone-100 px-1">DROP_ZONE</code>).
+            hysteresis (tune <code className="rounded bg-slate-100 px-1">CLEAR_HOLD_S</code>,{' '}
+            <code className="rounded bg-slate-100 px-1">MIN_BRIGHTNESS</code>,{' '}
+            <code className="rounded bg-slate-100 px-1">DROP_ZONE</code>).
             Clear/hold is decision support only and does not autonomously release a payload.
           </p>
         </div>

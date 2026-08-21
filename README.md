@@ -25,7 +25,7 @@ community data, explainable forecasting, 3D delivery planning, and human-reviewe
 EyePop vision into one operational loop:
 
 ```text
-understand demand -> predict hotspots -> verify a target -> allocate food
+understand context -> map a historical prior -> verify a target -> allocate food
   -> complete a safe handoff -> record the outcome -> improve the next plan
 ```
 
@@ -40,20 +40,20 @@ The repository contains three integrated systems:
 > **Project status:** Parsel is a working research/demo platform, not an autonomous
 > delivery system. Inventory and live hotspot feedback currently use process/browser
 > demo state. The latest block-level source snapshot is January 2025, so the UI marks
-> those predictions stale and requires field verification before dispatch.
+> those predictions stale. Historical-prior zones remain planning-only; only a
+> zone touched by reviewed field evidence can enter the allocation workflow.
 
 ## Product capabilities
 
 | Surface | What it does | Data mode |
 |---|---|---|
-| Landing | Explains the food-relief workflow and platform | Product narrative |
+| Landing | Explains the food-relief workflow with an interactive Three.js mission concept | Product narrative; not live telemetry |
 | Dashboard | Stock KPIs, PIT/shelter context, parking activity and food-access signals | Demo operations + real aggregate data |
 | Inventory | Search, filter, add and adjust food inventory with derived status | In-memory demo state |
 | Donations | Record incoming items and update matching stock | In-memory demo state |
 | Distributions | Record outgoing items and decrement stock | In-memory demo state |
 | Delivery | Render six movable model hotspots on a Mapbox 3D downtown map | Real marts + model artifacts |
-| Allocation | Apply deterministic FEFO and proportional allocation to hotspot demand | Demo inventory + model zones |
-| Food Check | Run one-shot EyePop item detection and optional freshness review | Live camera + EyePop |
+| Allocation | Apply deterministic FEFO and proportional allocation to field-updated zones | Demo inventory + reviewed zone updates |
 | Drone Ops | View the EyePop scene feed and apply one stabilized aggregate person count | Live bridge + adaptive hotspot state |
 
 ### What makes the loop adaptive
@@ -61,11 +61,17 @@ The repository contains three integrated systems:
 Parsel does not rely on one static heatmap. The offline block model initializes a
 261-block intensity surface. An operator can then select a delivery target and
 apply one stabilized EyePop observation. The server updates nearby Gamma-Poisson
-priors and recomputes all six hotspot centers immediately.
+priors and recomputes all six hotspot centers immediately. Only the zone containing
+that reviewed evidence becomes allocation-eligible; untouched zones remain labeled
+as historical priors.
 
 Repeated frames are never submitted automatically; doing so would count the same
 visible people many times. The endpoint stores only the aggregate observation in
 process memory—no image, identity, face embedding, or person-level track.
+
+The landing-page mission scene is an interactive 3D explainer. It illustrates the
+intended route, field review, hotspot update, allocation and return sequence; it is
+not connected to autopilot, payload release or live drone telemetry.
 
 ## Architecture
 
@@ -117,7 +123,9 @@ allocation, the ensemble is the safer compromise across count error, rank, spati
 placement and total bias.
 
 The newer 261-block panel produced a secondary four-fold MAE of 1.618 versus 1.690
-for persistence, and Poisson deviance of 2.554 versus 12.424.
+for persistence, and Poisson deviance of 2.550 versus 12.424. Those metrics remain
+available for technical review but are not presented as proof of current field
+accuracy in the operator workflow.
 
 Full Graph WaveNet, AGCRN, STAEformer, TFT, Neural CDE and DeepSTPP trials are gated
 until regular high-frequency field observations exist. A large parameter count is
@@ -167,10 +175,9 @@ not allow Turbopack's internal worker to bind a local port.
 | Variable | Required | Purpose |
 |---|---|---|
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | No | Public browser token for the 3D delivery map |
-| `EYEPOP_SECRET_KEY` | No | Server-only EyePop key for Food Check APIs |
-| `EYEPOP_FOOD_ABILITY_UUID` | No | Custom food-freshness ability |
 
-Never prefix the EyePop secret with `NEXT_PUBLIC_`.
+Keep the bridge's `EYEPOP_API_KEY` in `scripts/.env`; never prefix a secret with
+`NEXT_PUBLIC_`.
 
 ### Run the optional EyePop drone bridge
 
@@ -225,11 +232,10 @@ reproducible without a Python runtime.
 |---|---|---|
 | `GET` | `/api/commons` | Dashboard PIT and shelter summaries |
 | `GET` | `/api/forecast` | Neighborhood 311 history, forecast and model card |
-| `GET` | `/api/zones` | Current model-derived hotspots and metadata |
+| `GET` | `/api/zones` | Current planning surface and model metadata |
 | `POST` | `/api/hotspots/observe` | Assimilate one aggregate field observation |
 | `GET` | `/api/elevation` | Resolve elevation for a custom map point |
 | `GET/POST` | `/api/eyepop/detect` | Warm or run common-object detection |
-| `GET/POST` | `/api/eyepop/food` | Warm or run the food-quality check |
 
 Example hotspot update:
 

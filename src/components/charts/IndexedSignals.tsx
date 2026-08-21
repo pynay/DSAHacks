@@ -49,17 +49,17 @@ export default function IndexedSignals({
   return (
     <ResponsiveContainer width="100%" height={240}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" vertical={false} />
-        <ReferenceLine y={100} stroke="#d6d3d1" strokeDasharray="4 4" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+        <ReferenceLine y={100} stroke="#cbd5e1" strokeDasharray="4 4" />
         <XAxis
           dataKey="month"
-          tick={{ fontSize: 11, fill: '#78716c' }}
+          tick={{ fontSize: 11, fill: '#64748b' }}
           tickLine={false}
-          axisLine={{ stroke: '#e7e5e4' }}
+          axisLine={{ stroke: '#e2e8f0' }}
           ticks={months.filter((m) => m.endsWith('-01'))}
           tickFormatter={(m: string) => m.slice(0, 4)}
         />
-        <YAxis tick={{ fontSize: 11, fill: '#78716c' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `${v}`} />
+        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `${v}`} />
         <Tooltip formatter={(v, name) => [v == null ? '—' : `${v} (index)`, name]} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Line type="monotone" dataKey="homeless" name="Homelessness (DSDP)" stroke={COLORS.homeless} strokeWidth={2} dot={false} connectNulls />

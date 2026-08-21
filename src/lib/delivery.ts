@@ -8,7 +8,7 @@ export interface DeliveryZone {
   lng: number;
   lat: number;
   blocks: number;
-  need: number; // dsdp_individuals (most recent counted individuals)
+  need: number; // model prior or posterior visible-person estimate
   requests: number; // 311 "Get It Done" requests
   observed: number; // 2014-2018 observed individuals
   violations: number; // 72-hour encampment enforcement reports
@@ -17,7 +17,7 @@ export interface DeliveryZone {
   custom?: boolean; // true for zones the user dropped on the map
   elevation?: number | null; // meters, from terrain query
   predicted?: boolean; // true when position/need came from the hotspot model
-  confidence?: "experimental" | "drone-updated";
+  confidence?: "historical-prior" | "drone-updated";
   model?: string;
   sourceDate?: string;
   targetMonth?: string;
@@ -31,6 +31,8 @@ export interface HotspotMeta {
   source: string;
   source_date: string;
   target_month: string;
+  forecast_role?: "historical_next_observation_prior";
+  operational_gate?: "field_verification_required";
   generated_on: string;
   stale_source_warning: boolean;
   modern_panel_backtest?: {

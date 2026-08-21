@@ -1,9 +1,9 @@
-// Need-based allocation recommender: given current inventory and DuckDB-derived
-// delivery zones, recommend how many units of which items to send to each zone.
+// Field-gated allocation recommender: callers supply only zones that contain
+// reviewed field evidence, then this module recommends how many units of which
+// items to stage.
 //
 // Method (deterministic, explainable):
-//   1. Each zone's demand = need x unitsPerPerson (need = latest counted
-//      individuals for that neighborhood from the data commons).
+//   1. Each eligible zone's demand = updated estimate x unitsPerPerson.
 //   2. Items ship soonest-expiring first (FEFO), so perishables move before
 //      they are lost.
 //   3. Each item's quantity is split across zones proportionally to each
@@ -37,6 +37,11 @@ export interface AllocationResult {
   totalAllocated: number;
   coverage: number; // totalAllocated / totalDemand (0 when demand is 0)
   unitsLeft: number; // stock remaining after allocation
+}
+
+/** Keep historical priors visible for planning without allowing them to stage inventory. */
+export function allocationEligibleZones(zones: DeliveryZone[]): DeliveryZone[] {
+  return zones.filter((zone) => zone.confidence === 'drone-updated');
 }
 
 // Predictive mode: keep the SAME total need but re-split it across zones by

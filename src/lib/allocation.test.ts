@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { InventoryItem } from './types';
 import type { DeliveryZone } from './delivery';
-import { allocate, redistributeNeed } from './allocation';
+import { allocate, allocationEligibleZones, redistributeNeed } from './allocation';
 
 function item(over: Partial<InventoryItem> = {}): InventoryItem {
   return {
@@ -113,6 +113,18 @@ describe('allocate', () => {
     expect(r.totalAllocated).toBe(0);
     expect(r.unitsLeft).toBe(100);
     expect(r.coverage).toBe(0);
+  });
+});
+
+describe('allocationEligibleZones', () => {
+  it('allows only zones containing reviewed field evidence', () => {
+    const zones = [
+      zone({ id: 'prior', confidence: 'historical-prior' }),
+      zone({ id: 'updated', confidence: 'drone-updated' }),
+      zone({ id: 'fallback', confidence: undefined }),
+    ];
+
+    expect(allocationEligibleZones(zones).map((candidate) => candidate.id)).toEqual(['updated']);
   });
 });
 

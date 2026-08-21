@@ -2,27 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, HandHeart, Truck, MapPin, Boxes, ScanLine, Plane } from 'lucide-react';
+import { LayoutDashboard, Activity, Package, HandHeart, Truck, MapPin, Boxes, Plane, PackageOpen } from 'lucide-react';
 
 export const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/signals', label: 'Signals', icon: Activity },
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/donations', label: 'Donations', icon: HandHeart },
   { href: '/distributions', label: 'Distributions', icon: Truck },
   { href: '/delivery', label: 'Delivery', icon: MapPin },
   { href: '/allocation', label: 'Allocation', icon: Boxes },
-  { href: '/food-check', label: 'Food Check', icon: ScanLine },
   { href: '/drone', label: 'Drone Ops', icon: Plane },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="w-60 shrink-0 border-r border-stone-200 bg-white flex flex-col">
-      <div className="flex items-center px-5 h-16 border-b border-stone-200">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/parsel-logo.png" alt="Parsel" className="h-7 w-auto" />
-      </div>
+    <aside className="flex w-60 shrink-0 flex-col border-r border-white/10 bg-[#071a2b] text-white">
+      <Link
+        href="/"
+        aria-label="Back to landing page"
+        title="Back to landing page"
+        className="flex h-16 items-center gap-2.5 border-b border-white/10 px-5 transition-colors hover:bg-white/5"
+      >
+        <PackageOpen size={24} className="text-[#54b889]" />
+        <span className="text-xl font-semibold tracking-tight">Parsel</span>
+      </Link>
       <nav className="p-3 space-y-1">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
@@ -32,8 +37,8 @@ export default function Sidebar() {
               href={href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'text-stone-600 hover:bg-stone-100'
+                  ? 'bg-[#54b889] text-[#071a2b]'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
               }`}
             >
               <Icon size={18} />
@@ -42,7 +47,7 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="mt-auto p-4 text-xs text-stone-400">Building for Good 2026 · real SD need data · demo inventory</div>
+      <div className="mt-auto border-t border-white/10 p-4 text-xs leading-5 text-slate-400">Building for Good 2026<br />Real SD signals · demo inventory</div>
     </aside>
   );
 }

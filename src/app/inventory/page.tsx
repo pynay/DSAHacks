@@ -8,18 +8,41 @@ import type { Category, Status } from '@/lib/types';
 import InventoryTable from '@/components/InventoryTable';
 import Modal from '@/components/Modal';
 import FormField, { inputClass } from '@/components/FormField';
+import EngineBar from '@/components/warehouse/EngineBar';
+import ReorderQueue from '@/components/warehouse/ReorderQueue';
+import ExpiringPanel from '@/components/warehouse/ExpiringPanel';
+import ActivityTicker from '@/components/warehouse/ActivityTicker';
 
 const CATEGORIES: Category[] = ['Canned', 'Produce', 'Dairy', 'Grains', 'Frozen', 'Protein', 'Beverages', 'Household'];
 const STATUSES: Status[] = ['OK', 'Low', 'Expiring', 'Out'];
 
 export default function InventoryPage() {
-  const { inventory, adjustQuantity, addItem } = useInventory();
+  const {
+    inventory,
+    adjustQuantity,
+    addItem,
+    events,
+    reorders,
+    prioritized,
+    simDate,
+    running,
+    speed,
+    toggleRunning,
+    setSpeed,
+    resetDemo,
+    approveReorder,
+    togglePriority,
+  } = useInventory();
+
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('All');
   const [status, setStatus] = useState<string>('All');
   const [open, setOpen] = useState(false);
 
-  const now = useMemo(() => new Date(), []);
+  // "Now" tracks the simulated day, so statuses and expiry countdowns advance
+  // with the engine.
+  const now = useMemo(() => new Date(simDate + 'T00:00:00Z'), [simDate]);
+
   const filtered = useMemo(
     () =>
       inventory.filter((i) => {
@@ -31,7 +54,6 @@ export default function InventoryPage() {
     [inventory, search, category, status, now],
   );
 
-  // Add-item form state
   const [form, setForm] = useState({
     name: '',
     category: 'Canned' as Category,
@@ -60,6 +82,21 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-4">
+      <EngineBar
+        running={running}
+        speed={speed}
+        simDate={simDate}
+        onToggle={toggleRunning}
+        onSpeed={setSpeed}
+        onReset={resetDemo}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ReorderQueue inventory={inventory} reorders={reorders} onApprove={approveReorder} />
+        <ExpiringPanel inventory={inventory} now={now} prioritized={prioritized} onTogglePriority={togglePriority} />
+        <ActivityTicker events={events} />
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <input
           value={search}
@@ -81,14 +118,16 @@ export default function InventoryPage() {
         </select>
         <button
           onClick={() => setOpen(true)}
-          className="ml-auto flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
+          className="ml-auto flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
         >
           <Plus size={16} /> Add item
         </button>
       </div>
 
-      <p className="text-sm text-stone-500">{filtered.length} of {inventory.length} items</p>
-      <InventoryTable items={filtered} onAdjust={adjustQuantity} now={now} />
+      <p className="text-sm text-slate-500">
+        {filtered.length} of {inventory.length} items
+      </p>
+      <InventoryTable items={filtered} onAdjust={adjustQuantity} now={now} prioritized={prioritized} />
 
       <Modal open={open} title="Add inventory item" onClose={() => setOpen(false)}>
         <form onSubmit={submit} className="space-y-3">
@@ -120,10 +159,10 @@ export default function InventoryPage() {
             </FormField>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm text-stone-600 hover:bg-stone-100">
+            <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
               Cancel
             </button>
-            <button type="submit" className="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700">
+            <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
               Add item
             </button>
           </div>

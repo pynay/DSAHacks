@@ -7,11 +7,11 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Parsel — Food relief, precisely delivered',
+    default: 'Parsel — Evidence-informed food relief planning',
     template: '%s · Parsel',
   },
   description:
-    'A predictive food-bank operations platform that turns community data, inventory signals, and drone verification into smarter food allocation.',
+    'A research platform for combining food inventory, documented community signals, experimental hotspot forecasts, and operator-reviewed field feedback.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

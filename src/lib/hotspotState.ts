@@ -14,6 +14,8 @@ interface HotspotBlock {
   alpha: number;
   beta: number;
   last_observed: number;
+  feedbackObservationIds?: string[];
+  lastObservedAt?: string;
 }
 
 interface SeedFile {
@@ -139,6 +141,15 @@ export function getHotspotZones(): DeliveryZone[] {
         hoodWeight.set(hood, (hoodWeight.get(hood) ?? 0) + weights[i]);
       });
       const neighborhood = [...hoodWeight.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      const feedbackObservationIds = new Set(
+        members.flatMap((index) => live.blocks[index].feedbackObservationIds ?? []),
+      );
+      const feedbackObservations = feedbackObservationIds.size;
+      const lastObservedAt = members
+        .map((index) => live.blocks[index].lastObservedAt)
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .at(-1);
       const label = `${neighborhood
         .split("_")
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -157,12 +168,12 @@ export function getHotspotZones(): DeliveryZone[] {
         tents: 0,
         vehicles: 0,
         predicted: true,
-        confidence: live.observations.length ? "drone-updated" : "experimental",
+        confidence: feedbackObservations ? "drone-updated" : "historical-prior",
         model: live.meta.model,
         sourceDate: live.meta.source_date,
         targetMonth: live.meta.target_month,
-        lastObservedAt: latest,
-        feedbackObservations: live.observations.length,
+        lastObservedAt: lastObservedAt ?? (feedbackObservations ? latest : undefined),
+        feedbackObservations,
         elevation: null,
       } satisfies DeliveryZone;
     })
@@ -174,6 +185,8 @@ export function observeHotspot(input: HotspotObservationInput): AcceptedHotspotO
   const confidence = input.confidence ?? 0.8;
   const coverage = input.coverage ?? 1;
   const radiusKm = input.radiusKm ?? 0.18;
+  const observedAt = input.observedAt ?? new Date().toISOString();
+  const observationId = `drone-observation-${live.observations.length + 1}`;
   const distances = live.blocks.map((block) => haversineKm(input, block));
   let affected = distances
     .map((distance, index) => ({ distance, index }))
@@ -194,17 +207,21 @@ export function observeHotspot(input: HotspotObservationInput): AcceptedHotspotO
     // expands a partial-footprint count before allocating it across blocks.
     block.alpha += estimatedTotal * share * confidence;
     block.beta += confidence;
+    block.feedbackObservationIds = [
+      ...new Set([...(block.feedbackObservationIds ?? []), observationId]),
+    ];
+    block.lastObservedAt = observedAt;
   });
 
   const observation: AcceptedHotspotObservation = {
-    id: `drone-observation-${live.observations.length + 1}`,
+    id: observationId,
     lat: input.lat,
     lng: input.lng,
     count: input.count,
     confidence,
     coverage,
     radiusKm,
-    observedAt: input.observedAt ?? new Date().toISOString(),
+    observedAt,
     affectedBlocks: affected.length,
   };
   live.observations.push(observation);

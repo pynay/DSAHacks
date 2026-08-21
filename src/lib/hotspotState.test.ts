@@ -16,6 +16,7 @@ describe("live hotspot assimilation", () => {
     const zones = getHotspotZones();
     expect(zones).toHaveLength(6);
     expect(zones.every((zone) => zone.predicted && zone.need >= 0)).toBe(true);
+    expect(zones.every((zone) => zone.confidence === "historical-prior")).toBe(true);
     expect(getHotspotMeta().observations).toBe(0);
   });
 
@@ -43,7 +44,12 @@ describe("live hotspot assimilation", () => {
     expect(observation.affectedBlocks).toBeGreaterThan(0);
     expect(afterDistance).toBeLessThan(beforeDistance);
     expect(afterDistance).toBeLessThan(0.12);
-    expect(after.every((zone) => zone.confidence === "drone-updated")).toBe(true);
+    const updated = after.filter((zone) => zone.confidence === "drone-updated");
+    const historical = after.filter((zone) => zone.confidence === "historical-prior");
+    expect(updated.length).toBeGreaterThan(0);
+    expect(historical.length).toBeGreaterThan(0);
+    expect(updated.every((zone) => zone.feedbackObservations === 1)).toBe(true);
+    expect(historical.every((zone) => zone.feedbackObservations === 0)).toBe(true);
     expect(getHotspotMeta()).toMatchObject({
       observations: 1,
       latest_observation: "2026-08-21T12:00:00.000Z",

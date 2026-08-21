@@ -54,7 +54,7 @@ flowchart TB
         console[Operations console]
         clientState[Demo inventory context]
         map[Mapbox delivery view]
-        visionUI[Food Check and Drone Ops]
+        visionUI[Drone verification]
     end
 
     subgraph next[Next.js Node process]
@@ -177,12 +177,13 @@ person-level track is stored by the hotspot endpoint.
 
 The allocation service is deterministic:
 
-1. Convert zone need to demand using an operator-controlled units-per-person
+1. Exclude every zone that does not contain reviewed field evidence.
+2. Convert the eligible zone estimate to demand using an operator-controlled units-per-person
    factor.
-2. Sort available items by expiration date (FEFO).
-3. Split each item proportionally to remaining zone demand with
+3. Sort available items by expiration date (FEFO).
+4. Split each item proportionally to remaining zone demand with
    largest-remainder rounding.
-4. Stop when demand is covered or stock is exhausted.
+5. Stop when demand is covered or stock is exhausted.
 
 The existing inventory uses heterogeneous demo units. Production allocation must
 normalize servings, weight, volume, temperature class, and payload eligibility.
@@ -197,7 +198,6 @@ normalize servings, weight, volume, temperature class, and payload eligibility.
 | `POST` | `/api/hotspots/observe` | Assimilate one aggregate field observation | Node, mutable process state |
 | `GET` | `/api/elevation` | Resolve ground elevation for a map point | Node + external fallback |
 | `GET/POST` | `/api/eyepop/detect` | Warm and run one-shot common-object detection | Node + EyePop |
-| `GET/POST` | `/api/eyepop/food` | Warm and run food-quality inference | Node + EyePop |
 
 All dynamic routes use the Node runtime. `@duckdb/node-api` and the EyePop SDK
 remain external packages because they should not be bundled into browser code.

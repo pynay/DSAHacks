@@ -115,7 +115,7 @@ Secondary validation on the newer panel:
 | Metric | Ensemble | Last observation |
 |---|---:|---:|
 | Four-fold MAE | 1.618 | 1.690 |
-| Four-fold Poisson deviance | 2.554 | 12.424 |
+| Four-fold Poisson deviance | 2.550 | 12.424 |
 
 Outputs:
 
@@ -123,8 +123,10 @@ Outputs:
 - `marts/hotspot_zones.json`: six initial movable hotspot centers.
 
 The newest source observation is **2025-01-01**. The application therefore marks
-the current forecast stale and asks for drone or ground verification before any
-dispatch. The target month in the committed artifact is 2026-08.
+the model output stale and asks for drone or ground verification before any
+allocation. Because the model is evaluated one step ahead, the committed target
+is the next observation period, **2025-02**, rather than a misleading jump to the
+current month.
 
 ### Application integration
 
@@ -144,9 +146,10 @@ dispatch. The target month in the committed artifact is 2026-08.
   - Displays movable predicted hotspots, model/source information, stale-data
     warnings, and drone-updated status.
 - Allocation page
-  - Uses predicted hotspot demand by default.
-  - Can optionally reweight the same hotspot positions with the separate 311
-    pressure forecast.
+  - Excludes every historical-prior zone from staging.
+  - Uses only zones containing reviewed field evidence.
+  - Keeps the separate 311 pressure forecast contextual rather than treating it
+    as a headcount or allocation weight.
 - Drone Ops page
   - Displays the real EyePop bridge feed.
   - Lets an operator select a predicted target.
