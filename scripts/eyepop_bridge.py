@@ -39,7 +39,7 @@ from eyepop import EyePopSdk
 from eyepop.worker.worker_types import Pop, InferenceComponent
 
 from drop_verdict import VerdictEngine
-from privacy import head_region, pad_and_clamp
+from privacy import head_regions, pad_and_clamp
 from vision_stats import VisionStats
 
 load_dotenv(Path(__file__).parent / ".env", override=True)
@@ -73,6 +73,8 @@ BOOT_ID = f"{os.getpid()}-{int(time.time() * 1000)}"  # changes per process; let
 # Privacy: pixelate faces on every served frame (raw frames sent to EyePop stay
 # unblurred so detection quality is unaffected). BLUR_FACES=0 disables.
 BLUR_FACES = os.environ.get("BLUR_FACES", "1") != "0"
+BLUR_BLOCKS = int(os.environ.get("BLUR_BLOCKS", "6"))  # mosaic blocks per axis: lower = stronger
+BLUR_PAD = float(os.environ.get("BLUR_PAD", "0.25"))  # padding around face boxes
 FACE_ABILITY = os.environ.get("EYEPOP_FACE_ABILITY", "eyepop.person.face.short-range:latest")
 # Telemetry: JSONL log of 5s samples + verdict-transition events. Empty path disables.
 VISION_LOG = os.environ.get("VISION_LOG", str(Path(__file__).parent.parent / "data" / "drone_vision_log.jsonl"))
@@ -121,8 +123,12 @@ def grab_and_annotate(cap, objects, video_fps, infer_fps, verdict, zone, blur_re
     for (bx0, by0, bx1, by1) in blur_regions:
         if bx1 - bx0 > 4 and by1 - by0 > 4:
             roi = frame[by0:by1, bx0:bx1]
-            small = cv2.resize(roi, (max(1, (bx1 - bx0) // 14), max(1, (by1 - by0) // 14)),
-                               interpolation=cv2.INTER_LINEAR)
+            # Heavy anonymization: INTER_AREA downsampling to a coarse mosaic
+            # box-averages each block (a strong blur by itself, and cheap enough
+            # to run per frame at 30fps — an explicit GaussianBlur here cost 5x).
+            small = cv2.resize(roi, (max(2, min(BLUR_BLOCKS, (bx1 - bx0) // 8)),
+                                     max(2, min(BLUR_BLOCKS, (by1 - by0) // 8))),
+                               interpolation=cv2.INTER_AREA)
             frame[by0:by1, bx0:bx1] = cv2.resize(small, (bx1 - bx0, by1 - by0),
                                                  interpolation=cv2.INTER_NEAREST)
     for o in objects:
@@ -295,15 +301,18 @@ async def inference_loop(endpoint):
             if BLUR_FACES:
                 # Belt and braces: any person without a detected face inside their
                 # box (back of head, detector miss) gets a head-region blur too.
-                blur_boxes = list(face_boxes)
+                # Faces boxes start at the forehead: lift them so hair/top of
+                # head is anonymized too.
+                blur_boxes = [{**f, "y": f["y"] - f["height"] * 0.25,
+                               "height": f["height"] * 1.25} for f in face_boxes]
                 for pers in (o for o in objects if o["label"] == "person"):
                     has_face = any(
                         pers["x"] <= f["x"] + f["width"] / 2 <= pers["x"] + pers["width"]
                         and pers["y"] <= f["y"] + f["height"] / 2 <= pers["y"] + pers["height"]
                         for f in face_boxes)
                     if not has_face:
-                        blur_boxes.append(head_region(pers))
-                state["blur"] = [pad_and_clamp(b, fw, fh) for b in blur_boxes]
+                        blur_boxes.extend(head_regions(pers))
+                state["blur"] = [pad_and_clamp(b, fw, fh, pad=BLUR_PAD) for b in blur_boxes]
             else:
                 state["blur"] = []
             verdict = ENGINE.update(objects, fw, fh, state["brightness"], time.monotonic())

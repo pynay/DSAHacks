@@ -16,10 +16,20 @@ def pad_and_clamp(box, frame_w, frame_h, pad=0.4):
     return (x0, y0, max(x0, x1), max(y0, y1))
 
 
-def head_region(person_box):
-    """Fallback when no face detector runs: central 60% width, top 30% height of a person box."""
+def head_regions(person_box):
+    """Fallback blur zones when no face box matched this person.
+
+    Upright box (taller than wide): the head is at the top — central 60% width,
+    top 30% height. Lying box (wider than tall): the head is at one END and we
+    cannot know which, so cover both ends (30% width each, full height).
+    """
+    x, y = person_box.get("x", 0), person_box.get("y", 0)
     w, h = person_box.get("width", 0), person_box.get("height", 0)
+    if w >= h:  # lying / crouched sideways
+        end_w = int(w * 0.3)
+        return [
+            {"x": int(x), "y": int(y), "width": end_w, "height": int(h)},
+            {"x": int(x + w - end_w), "y": int(y), "width": end_w, "height": int(h)},
+        ]
     head_w, head_h = int(w * 0.6), int(h * 0.3)
-    return {"x": int(person_box.get("x", 0) + (w - head_w) / 2),
-            "y": int(person_box.get("y", 0)),
-            "width": head_w, "height": head_h}
+    return [{"x": int(x + (w - head_w) / 2), "y": int(y), "width": head_w, "height": head_h}]

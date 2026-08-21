@@ -1,5 +1,5 @@
 """Face-blur geometry: padded blur regions and person-box head fallback."""
-from scripts.privacy import head_region, pad_and_clamp
+from scripts.privacy import head_regions, pad_and_clamp
 
 W, H = 1920, 1080
 
@@ -20,7 +20,16 @@ def test_pad_zero_size_box_is_empty():
     assert x0 == x1 and y0 == y1
 
 
-def test_head_region_is_top_center_of_person():
-    # person 300x800 at (500,200): head = central 60% width, top 30% height
-    assert head_region({"x": 500, "y": 200, "width": 300, "height": 800}) == \
-        {"x": 560, "y": 200, "width": 180, "height": 240}
+def test_head_regions_upright_person_is_top_center():
+    # standing person 300x800 at (500,200): head = central 60% width, top 30% height
+    assert head_regions({"x": 500, "y": 200, "width": 300, "height": 800}) == \
+        [{"x": 560, "y": 200, "width": 180, "height": 240}]
+
+
+def test_head_regions_lying_person_covers_both_ends():
+    # lying person 900x300 at (500,800): head is at one end but we can't know
+    # which, so blur both ends (30% width each, full height)
+    assert head_regions({"x": 500, "y": 800, "width": 900, "height": 300}) == [
+        {"x": 500, "y": 800, "width": 270, "height": 300},
+        {"x": 1130, "y": 800, "width": 270, "height": 300},
+    ]

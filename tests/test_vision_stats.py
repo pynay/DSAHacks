@@ -2,10 +2,19 @@
 from scripts.vision_stats import VisionStats
 
 
-def test_tracks_peak_people():
+def test_peak_ignores_single_frame_spikes():
+    # One hallucinated frame (6 "people") must not move the peak.
     st = VisionStats()
-    for n in (1, 3, 2):
-        st.add_sample(people=n, verdict_state="GO", ts=float(n))
+    for i, n in enumerate((1, 1, 6, 1, 1)):
+        st.add_sample(people=n, verdict_state="GO", ts=float(i))
+    assert st.peak_people == 1
+
+
+def test_peak_counts_sustained_rise():
+    # Median of the last 5 samples: 3 people must persist ~3 frames to register.
+    st = VisionStats()
+    for i, n in enumerate((1, 2, 3, 3, 3)):
+        st.add_sample(people=n, verdict_state="GO", ts=float(i))
     assert st.peak_people == 3
 
 
@@ -24,11 +33,12 @@ def test_add_sample_returns_event_only_on_state_change():
     assert st.add_sample(people=1, verdict_state="HOLD", ts=2.0) is None
 
 
-def test_series_keeps_last_maxlen_samples():
+def test_series_keeps_last_maxlen_stabilized_samples():
+    # Series stores the stabilized (median) count so the sparkline matches peak semantics.
     st = VisionStats(maxlen=3)
-    for i in range(5):
+    for i in range(5):  # raw 0,1,2,3,4 -> low-medians 0,0,1,1,2
         st.add_sample(people=i, verdict_state="GO", ts=float(i))
-    assert st.series() == [[2.0, 2], [3.0, 3], [4.0, 4]]
+    assert st.series() == [[2.0, 1], [3.0, 1], [4.0, 2]]
 
 
 def test_summary_shape():
