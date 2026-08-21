@@ -14,6 +14,7 @@ import CategoryChart from '@/components/charts/CategoryChart';
 import TrendChart from '@/components/charts/TrendChart';
 import PitChart from '@/components/charts/PitChart';
 import DsdpChart from '@/components/charts/DsdpChart';
+import ActivityChart from '@/components/charts/ActivityChart';
 
 function daysAgo(n: number): string {
   return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
@@ -119,11 +120,58 @@ export default function DashboardPage() {
               <li><b>72-hr enforcement reports</b> — per-neighborhood violation signals</li>
               <li><b>HUD Point-in-Time</b> — annual regional counts, 2016–2025</li>
               <li><b>SDHC shelter roster</b> — real sites, beds &amp; occupancy, 2026</li>
+              <li><b>Paid parking sessions</b> — downtown activity proxy, 2021–2026 (Source J)</li>
+              <li><b>USDA FARA</b> — La Jolla food access by tract, 2010/2015/2019 (Source I)</li>
               <li><b>USGS / Mapbox terrain</b> — drop-zone ground elevation</li>
             </ul>
             <p className="mt-2 text-[11px] text-stone-400">
               Signals are proxies with known biases, not headcounts — see the repo data dictionary.
             </p>
+          </div>
+
+          {/* Source J: downtown activity proxy */}
+          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm lg:col-span-2">
+            <h2 className="font-semibold text-stone-900">Downtown activity (paid parking sessions)</h2>
+            <p className="mb-1 text-xs text-stone-500">
+              Source J activity proxy across the six downtown neighborhoods, 2021–2026. An open
+              signal of downtown activity — deliberately not read as foot traffic or a homelessness
+              count.
+            </p>
+            <ActivityChart data={commons.parking} />
+          </div>
+
+          {/* Source I: La Jolla food access */}
+          <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+            <h2 className="font-semibold text-stone-900">La Jolla food access</h2>
+            <p className="text-xs text-stone-500">USDA Food Access Research Atlas (Source I)</p>
+            {(() => {
+              const v = commons.laJolla[commons.laJolla.length - 1];
+              if (!v) return <p className="mt-2 text-xs text-stone-400">No data.</p>;
+              return (
+                <>
+                  <div className="mt-2 text-2xl font-semibold text-stone-900">
+                    {Math.round(v.lowIncomeLowAccess).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-stone-500">low-income + low-access residents ({v.year})</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {commons.laJolla.map((x) => (
+                      <span
+                        key={x.year}
+                        title={`${x.lowAccess.toLocaleString()} low-access of ${x.pop.toLocaleString()}`}
+                        className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800"
+                      >
+                        {x.year}: {x.lowAccessShare.toFixed(0)}% low-access
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] text-stone-400">
+                    A food desert beyond downtown: {Math.round(v.lowAccessShare)}% of{' '}
+                    {(v.pop / 1000).toFixed(0)}k residents live &gt;1 mi from a supermarket. A
+                    candidate expansion zone for drone delivery.
+                  </p>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

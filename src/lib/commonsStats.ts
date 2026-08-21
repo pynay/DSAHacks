@@ -39,6 +39,18 @@ export interface CommonsStats {
   // series, 2017-2025). value is null for the provider's true reporting gaps
   // (4 months in 2025) -- never zero-filled.
   dsdp: { month: string; value: number | null }[];
+  // Source J: downtown paid-parking sessions per month (an activity proxy, NOT
+  // a foot-traffic count), summed across the six neighborhoods, 2021-2026.
+  parking: { month: string; sessions: number }[];
+  // Source I: USDA FARA food-access rollup for La Jolla, by vintage.
+  laJolla: {
+    year: number;
+    pop: number;
+    lowAccess: number;
+    lowAccessShare: number;
+    lowIncomeLowAccess: number;
+    snapHousing: number;
+  }[];
 }
 
 async function build(): Promise<CommonsStats> {
@@ -109,6 +121,38 @@ async function build(): Promise<CommonsStats> {
     }
   }
 
+  // Source J: downtown paid-parking sessions per month (activity proxy).
+  const parkingCsv = path.join(process.cwd(), "marts", "parking_activity_monthly.csv").replace(/'/g, "''");
+  const parkReader = await conn.runAndReadAll(`
+    SELECT strftime(obs_month, '%Y-%m') AS month, ROUND(SUM(value)) AS sessions
+    FROM read_csv_auto('${parkingCsv}')
+    WHERE metric = 'paid_sessions'
+    GROUP BY 1 ORDER BY 1`);
+  const parking = parkReader
+    .getRowObjects()
+    .map((r) => ({ month: String(r.month), sessions: Number(r.sessions) }));
+
+  // Source I: USDA FARA food access, La Jolla rollup by vintage.
+  const faCsv = path.join(process.cwd(), "marts", "food_access_la_jolla.csv").replace(/'/g, "''");
+  const faReader = await conn.runAndReadAll(`
+    SELECT CAST(strftime(obs_month, '%Y') AS INTEGER) AS year,
+           MAX(CASE WHEN metric = 'pop_total' THEN value END)                  AS pop,
+           MAX(CASE WHEN metric = 'low_access_pop' THEN value END)             AS low_access,
+           MAX(CASE WHEN metric = 'low_access_pop_share' THEN value END)       AS low_access_share,
+           MAX(CASE WHEN metric = 'low_income_low_access_pop' THEN value END)  AS lila,
+           MAX(CASE WHEN metric = 'snap_housing_units' THEN value END)         AS snap
+    FROM read_csv_auto('${faCsv}')
+    WHERE geography = 'la_jolla'
+    GROUP BY 1 ORDER BY 1`);
+  const laJolla = faReader.getRowObjects().map((r) => ({
+    year: Number(r.year),
+    pop: Number(r.pop),
+    lowAccess: Number(r.low_access),
+    lowAccessShare: Number(r.low_access_share),
+    lowIncomeLowAccess: Number(r.lila),
+    snapHousing: Number(r.snap),
+  }));
+
   return {
     pit,
     shelters: {
@@ -119,6 +163,8 @@ async function build(): Promise<CommonsStats> {
       occupancy,
     },
     dsdp,
+    parking,
+    laJolla,
   };
 }
 
