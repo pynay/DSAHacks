@@ -21,11 +21,16 @@ export interface VisionPerson {
   height: number;
 }
 
+export interface VisionObject extends VisionPerson {
+  label: string;
+}
+
 export interface VisionDetection {
   label: 'clear' | 'obstructed'; // obstructed = at least one person in frame
   confidence: number; // max person confidence (0 when none)
-  count: number;
+  count: number; // people in frame (the drop-zone hazard)
   persons: VisionPerson[];
+  objects: VisionObject[]; // every detected object (people, vehicles, packages, ...)
   videoFps: number; // measured camera capture rate
   inferFps: number; // measured EyePop round-trip rate
   ts: number;
@@ -56,6 +61,7 @@ export function useDroneVision(): { connected: boolean; detection: VisionDetecti
             confidence: d.confidence ?? 0,
             count: d.count ?? 0,
             persons: d.persons ?? [],
+            objects: d.objects ?? [],
             videoFps: d.video_fps ?? 0,
             inferFps: d.infer_fps ?? 0,
             ts: d.ts ?? 0,

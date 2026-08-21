@@ -48,14 +48,17 @@ CAMERA_INDEX = int(os.environ.get("CAMERA_INDEX", "0"))
 VIDEO_SOURCE = os.environ.get("VIDEO_SOURCE")
 CAMERA_FPS_REQ = int(os.environ.get("CAMERA_FPS", "120"))  # hardware clamps to what it can do
 CONFIDENCE = 0.5
+# Detect the whole delivery scene (people, packages, objects). Override with
+# EYEPOP_ABILITY (e.g. eyepop.person:latest for people only).
+EYEPOP_ABILITY = os.environ.get("EYEPOP_ABILITY", "eyepop.common-objects:latest")
 
 POP = Pop(components=[
-    InferenceComponent(ability="eyepop.person:latest", confidenceThreshold=CONFIDENCE)
+    InferenceComponent(ability=EYEPOP_ABILITY, confidenceThreshold=CONFIDENCE)
 ])
 
 # Latest state, shared between loops and the web app.
 state: dict = {"ready": False, "ts": 0, "count": 0, "label": "clear",
-               "confidence": 0.0, "persons": [], "jpeg": b"", "frame_seq": 0,
+               "confidence": 0.0, "persons": [], "objects": [], "jpeg": b"", "frame_seq": 0,
                "video_fps": 0.0, "infer_fps": 0.0}
 latest_raw: dict = {"jpg": b""}  # newest un-annotated frame (jpeg bytes) for the inference loop
 
@@ -66,7 +69,7 @@ def ema(prev: float, dt: float) -> float:
     return inst if prev == 0.0 else prev * 0.9 + inst * 0.1
 
 
-def grab_and_annotate(cap, persons, video_fps, infer_fps):
+def grab_and_annotate(cap, objects, video_fps, infer_fps):
     """Blocking: read one frame, return (raw_jpeg, annotated_jpeg) bytes.
 
     Runs in the executor; ALL cv2/numpy work happens here. Only bytes cross
@@ -78,14 +81,16 @@ def grab_and_annotate(cap, persons, video_fps, infer_fps):
         return None
     frame = frame.copy()  # detach from the capture buffer immediately
     ok_raw, raw_buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
-    for p in persons:
-        x, y = int(p["x"]), int(p["y"])
-        w, h = int(p["width"]), int(p["height"])
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (80, 220, 80), 2)
-        tag = f"person {p['confidence'] * 100:.0f}%"
-        cv2.rectangle(frame, (x, y - 22), (x + 8 + 11 * len(tag), y), (80, 220, 80), -1)
-        cv2.putText(frame, tag, (x + 4, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (20, 40, 20), 2)
-    banner = (f"EyePop.ai eyepop.person:latest  |  {len(persons)} detected  |  "
+    for o in objects:
+        x, y = int(o["x"]), int(o["y"])
+        w, h = int(o["width"]), int(o["height"])
+        # People are the drop-zone hazard (red); everything else is cyan.
+        color = (60, 60, 235) if o.get("label") == "person" else (220, 200, 40)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+        tag = f"{o.get('label', 'object')} {o['confidence'] * 100:.0f}%"
+        cv2.rectangle(frame, (x, y - 22), (x + 8 + 10 * len(tag), y), color, -1)
+        cv2.putText(frame, tag, (x + 4, y - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
+    banner = (f"EyePop.ai {EYEPOP_ABILITY}  |  {len(objects)} detected  |  "
               f"{video_fps:.0f} fps video / {infer_fps:.1f} fps inference")
     cv2.putText(frame, banner, (12, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     ok_ann, ann_buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
@@ -155,7 +160,7 @@ async def capture_loop():
     try:
         while True:
             got_frame = await loop.run_in_executor(
-                None, grab_and_annotate, cap, state["persons"], state["video_fps"], state["infer_fps"])
+                None, grab_and_annotate, cap, state["objects"], state["video_fps"], state["infer_fps"])
             if got_frame is None:
                 if VIDEO_SOURCE:  # end of file -> loop it
                     await loop.run_in_executor(None, cap.set, cv2.CAP_PROP_POS_FRAMES, 0)
@@ -201,23 +206,25 @@ async def inference_loop(endpoint):
                 print(f"  inference error: {e}", flush=True)
                 await asyncio.sleep(1.0)
                 continue
-            persons = [
-                {"confidence": round(o.get("confidence", 0.0), 3),
+            objects = [
+                {"label": o.get("classLabel", "object"),
+                 "confidence": round(o.get("confidence", 0.0), 3),
                  "x": o.get("x", 0), "y": o.get("y", 0),
                  "width": o.get("width", 0), "height": o.get("height", 0)}
                 for o in result.get("objects", [])
-                if o.get("classLabel") == "person"
             ]
+            persons = [o for o in objects if o["label"] == "person"]
             now = time.monotonic()
             state["infer_fps"] = ema(state["infer_fps"], now - last)
             last = now
             state.update(
                 ready=True,
                 ts=int(time.time() * 1000),
-                count=len(persons),
+                count=len(persons),  # drop-zone hazard count = people in frame
                 label="obstructed" if persons else "clear",
                 confidence=max((p["confidence"] for p in persons), default=0.0),
                 persons=persons,
+                objects=objects,
             )
     finally:
         tmp.unlink(missing_ok=True)
@@ -226,7 +233,7 @@ async def inference_loop(endpoint):
 async def get_detection(_req):
     if not state["ready"]:
         return web.json_response({"warming": True}, status=503)
-    body = {k: state[k] for k in ("ts", "count", "label", "confidence", "persons")}
+    body = {k: state[k] for k in ("ts", "count", "label", "confidence", "persons", "objects")}
     body["video_fps"] = round(state["video_fps"], 1)
     body["infer_fps"] = round(state["infer_fps"], 1)
     return web.json_response(body)
@@ -271,7 +278,7 @@ async def main():
         except Exception as e:
             sys.exit(f"EyePop rejected the session ({e}).\nCheck EYEPOP_API_KEY in scripts/.env "
                      "(keys are lowercase 'eyp_...' — a capitalized 'Eyp_' means a bad copy).")
-        print("Connected. Pop: eyepop.person:latest", flush=True)
+        print(f"Connected. Pop: {EYEPOP_ABILITY}", flush=True)
         app = web.Application()
         app.on_response_prepare.append(cors)
         app.router.add_get("/detection", get_detection)
