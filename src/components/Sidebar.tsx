@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Package, HandHeart, Truck, MapPin, Boxes, Plane, PackageOpen } from 'lucide-react';
+import { LayoutDashboard, Activity, Package, HandHeart, Truck, MapPin, Boxes, Plane, PackageOpen } from 'lucide-react';
 
 export const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/signals', label: 'Signals', icon: Activity },
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/donations', label: 'Donations', icon: HandHeart },
   { href: '/distributions', label: 'Distributions', icon: Truck },
