@@ -182,9 +182,10 @@ not allow Turbopack's internal worker to bind a local port.
 | Variable | Required | Purpose |
 |---|---|---|
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | No | Public browser token for the 3D delivery map |
+| `EYEPOP_API_KEY` | For camera detection | Server-only key for one-shot delivery-zone EyePop captures |
 
-Keep the bridge's `EYEPOP_API_KEY` in `scripts/.env`; never prefix a secret with
-`NEXT_PUBLIC_`.
+Keep `EYEPOP_API_KEY` in `.env.local` for the browser capture API and in
+`scripts/.env` for the optional live bridge; never prefix a secret with `NEXT_PUBLIC_`.
 
 ### Run the optional EyePop drone bridge
 
