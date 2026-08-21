@@ -8,10 +8,6 @@ body {
   color: #1c1917; /* stone-900 text */
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 ::selection {
   background: #fcd34d;
   color: #1c1917;
