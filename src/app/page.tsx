@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import CountUp from '@/components/landing/CountUp';
 import DroneMissionStory from '@/components/landing/DroneMissionStory';
+import Reveal from '@/components/landing/Reveal';
+import ScrollProgress from '@/components/landing/ScrollProgress';
 import {
   Activity,
   ArrowDown,
@@ -231,8 +234,8 @@ export default function Home() {
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
+      <header className="header-condense sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+        <div className="header-shrink mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" aria-label="Parsel home" className="flex items-center gap-2.5">
             <PackageOpen size={25} className="text-[#3ca875]" />
             <span className="text-xl font-semibold tracking-tight">Parsel</span>
@@ -244,41 +247,59 @@ export default function Home() {
           </nav>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#123a54]"
+            className="group inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#123a54]"
           >
-            Open demo <ArrowRight size={15} />
+            Open demo <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
+        <ScrollProgress />
       </header>
 
       <section id="main-story" className="flex min-h-[calc(100svh-5rem)] items-center border-b border-slate-200 bg-white">
-        <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
+        <div className="hero-recede mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+          <div className="hero-rise inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
             <ShieldCheck size={14} /> Food insecurity decision-support demo
           </div>
-          <h1 className="mt-7 max-w-6xl text-5xl font-semibold leading-[0.91] tracking-[-0.06em] sm:text-7xl lg:text-[7.25rem]">
-            Hunger is local.{' '}
-            <span className="text-[#27875b]">Relief should be precise.</span>
+          <h1 className="hero-rise font-display mt-7 text-6xl font-semibold leading-[0.95] tracking-[-0.04em] sm:text-8xl lg:text-[8.5rem]" style={{ ['--rise-delay' as string]: '90ms' }}>
+            Meet <span className="hero-underline text-[#27875b]">Parsel</span>.
           </h1>
-          <div className="mt-9 grid gap-8 border-t border-slate-200 pt-7 md:grid-cols-[1.15fr_.85fr] md:items-end">
-            <p className="max-w-3xl text-xl leading-8 text-slate-600 sm:text-2xl sm:leading-9">
-              Parsel connects food inventory, nutrition-insecurity data, a planning model, and
-              reviewed drone observations to help operators decide what food to send, where, and when.
+
+          <div className="hero-rise mt-10 max-w-3xl border-t border-slate-200 pt-7" style={{ ['--rise-delay' as string]: '200ms' }}>
+            <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="font-display text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">par&middot;sel</span>
+              <span className="font-mono text-sm text-slate-400">/&#712;p&auml;r&#712;s&#601;l/</span>
+              <span className="font-mono text-sm italic text-slate-400">noun &middot; San Diego</span>
             </p>
-            <div className="flex flex-wrap gap-3 md:justify-end">
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]"
-              >
-                Open the demo <ArrowRight size={17} />
-              </Link>
-              <a
-                href="#case-for-action"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-              >
-                See why it matters <ArrowDown size={17} />
-              </a>
-            </div>
+            <ol className="mt-4 space-y-3">
+              <li className="grid grid-cols-[1.5rem_1fr] gap-2">
+                <span className="font-mono text-sm leading-7 text-[#27875b]">1.</span>
+                <span className="text-lg leading-7 text-slate-700 sm:text-xl sm:leading-8">
+                  a parcel of food, routed to verified need instead of a best guess.
+                </span>
+              </li>
+              <li className="grid grid-cols-[1.5rem_1fr] gap-2">
+                <span className="font-mono text-sm leading-7 text-[#27875b]">2.</span>
+                <span className="text-lg leading-7 text-slate-700 sm:text-xl sm:leading-8">
+                  planning software that pairs live inventory with field-checked demand &mdash; and
+                  keeps a person deciding what moves.
+                </span>
+              </li>
+            </ol>
+          </div>
+
+          <div className="hero-rise mt-9 flex flex-wrap gap-3" style={{ ['--rise-delay' as string]: '330ms' }}>
+            <Link
+              href="/login"
+              className="group inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123a54]"
+            >
+              Open the demo <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="#case-for-action"
+              className="group inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+            >
+              See why it matters <ArrowDown size={17} className="transition-transform group-hover:translate-y-0.5" />
+            </a>
           </div>
         </div>
       </section>
@@ -295,35 +316,45 @@ export default function Home() {
             >
               <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.2fr_.8fr] lg:items-end lg:gap-20">
                 <div>
-                  <div className="flex items-center gap-4">
-                    <span className={`grid h-11 w-11 place-items-center rounded-full border font-mono text-xs font-bold ${styles.index}`}>
-                      {slide.number}
-                    </span>
-                    <p className={`text-xs font-bold uppercase tracking-[0.18em] ${styles.kicker}`}>
-                      {slide.kicker}
+                  <Reveal>
+                    <div className="flex items-center gap-4">
+                      <span className={`grid h-11 w-11 place-items-center rounded-full border font-mono text-xs font-bold ${styles.index}`}>
+                        {slide.number}
+                      </span>
+                      <p className={`text-xs font-bold uppercase tracking-[0.18em] ${styles.kicker}`}>
+                        {slide.kicker}
+                      </p>
+                    </div>
+                  </Reveal>
+                  <Reveal variant="scale" delay={120}>
+                    <p className={`font-display parallax-drift mt-12 whitespace-nowrap text-[clamp(5rem,16vw,13rem)] font-semibold leading-[0.8] tracking-[-0.05em] ${styles.stat}`}>
+                      <CountUp value={slide.stat} />
                     </p>
-                  </div>
-                  <p className={`mt-12 whitespace-nowrap text-[clamp(5rem,16vw,13rem)] font-semibold leading-[0.76] tracking-[-0.08em] ${styles.stat}`}>
-                    {slide.stat}
-                  </p>
+                  </Reveal>
                 </div>
 
                 <div className="lg:pb-1">
-                  <h2 id={`impact-slide-${slide.number}`} className="text-3xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">
-                    {slide.headline}
-                  </h2>
-                  <p className={`mt-6 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8 ${styles.body}`}>
-                    {slide.detail}
-                  </p>
-                  <a
-                    href={slide.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`mt-10 inline-flex max-w-full items-start gap-2 border-t pt-4 text-xs font-semibold uppercase leading-5 tracking-[0.12em] ${styles.source}`}
-                  >
-                    <span>Source: {slide.source}</span>
-                    <ExternalLink size={14} className="mt-0.5 shrink-0" />
-                  </a>
+                  <Reveal delay={150}>
+                    <h2 id={`impact-slide-${slide.number}`} className="font-display text-3xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
+                      {slide.headline}
+                    </h2>
+                  </Reveal>
+                  <Reveal delay={260}>
+                    <p className={`mt-6 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8 ${styles.body}`}>
+                      {slide.detail}
+                    </p>
+                  </Reveal>
+                  <Reveal delay={370}>
+                    <a
+                      href={slide.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`mt-10 inline-flex max-w-full items-start gap-2 border-t pt-4 text-xs font-semibold uppercase leading-5 tracking-[0.12em] ${styles.source}`}
+                    >
+                      <span>Source: {slide.source}</span>
+                      <ExternalLink size={14} className="mt-0.5 shrink-0" />
+                    </a>
+                  </Reveal>
                 </div>
               </div>
             </section>
@@ -336,16 +367,18 @@ export default function Home() {
       <section id="platform" className="scroll-mt-20" aria-labelledby="platform-title">
         <div className="flex min-h-[72svh] items-center bg-[#f4f1e8]">
           <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
-            <div>
+            <Reveal>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#9b511b]">After the drone lands</p>
-              <h2 id="platform-title" className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.94] tracking-[-0.055em] sm:text-7xl">
+              <h2 id="platform-title" className="font-display text-balance mt-5 max-w-4xl text-5xl font-semibold leading-[0.96] tracking-[-0.04em] sm:text-7xl">
                 Evidence becomes an operating decision.
               </h2>
-            </div>
-            <p className="max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+            </Reveal>
+            <Reveal delay={160} className="max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+              <p>
               Parsel is not one heatmap. It connects the need outside, the food inside,
               and the person responsible for deciding what happens next.
-            </p>
+              </p>
+            </Reveal>
           </div>
         </div>
 
@@ -357,37 +390,47 @@ export default function Home() {
             <article key={layer.number} className={`flex min-h-[76svh] items-center border-t ${styles.line} ${styles.section}`}>
               <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.72fr_1.28fr] lg:items-end lg:gap-20">
                 <div>
-                  <div className="flex items-center gap-4">
-                    <span className={`grid h-12 w-12 place-items-center rounded-full ${styles.icon}`}>
-                      <Icon size={21} />
-                    </span>
-                    <p className={`text-xs font-bold uppercase tracking-[0.18em] ${styles.accent}`}>
-                      {layer.number} · {layer.eyebrow}
+                  <Reveal>
+                    <div className="flex items-center gap-4">
+                      <span className={`grid h-12 w-12 place-items-center rounded-full ${styles.icon}`}>
+                        <Icon size={21} />
+                      </span>
+                      <p className={`text-xs font-bold uppercase tracking-[0.18em] ${styles.accent}`}>
+                        {layer.number} · {layer.eyebrow}
+                      </p>
+                    </div>
+                  </Reveal>
+                  <Reveal variant="scale" delay={120}>
+                    <p className={`parallax-drift mt-10 font-mono text-[clamp(5rem,14vw,11rem)] leading-none tracking-[-0.08em] ${styles.accent}`} aria-hidden="true">
+                      {layer.number}
                     </p>
-                  </div>
-                  <p className={`mt-10 font-mono text-[clamp(5rem,14vw,11rem)] leading-none tracking-[-0.08em] ${styles.accent}`} aria-hidden="true">
-                    {layer.number}
-                  </p>
+                  </Reveal>
                 </div>
 
                 <div>
-                  <h3 className="max-w-3xl text-4xl font-semibold leading-[0.98] tracking-[-0.045em] sm:text-6xl">
-                    {layer.title}
-                  </h3>
-                  <p className={`mt-6 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8 ${styles.body}`}>
-                    {layer.body}
-                  </p>
-                  <div className="mt-9 flex flex-wrap gap-3">
+                  <Reveal delay={150}>
+                    <h3 className="font-display max-w-3xl text-4xl font-semibold leading-[1] tracking-[-0.03em] sm:text-6xl">
+                      {layer.title}
+                    </h3>
+                  </Reveal>
+                  <Reveal delay={260}>
+                    <p className={`mt-6 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8 ${styles.body}`}>
+                      {layer.body}
+                    </p>
+                  </Reveal>
+                  <Reveal delay={370} className="mt-9 flex flex-wrap gap-3">
+                    <>
                     {layer.links.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-colors ${styles.link}`}
+                        className={`group inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-colors ${styles.link}`}
                       >
-                        {link.label} <ArrowRight size={15} />
+                        {link.label} <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
                       </Link>
                     ))}
-                  </div>
+                    </>
+                  </Reveal>
                 </div>
               </div>
             </article>
@@ -398,20 +441,23 @@ export default function Home() {
       <section id="feedback-loop" className="flex min-h-[100svh] scroll-mt-20 items-center bg-[#071a2b] text-white">
         <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-end">
-            <div>
+            <Reveal>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#76d6a7]">The adaptive feedback loop</p>
-              <h2 className="mt-5 max-w-4xl text-5xl font-semibold leading-[0.93] tracking-[-0.055em] sm:text-7xl">
+              <h2 className="font-display text-balance mt-5 max-w-4xl text-5xl font-semibold leading-[0.95] tracking-[-0.04em] sm:text-7xl">
                 The model can move the map.
               </h2>
-            </div>
-            <p className="max-w-xl text-2xl font-semibold leading-tight text-[#76d6a7] sm:text-3xl">
-              Only people move food.
-            </p>
+            </Reveal>
+            <Reveal delay={180}>
+              <p className="max-w-xl text-2xl font-semibold leading-tight text-[#76d6a7] sm:text-3xl">
+                Only people move food.
+              </p>
+            </Reveal>
           </div>
 
           <ol className="mt-16 grid gap-px border border-white/15 bg-white/15 md:grid-cols-2 lg:grid-cols-4">
-            {workflow.map(({ number, icon: Icon, title, body }) => (
+            {workflow.map(({ number, icon: Icon, title, body }, i) => (
               <li key={number} className="bg-[#071a2b] p-6 sm:p-8">
+                <Reveal delay={i * 110}>
                 <div className="flex items-center justify-between gap-4">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-[#3ca875] text-[#071a2b]">
                     <Icon size={20} />
@@ -420,6 +466,7 @@ export default function Home() {
                 </div>
                 <h3 className="mt-10 text-2xl font-semibold leading-tight">{title}</h3>
                 <p className="mt-4 text-sm leading-6 text-slate-400">{body}</p>
+                </Reveal>
               </li>
             ))}
           </ol>
@@ -437,33 +484,41 @@ export default function Home() {
 
       <section id="evidence" className="flex min-h-[100svh] scroll-mt-20 items-center bg-[#f2c46d] text-[#071a2b]">
         <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#72400f]/30 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#72400f]">
-            <TriangleAlert size={15} /> Decision gate
-          </div>
-          <h2 className="mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.82] tracking-[-0.07em]">
-            No field evidence.
-            <span className="mt-3 block text-[#9b511b]">No allocation.</span>
-          </h2>
-          <p className="mt-10 max-w-3xl text-lg leading-8 text-[#5f3b16] sm:text-xl">
+          <Reveal>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#72400f]/30 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#72400f]">
+              <TriangleAlert size={15} /> Decision gate
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <h2 className="font-display text-balance parallax-drift mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.85] tracking-[-0.05em]">
+              No field evidence.
+              <span className="mt-3 block text-[#9b511b]">No allocation.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={230}>
+            <p className="mt-10 max-w-3xl text-lg leading-8 text-[#5f3b16] sm:text-xl">
             The current model estimates visible mobile-outreach demand. It does not diagnose
             hunger or authorize a distribution. A reviewed local observation is the gate between
             a planning prior and a food recommendation.
-          </p>
+            </p>
+          </Reveal>
 
           <ol className="mt-14 grid gap-px border border-[#72400f]/25 bg-[#72400f]/25 md:grid-cols-3">
-            {decisionSteps.map((step) => (
+            {decisionSteps.map((step, i) => (
               <li key={step.number} className="bg-[#f2c46d] p-6 sm:p-8">
+                <Reveal delay={i * 120}>
                 <p className="font-mono text-xs font-bold uppercase tracking-[0.15em] text-[#72400f]">
                   {step.number} · {step.label}
                 </p>
                 <h3 className="mt-7 text-2xl font-semibold">{step.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-[#5f3b16]">{step.body}</p>
+                </Reveal>
               </li>
             ))}
           </ol>
 
-          <Link href="/allocation" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]">
-            Inspect the allocation gate <ArrowRight size={16} />
+          <Link href="/allocation" className="group mt-8 inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123a54]">
+            Inspect the allocation gate <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -471,12 +526,14 @@ export default function Home() {
       <section id="human-control" className="flex min-h-[92svh] scroll-mt-20 items-center bg-[#f4f1e8]">
         <div className="mx-auto grid w-full max-w-7xl gap-14 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[.8fr_1.2fr] lg:items-start lg:gap-20">
           <div className="lg:sticky lg:top-28">
-            <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">
-              <HandHeart size={19} /> Human control is the product
-            </div>
-            <h2 className="mt-5 text-5xl font-semibold leading-[0.94] tracking-[-0.055em] sm:text-7xl">
-              What stays human.
-            </h2>
+            <Reveal>
+              <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#27875b]">
+                <HandHeart size={19} /> Human control is the product
+              </div>
+              <h2 className="font-display text-balance mt-5 text-5xl font-semibold leading-[0.96] tracking-[-0.04em] sm:text-7xl">
+                What stays human.
+              </h2>
+            </Reveal>
             <p className="mt-6 max-w-lg text-lg leading-8 text-slate-600">
               Parsel shortens the distance between evidence and a decision. It does not remove
               the people accountable for consent, safety, food quality, dispatch, or handoff.
@@ -486,9 +543,11 @@ export default function Home() {
           <div>
             <ol className="border-y border-slate-300">
               {boundaries.map((boundary, index) => (
-                <li key={boundary} className="grid gap-4 border-b border-slate-300 py-6 last:border-b-0 sm:grid-cols-[4rem_1fr] sm:items-start">
-                  <span className="font-mono text-sm text-[#27875b]">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="text-lg font-medium leading-7 text-slate-800">{boundary}</span>
+                <li key={boundary} className="border-b border-slate-300 py-6 last:border-b-0">
+                  <Reveal delay={index * 90} className="grid gap-4 sm:grid-cols-[4rem_1fr] sm:items-start">
+                    <span className="font-mono text-sm text-[#27875b]">{String(index + 1).padStart(2, '0')}</span>
+                    <span className="text-lg font-medium leading-7 text-slate-800">{boundary}</span>
+                  </Reveal>
                 </li>
               ))}
             </ol>
@@ -502,15 +561,19 @@ export default function Home() {
 
       <section id="closing" className="flex min-h-[72svh] scroll-mt-20 items-center border-y border-[#27875b] bg-[#3ca875]">
         <div className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8">
-          <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#0b3f2b]">
-            <CheckCircle2 size={18} /> From evidence to food flow
-          </div>
+          <Reveal>
+            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#0b3f2b]">
+              <CheckCircle2 size={18} /> From evidence to food flow
+            </div>
+          </Reveal>
           <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
-            <h2 className="max-w-5xl text-5xl font-semibold leading-[0.92] tracking-[-0.055em] sm:text-7xl">
-              Follow food from donation to verified allocation.
-            </h2>
-            <Link href="/login" className="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-7 py-4 text-sm font-bold text-white hover:bg-[#123a54]">
-              Open Parsel <ArrowRight size={17} />
+            <Reveal delay={120}>
+              <h2 className="font-display text-balance max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.04em] sm:text-7xl">
+                Follow food from donation to verified allocation.
+              </h2>
+            </Reveal>
+            <Link href="/login" className="group inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-[#071a2b] px-7 py-4 text-sm font-bold text-white transition-colors hover:bg-[#123a54]">
+              Open Parsel <ArrowRight size={17} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
         </div>
