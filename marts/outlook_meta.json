@@ -53,6 +53,17 @@
       10,
       11,
       12
+    ],
+    "beats_last_value_at_horizons": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
     ]
   },
   "headline": {
@@ -60,6 +71,30 @@
     "downtown_point": 886,
     "downtown_lo80_sum": 525,
     "downtown_hi80_sum": 1174,
+    "ban_level_change_dsdp": {
+      "estimate": -420.7560966302167,
+      "ci_lo": -605.7945162479413,
+      "ci_hi": -235.71767701249215,
+      "p": 8.3218218272263e-06
+    },
+    "ban_level_change_requests": {
+      "estimate": 285.7618450513813,
+      "ci_lo": 33.56777175355532,
+      "ci_hi": 537.9559183492072,
+      "p": 0.026361736138633265
+    },
+    "ban_slope_change_dsdp": {
+      "estimate": -41.59552005344824,
+      "ci_lo": -52.69671430925886,
+      "ci_hi": -30.49432579763762,
+      "p": 2.0750555150856983e-13
+    },
+    "ban_slope_change_requests": {
+      "estimate": -28.744132148529808,
+      "ci_lo": -40.34421192143142,
+      "ci_hi": -17.144052375628192,
+      "p": 1.1939165541742078e-06
+    },
     "ban_effect_12m_dsdp": {
       "estimate": -919.9023372715956,
       "ci_lo": -1036.3013772805177,
@@ -71,6 +106,30 @@
       "ci_lo": -277.5071821769941,
       "ci_hi": 159.17170071504128,
       "pct_of_pre": -10.733219981627176
+    },
+    "placebo_level_change_dsdp": {
+      "estimate": 83.20178180681431,
+      "ci_lo": -52.19460122175387,
+      "ci_hi": 218.59816483538248,
+      "p": 0.2284318960874948
+    },
+    "placebo_level_change_requests": {
+      "estimate": -203.10464207564877,
+      "ci_lo": -470.7242280960119,
+      "ci_hi": 64.51494394471439,
+      "p": 0.13688906611651155
+    },
+    "placebo_slope_change_dsdp": {
+      "estimate": -29.11050328227262,
+      "ci_lo": -43.903674874634,
+      "ci_hi": -14.317331689911242,
+      "p": 0.00011484190705369192
+    },
+    "placebo_slope_change_requests": {
+      "estimate": -8.777899343542874,
+      "ci_lo": -39.75972260967542,
+      "ci_hi": 22.203923922589677,
+      "p": 0.5786859445770898
     },
     "placebo_effect_12m_dsdp": {
       "estimate": -266.12425758045714,
@@ -93,6 +152,7 @@
     "80% bands = empirical 10th/90th percentiles of log-space backtest residuals per horizon; band sums across neighborhoods are approximations.",
     "ITS is quasi-experimental: the ban coincided with shelter openings and sweeps; read effects as 'associated with'.",
     "311 is complaint volume, never a headcount.",
-    "HAC (Newey-West) 95% CIs slightly under-cover in samples of ~60 months; read as roughly 85-90% intervals."
+    "effect_12m is relative to a counterfactual that extrapolates the pre-ban linear trend 12 more months; treat the immediate level change (post) as the more defensible estimate.",
+    "HAC 95% CIs read as roughly 85\u201390% in samples of ~60 months."
   ]
 }

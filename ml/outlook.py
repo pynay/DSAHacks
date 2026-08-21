@@ -61,7 +61,8 @@ def run(root: Path, run_month: pd.Timestamp) -> dict:
         y = panel[panel.neighborhood == h].set_index("obs_month")["y"]
         its_rows += _its_rows("dsdp_adjusted_total", h, y)[0]
 
-    beats = bt[bt.model_mae < bt.seasonal_naive_mae]["horizon"].tolist()
+    beats_sn = bt[bt.model_mae < bt.seasonal_naive_mae]["horizon"].astype(int).tolist()
+    beats_lv = bt[bt.model_mae < bt.last_value_mae]["horizon"].astype(int).tolist()
     dec = fc[fc.obs_month == fc.obs_month.max()]
     meta = {
         "model": "Pooled Ridge (alpha=1.0), direct multi-horizon 1-12, log1p target, lags 0/1/2/3/12 + roll3 + month Fourier + neighborhood one-hots",
@@ -71,12 +72,17 @@ def run(root: Path, run_month: pd.Timestamp) -> dict:
         "its_window_start": ITS_START.strftime("%Y-%m"),
         "interpolated_months": interpolated_months(frame),
         "backtest": {"origins": [o.strftime("%Y-%m") for o in BACKTEST_ORIGINS],
-                     "beats_seasonal_naive_at_horizons": beats},
+                     "beats_seasonal_naive_at_horizons": beats_sn,
+                     "beats_last_value_at_horizons": beats_lv},
         "headline": {
             "downtown_forecast_last_month": dec.obs_month.max().strftime("%Y-%m"),
             "downtown_point": round(float(dec.value.sum())),
             "downtown_lo80_sum": round(float(dec.lo80.sum())), "downtown_hi80_sum": round(float(dec.hi80.sum())),
+            "ban_level_change_dsdp": r_d["post"], "ban_level_change_requests": r_r["post"],
+            "ban_slope_change_dsdp": r_d["post_t"], "ban_slope_change_requests": r_r["post_t"],
             "ban_effect_12m_dsdp": r_d["effect_12m"], "ban_effect_12m_requests": r_r["effect_12m"],
+            "placebo_level_change_dsdp": p_d["post"], "placebo_level_change_requests": p_r["post"],
+            "placebo_slope_change_dsdp": p_d["post_t"], "placebo_slope_change_requests": p_r["post_t"],
             "placebo_effect_12m_dsdp": p_d["effect_12m"], "placebo_effect_12m_requests": p_r["effect_12m"],
             "pre_mean_dsdp": r_d["pre_mean"], "pre_mean_requests": r_r["pre_mean"],
         },
@@ -86,7 +92,8 @@ def run(root: Path, run_month: pd.Timestamp) -> dict:
             "80% bands = empirical 10th/90th percentiles of log-space backtest residuals per horizon; band sums across neighborhoods are approximations.",
             "ITS is quasi-experimental: the ban coincided with shelter openings and sweeps; read effects as 'associated with'.",
             "311 is complaint volume, never a headcount.",
-            "HAC (Newey-West) 95% CIs slightly under-cover in samples of ~60 months; read as roughly 85-90% intervals.",
+            "effect_12m is relative to a counterfactual that extrapolates the pre-ban linear trend 12 more months; treat the immediate level change (post) as the more defensible estimate.",
+            "HAC 95% CIs read as roughly 85–90% in samples of ~60 months.",
         ],
     }
     marts = root / "marts"
@@ -98,46 +105,172 @@ def run(root: Path, run_month: pd.Timestamp) -> dict:
     return meta
 
 
-def _fmt_eff(e, unit):
-    sign = "+" if e["estimate"] >= 0 else "−"
-    return f"{sign}{abs(e['estimate']):.0f} {unit} (95% CI {e['ci_lo']:.0f} to {e['ci_hi']:.0f}; {e['pct_of_pre']:+.0f}% of the pre-ban mean)"
+def _sig(e):
+    return not (e["ci_lo"] <= 0 <= e["ci_hi"])
 
 
-def _placebo_note(real, placebo):
-    if abs(placebo["estimate"]) >= 0.5 * abs(real["estimate"]):
-        return " This placebo is not distinguishable from trend noise relative to the real effect, so treat the real estimate with extra caution."
-    return ""
+def _fmt_p(p):
+    return "p<0.001" if p < 0.001 else f"p={p:.3f}"
+
+
+def _continuation_phrase(r, with_year=False):
+    """Phrase (with its own leading connector) describing what happens after the initial
+    (post) jump, derived from the sign relationship between post and post_t: same sign
+    means the level keeps moving the same way; opposite sign means it fades back toward
+    the pre-existing trend."""
+    post_e, post_t_e = r["post"]["estimate"], r["post_t"]["estimate"]
+    same_dir = (post_e >= 0) == (post_t_e >= 0)
+    suffix = " over the following year" if with_year else ""
+    if same_dir:
+        return f" and stayed {'lower' if post_e < 0 else 'higher'}"
+    verb = "eased back toward its prior trend" if post_e < 0 else "decayed toward its prior trend"
+    return f", then {verb}{suffix}"
+
+
+def _placebo_survives_post(e, pe):
+    """The immediate level change 'survives' the placebo check unless the placebo moves the
+    SAME direction and is a comparable magnitude (>=50% of the real estimate)."""
+    if e["estimate"] == 0:
+        return True
+    same_sign = (e["estimate"] >= 0) == (pe["estimate"] >= 0)
+    comparable = abs(pe["estimate"]) >= 0.5 * abs(e["estimate"])
+    return not (same_sign and comparable)
+
+
+def _slope_comparable(e, pe):
+    if e["estimate"] == 0:
+        return False
+    return abs(pe["estimate"]) >= 0.5 * abs(e["estimate"])
+
+
+def _fmt_horizons(hs):
+    """Compress a list of ints into range notation, e.g. [4,5,6,7,9] -> '4-7, 9'."""
+    hs = sorted(hs)
+    if not hs:
+        return "none"
+    runs, start, prev = [], hs[0], hs[0]
+    for x in hs[1:]:
+        if x == prev + 1:
+            prev = x
+            continue
+        runs.append((start, prev)); start = prev = x
+    runs.append((start, prev))
+    return ", ".join(f"{a}" if a == b else f"{a}-{b}" for a, b in runs)
+
+
+def _fmt_post_line(subject, unit, r, p):
+    e, pe = r["post"], p["post"]
+    pct = 100 * e["estimate"] / r["pre_mean"] if r["pre_mean"] else float("nan")
+    verb = "dropped" if e["estimate"] < 0 else "rose"
+    check = "survives the placebo check" if _placebo_survives_post(e, pe) else "is not clearly distinguishable from placebo noise"
+    return (f"- {subject}: {verb} an estimated {e['estimate']:+.0f} {unit} "
+            f"({pct:+.0f}%; 95% CI {e['ci_lo']:.0f} to {e['ci_hi']:.0f}; {_fmt_p(e['p'])}) in the first full "
+            f"enforcement month{_continuation_phrase(r)}; placebo (fake ban {PLACEBO_T0.strftime('%b %Y')}) "
+            f"{pe['estimate']:+.0f}, so this {check}.")
+
+
+def _fmt_slope_line(subject, unit, r, p):
+    e, pe = r["post_t"], p["post_t"]
+    line = (f"- {subject} slope after the break: {e['estimate']:+.1f} {unit}/month "
+            f"(95% CI {e['ci_lo']:.1f} to {e['ci_hi']:.1f}; {_fmt_p(e['p'])}); placebo {pe['estimate']:+.1f}/month.")
+    if _slope_comparable(e, pe):
+        line += " This is comparable to the placebo, so the slope component is not distinguishable from trend noise."
+    return line
+
+
+def _fmt_effect12_line(subject, unit, r, p):
+    e, pe = r["effect_12m"], p["effect_12m"]
+    span = f"{ITS_START.year}–{T0.year % 100:02d}"
+    return (f"- {subject}, 12 months out: {e['estimate']:+.0f} {unit} relative to a counterfactual that "
+            f"assumes the {span} pre-ban trend continued linearly for 12 more months "
+            f"(95% CI {e['ci_lo']:.0f} to {e['ci_hi']:.0f}; placebo {pe['estimate']:+.0f}).")
+
+
+def _read_together(r_d, r_r):
+    sig_d, sig_r = _sig(r_d["post"]), _sig(r_r["post"])
+    if not (sig_d or sig_r):
+        return ("Neither series shows a statistically significant immediate level change at the ban date, so "
+                "the data does not support a directional claim about the ordinance's effect; read the 12-month "
+                "figures above as illustrative, not evidence of impact.")
+    parts = []
+    if sig_d:
+        pct_d = round(abs(100 * r_d["post"]["estimate"] / r_d["pre_mean"]) / 5) * 5
+        verb_d = "fell" if r_d["post"]["estimate"] < 0 else "rose"
+        parts.append(f"Counted units {verb_d} ~{pct_d}% immediately{_continuation_phrase(r_d)}")
+    if sig_r:
+        pct_r = round(abs(100 * r_r["post"]["estimate"] / r_r["pre_mean"]) / 5) * 5
+        verb_r = "jumped" if r_r["post"]["estimate"] > 0 else "dropped"
+        parts.append(f"311 reports {verb_r} ~{pct_r}% immediately{_continuation_phrase(r_r, with_year=True)}")
+    lead = "; ".join(parts) + "."
+    fall_word = "fall" if (sig_d and r_d["post"]["estimate"] < 0) else "rise"
+    desc_r = "spike" if (sig_r and r_r["post"]["estimate"] > 0) else "drop"
+    qualifier = "temporary " if sig_r and (r_r["post"]["estimate"] >= 0) != (r_r["post_t"]["estimate"] >= 0) else ""
+    return (f"{lead} A {fall_word} in people seen on sweep mornings alongside a {qualifier}{desc_r} in reports is "
+            "consistent with displacement into less-visible locations and with enforcement-driven reporting; "
+            "it is associated with — not proven caused by — the ordinance, which coincided with shelter openings and sweeps.")
+
+
+def _fmt_bullet_311_shift(r_r):
+    if not _sig(r_r["post"]):
+        return "- 311 report volume did not show a statistically significant immediate shift at the ban date — avoid reading a trend narrative into noise."
+    pct_r = round(abs(100 * r_r["post"]["estimate"] / r_r["pre_mean"]) / 5) * 5
+    if r_r["post"]["estimate"] <= 0:
+        return f"- 311 reports dropped roughly {pct_r}% immediately after the ban — treat this as a reporting-volume shift, not evidence about the underlying population, when briefing decision-makers."
+    fading = (r_r["post"]["estimate"] >= 0) != (r_r["post_t"]["estimate"] >= 0)
+    if fading:
+        return (f"- 311 reports spiked roughly {pct_r}% immediately after the ban, then decayed back toward their prior trend "
+                "within the following year — treat it as a temporary reporting shift, not a lasting change in the underlying population.")
+    return f"- 311 reports rose roughly {pct_r}% immediately after the ban and stayed elevated — treat this as a reporting-volume shift, not a population count, when briefing decision-makers."
 
 
 def write_findings(meta, bt, path: Path):
     h = meta["headline"]
-    beats = meta["backtest"]["beats_seasonal_naive_at_horizons"]
+    r_d = {"post": h["ban_level_change_dsdp"], "post_t": h["ban_slope_change_dsdp"],
+           "effect_12m": h["ban_effect_12m_dsdp"], "pre_mean": h["pre_mean_dsdp"]}
+    p_d = {"post": h["placebo_level_change_dsdp"], "post_t": h["placebo_slope_change_dsdp"],
+           "effect_12m": h["placebo_effect_12m_dsdp"]}
+    r_r = {"post": h["ban_level_change_requests"], "post_t": h["ban_slope_change_requests"],
+           "effect_12m": h["ban_effect_12m_requests"], "pre_mean": h["pre_mean_requests"]}
+    p_r = {"post": h["placebo_level_change_requests"], "post_t": h["placebo_slope_change_requests"],
+           "effect_12m": h["placebo_effect_12m_requests"]}
+
+    beats_sn = meta["backtest"]["beats_seasonal_naive_at_horizons"]
+    beats_lv = meta["backtest"]["beats_last_value_at_horizons"]
+    not_lv = [x for x in range(1, 13) if x not in beats_lv]
+    honesty = (f"Honesty check: in a 24-origin rolling backtest the model beats seasonal-naive at horizons "
+               f"{_fmt_horizons(beats_sn)} of 1-12. Against naive persistence (last published value carried "
+               f"forward) it wins at horizons {_fmt_horizons(beats_lv)}"
+               + (f"; at shorter horizons ({_fmt_horizons(not_lv)}) it is no better than carrying the last "
+                  "published value forward." if not_lv else ".")
+               + " Where it does not beat a baseline, the band is the useful output, not the point.\n")
+
     lines = [
         "# Outlook — where downtown San Diego homelessness is headed",
         f"_Auto-generated by ml/outlook.py on {meta['run_month']}. Numbers are DSDP published (multiplier-adjusted) counted units unless labeled reports._\n",
         "## 1. Twelve-month outlook",
         f"Downtown total (6 core neighborhoods) for {h['downtown_forecast_last_month']}: **{h['downtown_point']:,}** "
         f"(80% band {h['downtown_lo80_sum']:,}–{h['downtown_hi80_sum']:,}), forecast from the last published month {meta['origin']}.",
-        f"Honesty check: in a 24-origin rolling backtest the model beats seasonal-naive at horizons {beats if beats else 'none'} of 1–12. "
-        "Where it does not, the band is the useful output, not the point.\n",
+        honesty,
         "| horizon | model MAE | seasonal-naive MAE | last-value MAE |", "|---|---|---|---|",
         *[f"| {int(r.horizon)} | {r.model_mae:.0f} | {r.seasonal_naive_mae:.0f} | {r.last_value_mae:.0f} |" for r in bt.itertuples()],
         "\n## 2. What the camping ban was associated with (interrupted time series, T0 = Aug 2023)",
-        f"- Counted units (DSDP): 12 months after enforcement began, the series was {_fmt_eff(h['ban_effect_12m_dsdp'], 'units')}. "
-        f"Placebo (fake ban Aug 2022, pre-ban data only): {h['placebo_effect_12m_dsdp']['estimate']:+.0f}."
-        f"{_placebo_note(h['ban_effect_12m_dsdp'], h['placebo_effect_12m_dsdp'])}",
-        f"- 311 homelessness reports: {_fmt_eff(h['ban_effect_12m_requests'], 'reports/month')}. "
-        f"Placebo: {h['placebo_effect_12m_requests']['estimate']:+.0f}."
-        f"{_placebo_note(h['ban_effect_12m_requests'], h['placebo_effect_12m_requests'])}",
-        "- Read together: after the ban, counted units moved one way and reports moved the other. Complaint volume is a reporting signal, "
-        "not a headcount — a decline in people seen on sweep mornings alongside rising reports is consistent with displacement into less-visible "
-        "locations and with enforcement-driven reporting, and is associated with (not proven caused by) the ordinance, which coincided with shelter openings and sweeps.\n",
+        "**Immediate level change — the most robust estimate:**",
+        _fmt_post_line("Counted units (DSDP)", "units", r_d, p_d),
+        _fmt_post_line("311 reports (GID requests)", "reports/month", r_r, p_r),
+        "\n**Slope after the break (per month):**",
+        _fmt_slope_line("Counted units (DSDP)", "units", r_d, p_d),
+        _fmt_slope_line("311 reports (GID requests)", "reports", r_r, p_r),
+        "\n**Twelve months out (`effect_12m`):**",
+        _fmt_effect12_line("Counted units (DSDP)", "units", r_d, p_d),
+        _fmt_effect12_line("311 reports (GID requests)", "reports/month", r_r, p_r),
+        "With a steep pre-ban upswing, this counterfactual is generous; read the immediate level change above as the defensible effect.\n",
+        f"**Read together:** {_read_together(r_d, r_r)}\n",
         "## 3. What this should tell the people working on it",
         "- Plan capacity against the band, not the point: the 80% range is the honest planning envelope.",
         "- Target outreach at the blocks the complaint signal misses: QA_REPORT.md shows 311 volume explains only a fraction of block-level counts "
         "(r≈0.23), and the block map shows counted people on blocks with zero reports. Complaint-driven deployment under-serves them.",
         "- Do not read enforcement as need: coded citation volume is negatively correlated with complaints (r≈−0.49) — it tracks policy cycles.",
-        "- Treat post-ban 311 growth as a reporting shift, not a population surge, when briefing decision-makers.",
+        _fmt_bullet_311_shift(r_r),
     ]
     path.write_text("\n".join(lines) + "\n")
 

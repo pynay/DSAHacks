@@ -19,5 +19,8 @@ def test_real_run(tmp_path):
     txt = (root / "docs" / "OUTLOOK_FINDINGS.md").read_text()
     assert "camping ban" in txt.lower() and "associated with" in txt and "reports" in txt
     assert "people fell" not in txt and "people rose" not in txt
+    assert "immediate" in txt.lower() or "first full enforcement month" in txt
+    assert "counterfactual" in txt
+    assert "88% of the pre-ban mean" not in txt
     m = json.loads((root / "marts" / "outlook_meta.json").read_text())
     assert m["origin"] == "2025-12" and m["t0"] == "2023-08"
