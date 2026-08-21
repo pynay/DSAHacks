@@ -256,20 +256,20 @@ export default function Home() {
       </header>
 
       <section id="main-story" className="flex min-h-[calc(100svh-5rem)] items-center border-b border-slate-200 bg-white">
-        <div className="mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
+        <div className="hero-recede mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20">
           <div className="hero-rise inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-[#176b48]">
             <ShieldCheck size={14} /> Food insecurity decision-support demo
           </div>
           <h1 className="hero-rise font-display mt-7 max-w-6xl text-5xl font-semibold leading-[0.93] tracking-[-0.045em] sm:text-7xl lg:text-[7rem]" style={{ ['--rise-delay' as string]: '90ms' }}>
             Hunger is local.{' '}
-            <span className="text-[#27875b]">Relief should be precise.</span>
+            <span className="hero-underline text-[#27875b]">Relief should be precise.</span>
           </h1>
           <div className="hero-rise mt-9 grid gap-8 border-t border-slate-200 pt-7 md:grid-cols-[1.15fr_.85fr] md:items-end" style={{ ['--rise-delay' as string]: '190ms' }}>
             <p className="max-w-3xl text-xl leading-8 text-slate-600 sm:text-2xl sm:leading-9">
               Parsel connects food inventory, nutrition-insecurity data, a planning model, and
               reviewed drone observations to help operators decide what food to send, where, and when.
             </p>
-            <div className="flex flex-wrap gap-3 md:justify-end">
+            <div className="hero-rise flex flex-wrap gap-3 md:justify-end" style={{ ['--rise-delay' as string]: '320ms' }}>
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 rounded-full bg-[#071a2b] px-6 py-3.5 text-sm font-bold text-white hover:bg-[#123a54]"
@@ -473,7 +473,7 @@ export default function Home() {
             </div>
           </Reveal>
           <Reveal delay={120}>
-            <h2 className="font-display mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.85] tracking-[-0.05em]">
+            <h2 className="font-display parallax-drift mt-8 max-w-6xl text-[clamp(4.25rem,11vw,9rem)] font-semibold leading-[0.85] tracking-[-0.05em]">
               No field evidence.
               <span className="mt-3 block text-[#9b511b]">No allocation.</span>
             </h2>

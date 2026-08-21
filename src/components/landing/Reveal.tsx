@@ -22,19 +22,30 @@ export default function Reveal({
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            node.classList.add('is-visible');
-            observer.disconnect();
+    // Attach after first paint settles: elements already in the viewport at
+    // load (hero-adjacent sections) then transition visibly instead of
+    // snapping to visible mid-hydration.
+    let observer: IntersectionObserver | undefined;
+    const timer = window.setTimeout(() => {
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              node.classList.add('is-visible');
+              observer?.disconnect();
+            }
           }
-        }
-      },
-      { threshold: 0.2 },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
+        },
+        // Fire once ~12% of the element is inside the viewport's inner band,
+        // so scrolling into a section reads unmistakably as the trigger.
+        { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      );
+      observer.observe(node);
+    }, 140);
+    return () => {
+      window.clearTimeout(timer);
+      observer?.disconnect();
+    };
   }, []);
 
   return (
