@@ -18,10 +18,15 @@ export default function Sidebar() {
   const pathname = usePathname();
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-white/10 bg-[#071a2b] text-white">
-      <div className="flex h-16 items-center gap-2.5 border-b border-white/10 px-5">
+      <Link
+        href="/"
+        aria-label="Back to landing page"
+        title="Back to landing page"
+        className="flex h-16 items-center gap-2.5 border-b border-white/10 px-5 transition-colors hover:bg-white/5"
+      >
         <PackageOpen size={24} className="text-[#54b889]" />
         <span className="text-xl font-semibold tracking-tight">Parsel</span>
-      </div>
+      </Link>
       <nav className="p-3 space-y-1">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
