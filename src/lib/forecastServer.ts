@@ -26,6 +26,10 @@ export interface ForecastPayload {
   meta: unknown; // ml/forecast.py's forecast_meta.json, verbatim
   total: { history: MonthPoint[]; forecast: MonthPoint[] }; // downtown-wide sums
   hoods: HoodForecast[];
+  // Per-neighborhood forecast series for the map's predicted-need horizon:
+  // for each zone id, the latest actual 311 volume + the forecast for each
+  // horizon month. The client projects zone need forward by these ratios.
+  series: { months: string[]; hoods: Record<string, { last: number; values: number[] }> };
 }
 
 function pretty(key: string): string {
@@ -92,8 +96,26 @@ async function build(): Promise<ForecastPayload> {
     }))
     .sort((a, b) => b.nextPredicted - a.nextPredicted);
 
+  // Per-neighborhood forecast series across the horizon months.
+  const months = totalForecast.map((t) => t.month);
+  const seriesHoods: Record<string, { last: number; values: number[] }> = {};
+  for (const h of hoods) {
+    seriesHoods[h.id] = {
+      last: h.lastActual,
+      values: months.map((m) => {
+        const row = fcRows.find((r) => r.neighborhood === h.id && r.month === m);
+        return row ? Math.round(row.value) : h.nextPredicted;
+      }),
+    };
+  }
+
   const meta = JSON.parse(fs.readFileSync(path.join(MARTS, "forecast_meta.json"), "utf8"));
-  return { meta, total: { history: totalHistory, forecast: totalForecast }, hoods };
+  return {
+    meta,
+    total: { history: totalHistory, forecast: totalForecast },
+    hoods,
+    series: { months, hoods: seriesHoods },
+  };
 }
 
 let cache: Promise<ForecastPayload> | null = null;

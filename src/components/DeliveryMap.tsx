@@ -35,16 +35,21 @@ export default function DeliveryMap({
   onAddZone,
   drone = null,
   zoom,
+  needCenter = null,
+  centerTrail = [],
 }: {
   zones: DeliveryZone[];
   onAddZone: (lngLat: { lng: number; lat: number }) => void;
   drone?: { lng: number; lat: number; headingDeg: number } | null;
   zoom?: number;
+  needCenter?: [number, number] | null; // predicted need centroid for the selected month
+  centerTrail?: [number, number][]; // centroids across the forecast horizon
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const readyRef = useRef(false);
   const droneMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const centerMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Keep latest props reachable from stable map event handlers.
   const zonesRef = useRef(zones);
@@ -158,6 +163,18 @@ export default function DeliveryMap({
         paint: { "text-color": "#f5f5f4", "text-halo-color": "#1c1917", "text-halo-width": 1.2 },
       });
 
+      // Predicted need-center trail (how the forecast moves the center of need).
+      map.addSource("needtrail", {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "LineString", coordinates: [] }, properties: {} },
+      });
+      map.addLayer({
+        id: "needtrail-line",
+        type: "line",
+        source: "needtrail",
+        paint: { "line-color": "#d946ef", "line-width": 2.5, "line-dasharray": [1, 1.2], "line-opacity": 0.85 },
+      });
+
       // Depot marker.
       const el = document.createElement("div");
       el.style.cssText =
@@ -240,6 +257,33 @@ export default function DeliveryMap({
     const inner = droneMarkerRef.current.getElement().firstElementChild as HTMLElement | null;
     if (inner) inner.style.transform = `rotate(${drone.headingDeg}deg)`;
   }, [drone]);
+
+  // Predicted need-center trail line.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const src = map.getSource("needtrail") as mapboxgl.GeoJSONSource | undefined;
+    src?.setData({ type: "Feature", geometry: { type: "LineString", coordinates: centerTrail }, properties: {} });
+  }, [centerTrail]);
+
+  // Predicted need-center marker (pulsing), glides between forecast months.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!needCenter) {
+      centerMarkerRef.current?.remove();
+      centerMarkerRef.current = null;
+      return;
+    }
+    if (!centerMarkerRef.current) {
+      const el = document.createElement("div");
+      el.style.cssText = "transition:transform .5s ease";
+      el.innerHTML =
+        '<div style="width:20px;height:20px;border-radius:50%;background:#d946ef;border:2px solid #fff;box-shadow:0 0 0 6px rgba(217,70,239,.28)"></div>';
+      centerMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: "center" }).setLngLat(needCenter).addTo(map);
+    }
+    centerMarkerRef.current.setLngLat(needCenter);
+  }, [needCenter]);
 
   if (!TOKEN) {
     return (
