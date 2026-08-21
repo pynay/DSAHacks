@@ -130,6 +130,9 @@ model table, methodology, limitations, and deep-model readiness gates. Reproduce
 python3 ml/hotspot_benchmark.py
 ```
 
+For a self-contained product and engineering handoff, see
+[`docs/HOTSPOT_DRONE_CONTEXT.md`](docs/HOTSPOT_DRONE_CONTEXT.md).
+
 `ml/hotspot_production.py` then fits that architecture to the newer 12-month × 261-block
 DSDP panel. A secondary four-fold forward backtest reduced MAE from **1.690 to 1.618** and
 Poisson deviance from **12.424 to 2.554** versus last-observation persistence. It exports
