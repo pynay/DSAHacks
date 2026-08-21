@@ -439,8 +439,14 @@ export default function DroneMissionStory() {
   const ActiveIcon = active.icon;
 
   return (
-    <section ref={sectionRef} id="drone-concept" className="relative h-[360vh] scroll-mt-8 bg-[#071a2b] text-white">
-      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="drone-concept"
+      aria-label="Scroll-controlled drone sensing mission"
+      tabIndex={-1}
+      className="relative h-[420svh] scroll-mt-8 bg-[#071a2b] text-white"
+    >
+      <div className="sticky top-0 flex h-[100svh] items-center overflow-hidden">
         <div className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-5 sm:gap-8 sm:px-8 sm:py-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-center lg:gap-12">
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#76d6a7]/35 bg-[#54b889]/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.15em] text-[#76d6a7]">

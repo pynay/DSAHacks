@@ -131,7 +131,7 @@ const boundaries = [
 
 export default function Home() {
   return (
-    <main id="main-content" className="min-h-screen overflow-hidden bg-white text-[#071a2b]">
+    <main id="main-content" className="min-h-screen bg-white text-[#071a2b]">
       <a
         href="#main-story"
         className="sr-only z-50 rounded-md bg-[#071a2b] px-4 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"

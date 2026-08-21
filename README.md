@@ -47,7 +47,7 @@ The repository contains three integrated systems:
 
 | Surface | What it does | Data mode |
 |---|---|---|
-| Landing | Explains the food-relief workflow with a scroll-controlled Three.js mission concept | Product narrative; not live telemetry |
+| Landing | Explains the food-relief workflow with a pinned, scroll-controlled Three.js mission concept | Product narrative; not live telemetry |
 | Dashboard | Stock KPIs, PIT/shelter context, parking activity and food-access signals | Demo operations + real aggregate data |
 | Inventory | Search, filter, add and adjust food inventory with derived status | In-memory demo state |
 | Donations | Record incoming items and update matching stock | In-memory demo state |
@@ -69,7 +69,7 @@ Repeated frames are never submitted automatically; doing so would count the same
 visible people many times. The endpoint stores only the aggregate observation in
 process memory. It stores no image, identity, face embedding, or person-level track.
 
-The landing-page mission scene is a scroll-controlled 3D explainer. It illustrates the
+The landing-page mission scene is a pinned, scroll-controlled 3D explainer. It illustrates the
 intended sensing route, aggregate observation, reviewed hotspot update, response
 optimization and return. The drone is an information-gathering input to the model,
 not a food-delivery mechanism, and the scene is not live flight telemetry.
