@@ -15,6 +15,20 @@
   <a href="docs/README.md">Documentation</a>
 </p>
 
+<p align="center">
+  <strong>Drone computer-vision demo.</strong> A DJI UAS feed annotated in real time by the EyePop detection pipeline that feeds the response map and Live Delivery workflow.
+</p>
+
+<p align="center">
+  <video src="https://github.com/pynay/DSAHacks/raw/main/public/DJI_0044_annotated.mp4" controls muted width="720">
+    Your browser does not render embedded video.
+  </video>
+</p>
+
+<p align="center">
+  <em><a href="public/DJI_0044_annotated.mp4">▶ Watch the annotated drone-vision clip</a></em>
+</p>
+
 ---
 
 ## Overview
