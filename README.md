@@ -20,13 +20,11 @@
 </p>
 
 <p align="center">
-  <video src="https://github.com/pynay/DSAHacks/raw/main/public/DJI_0044_annotated.mp4" controls muted width="720">
-    Your browser does not render embedded video.
-  </video>
-</p>
-
-<p align="center">
-  <em><a href="public/DJI_0044_annotated.mp4">▶ Watch the annotated drone-vision clip</a></em>
+  <a href="https://github.com/pynay/DSAHacks/blob/main/public/DJI_0044_annotated.mp4">
+    <img src="public/DJI_0044_poster.jpg" alt="Watch the annotated drone computer-vision demo" width="720" />
+  </a>
+  <br />
+  <em>▶ Click to watch the annotated drone-vision clip</em>
 </p>
 
 ---
