@@ -21,7 +21,7 @@
 
 <p align="center">
   <a href="https://github.com/pynay/DSAHacks/blob/main/public/DJI_0044_annotated.mp4">
-    <img src="public/DJI_0044_poster.jpg" alt="Watch the annotated drone computer-vision demo" width="720" />
+    <img src="public/banner.png" alt="Watch the annotated drone computer-vision demo" width="720" />
   </a>
   <br />
   <em>▶ Click to watch the annotated drone-vision clip</em>
